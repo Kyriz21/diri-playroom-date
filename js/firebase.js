@@ -27,13 +27,13 @@ import {
 export const firebaseConfig = {
   // Create a NEW Firebase Web App for Diri. Playroom Date and paste its values here.
   // Keep the placeholder values until the new Firebase project is ready.
-  apiKey: 'PASTE_FIREBASE_WEB_API_KEY_HERE',
-  authDomain: 'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
-  databaseURL: 'https://REPLACE_WITH_DATABASE_URL',
-  projectId: 'REPLACE_WITH_PROJECT_ID',
-  storageBucket: 'REPLACE_WITH_PROJECT_ID.firebasestorage.app',
-  messagingSenderId: 'REPLACE_WITH_MESSAGING_SENDER_ID',
-  appId: 'REPLACE_WITH_FIREBASE_APP_ID'
+  apiKey: "AIzaSyBC-hBpMcJCN1BsIe6oo2LZ72QKh2YzIU4",
+  authDomain: "diri-playroom-date.firebaseapp.com",
+  databaseURL: "https://diri-playroom-date-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "diri-playroom-date",
+  storageBucket: "diri-playroom-date.firebasestorage.app",
+  messagingSenderId: "667695982695",
+  appId: "1:667695982695:web:acd2dae896fc75049eccc2"
 };
 
 export const isFirebaseConfigured = Object.values(firebaseConfig).every(value =>
