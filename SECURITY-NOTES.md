@@ -11,10 +11,13 @@ Kode room enam karakter berfungsi sebagai kode undangan. Siapa pun yang memperol
 ## Data storage split
 
 - `/rooms`: data keanggotaan, lobby, readiness, presence, dan metadata sesi.
-- `/roomGames`: state publik game yang memang perlu dilihat kedua pemain serta WebRTC signaling.
+- `/roomGames`: state publik game yang memang perlu dilihat kedua pemain, WebRTC signaling, serta relay foto sementara terbatas untuk sesi Photobooth.
 - `/privateRooms`: konten privat per UID, seperti jawaban atau secret word yang dibutuhkan game.
 - IndexedDB: koleksi custom lokal, gambar Memory Card, foto sementara, dan Private Gallery.
-- Binary gambar/foto tidak dikirim sebagai blob/base64 ke Realtime Database.
+- Foto mode pribadi disimpan di IndexedDB lokal.
+- Pada sesi berdua, WebRTC DataChannel menjadi jalur utama. Jika gagal, foto JPEG terkompresi (maksimum 256 KiB per foto) dikirim sementara sebagai Data URL melalui RTDB relay.
+- Payload relay memuat peran, nomor slot, ukuran byte, tipe MIME, dan SHA-256. Penerima memverifikasi semua bidang dan menyimpan Blob ke IndexedDB sebelum memberi ACK.
+- Relay dihapus setelah kedua perangkat menyimpan foto dan mengirim ACK. Jika kedua perangkat menutup browser sebelum ACK, data relay mungkin tertinggal; sesi berikutnya/cleanup host dapat menghapusnya.
 
 ## Client-only trust limitation
 
@@ -27,11 +30,14 @@ Room secara logis kedaluwarsa setelah 24 jam tanpa aktivitas bermakna. Rules men
 ## Photobooth
 
 - Kamera hanya diminta setelah pengguna memilih aksi Open camera dan memberikan izin browser.
-- Couple Photobooth mengirim file foto langsung melalui WebRTC DataChannel apabila koneksi P2P berhasil.
-- Signaling/metadata berada di RTDB; foto tidak disimpan di RTDB.
-- STUN-only tidak menjamin koneksi pada semua NAT, firewall, atau jaringan. Paket tidak memakai TURN relay berbayar.
-- Jika P2P gagal setelah satu retry, gunakan Manual Transfer di luar website: kedua pemain mengimpor delapan file yang sama dalam urutan Host 1–4 lalu Guest 1–4. SHA-256 digunakan untuk memeriksa file/order yang sama.
-- Shared Editor menyinkronkan elemen teks/stiker/posisi, bukan file fotonya. Kedua perangkat harus mempunyai file gambar lokal yang sama agar dapat merender komposisi yang serupa.
+- Couple Photobooth mencoba WebRTC DataChannel terlebih dahulu. Setiap file menunggu ACK penerima dengan checksum SHA-256 yang cocok.
+- STUN-only tidak menjamin koneksi pada semua NAT, firewall, atau jaringan; TURN relay berbayar tidak disertakan.
+- Jika koneksi langsung gagal atau macet, kedua klien otomatis menggunakan Firebase Realtime Database sebagai relay sementara. Pengguna tidak diminta memilih delapan file secara manual.
+- Foto relay adalah JPEG maksimum 256 KiB per file. Penerima memvalidasi peran, nomor slot, tipe, ukuran, dan SHA-256 sebelum menyimpan file ke IndexedDB.
+- Kedua perangkat harus mengirim ACK setelah menyimpan empat foto pasangan. Editor baru dibuka setelah kedua ACK diterima. Data relay dihapus setelahnya.
+- Relay memerlukan Firebase Rules v0.9 yang dipublikasikan. Jika Rules belum diperbarui, Firebase dapat menolak penulisan.
+- Jika seluruh akses internet/Firebase terputus, transfer tidak dapat diselesaikan saat offline. Foto tetap tersimpan lokal dan transfer dapat dicoba ulang setelah koneksi kembali.
+- Shared Editor menyinkronkan elemen teks/stiker/posisi; foto tersedia di lokal kedua perangkat setelah transfer dan ACK berhasil.
 
 ## Operational safeguards
 

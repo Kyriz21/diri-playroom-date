@@ -1,6 +1,7 @@
 import { putLocalMedia, getLocalMedia, deleteLocalMedia, setLocalValue, getLocalValue, cleanupExpiredMedia } from '../services/local-store.js';
 import { nextPhotoSlot, hasCompletePhotoSet } from '../games/logic.js';
 import { FRAMES, frameById, clampPosition, drawFrameBackground, drawPhotoSlotBorder, drawFrameOverlay } from './frame-art.js';
+import { RELAY_MAX_PHOTO_BYTES, dataUrlToBlob, validateRelayPayload, buildRelayPhotoPayload } from './relay-transfer.js';
 
 // Firebase is loaded only for a shared session. Standalone Photobooth stays local and
 // can be used even before a Firebase project is configured.
@@ -101,9 +102,9 @@ export function mountPhotobooth(root, context) {
   let candidateUnsubscribe = null;
   let lastSeenRetakeToken = null;
   let sendStarted = false;
+  let p2pTransferError = null;
   let localSent = false;
   let remoteDone = false;
-  let incomingFile = null;
   let localPhotos = [];
   let remotePhotos = [];
   let manualPhotos = [];
@@ -124,6 +125,15 @@ export function mountPhotobooth(root, context) {
   let restoringCapture = false;
   let manualCompletionRunning = false;
   let appliedSlotRetakeKey = '';
+  let relayStarted = false;
+  let relayUploadCount = 0;
+  let relayDownloadCount = 0;
+  let relayStatusText = 'Menyiapkan pengiriman foto…';
+  let relayErrorText = '';
+  let restoreCapturePromise = null;
+  let onlineHandler = null;
+  let firebaseConnectionUnsubscribe = null;
+  const fileAckWaiters = new Map();
 
   function showToast(message, type = 'default') { toast(message, type); }
   function stopCamera() {
@@ -142,6 +152,8 @@ export function mountPhotobooth(root, context) {
     if (candidateUnsubscribe) { try { candidateUnsubscribe(); } catch {} }
     candidateUnsubscribe = null;
     if (rtc) { try { rtc.close(); } catch {} }
+    for (const waiter of fileAckWaiters.values()) { try { waiter.resolve({aborted:true}); } catch {} }
+    fileAckWaiters.clear();
     rtc = null;
     channel = null;
   }
@@ -158,6 +170,8 @@ export function mountPhotobooth(root, context) {
     root.removeEventListener('pointerup', onPointerUp);
     root.removeEventListener('pointercancel', onPointerUp);
     root.removeEventListener('wheel', onElementWheel);
+    if (onlineHandler) window.removeEventListener('online', onlineHandler);
+    if (firebaseConnectionUnsubscribe) { try { firebaseConnectionUnsubscribe(); } catch {} firebaseConnectionUnsubscribe = null; }
     if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
   }
 
@@ -218,6 +232,25 @@ export function mountPhotobooth(root, context) {
       ({ db, ref, get, set, update, remove, onValue, runTransaction, serverTimestamp } = firebase);
       publicRef = roomPublic(code, session.sessionId);
       mode = context.mode === 'couple' ? 'couple' : 'choose';
+      onlineHandler = () => {
+        if (mode === 'couple' && pState?.phase === 'relay' && pState?.p2p?.status === 'relay-error' && !relayStarted) {
+          relayErrorText = '';
+          void mutate(state => { if (state.phase === 'relay') state.p2p = {...(state.p2p || {}), status:'relay', method:'firebase', updatedAt:Date.now()}; });
+        }
+      };
+      window.addEventListener('online', onlineHandler);
+      // Firebase can reconnect even when the browser does not emit another
+      // window 'online' event. Watch the SDK connection state as a second wake-up.
+      firebaseConnectionUnsubscribe = onValue(ref(db, '.info/connected'), snapshot => {
+        if (snapshot.val() === true && mode === 'couple' && pState?.phase === 'relay' && pState?.p2p?.status === 'relay-error' && !relayStarted && !destroyed) {
+          relayErrorText = '';
+          void mutate(state => {
+            if (state.phase === 'relay' && state.p2p?.status === 'relay-error') {
+              state.p2p = { ...(state.p2p || {}), status:'relay', method:'firebase', updatedAt:Date.now() };
+            }
+          }).then(() => { if (!relayStarted && !destroyed) void startFirebaseRelay(); }).catch(error => console.warn('Automatic relay resume:', error));
+        }
+      }, error => console.warn('Firebase connection monitor:', error));
       await ensureSessionState();
       unsubscribers.push(onValue(publicRef, snapshot => {
         pState = snapshot.val();
@@ -233,16 +266,38 @@ export function mountPhotobooth(root, context) {
         if (mode === 'couple') {
           if (pState.phase === 'capture' && pState.retakeSlot) void applyPendingSlotRetake();
           else if (pState.phase === 'capture') void restoreCaptureMedia();
-          if (pState.phase === 'manual') { void restoreCaptureMedia(); void restoreManualFotos().then(()=>tryCompleteManual()); void tryCompleteManual(); }
+          if (pState.phase === 'manual') {
+            // Migrate a legacy manual-fallback session from either participant.
+            // The transaction ensures only the first client creates the new relay ID.
+            if (pState.photosDone?.host && pState.photosDone?.guest) {
+              void mutate(state => {
+                if (state.phase === 'manual') {
+                  state.phase='relay';
+                  state.p2p={...(state.p2p||{}),status:'relay',method:'firebase',transferId:state.p2p?.transferId||randomId()};
+                }
+              });
+            }
+            void restoreCaptureMedia();
+          }
+          if (pState.phase === 'relay' && pState.p2p?.status === 'relay' && !relayStarted) {
+            void restoreCaptureMedia();
+            void startFirebaseRelay();
+          }
           if (pState.phase === 'editor' || pState.phase === 'finalized') void ensureEditorData();
+          if (pState.phase === 'aborted' && pState.p2p?.method === 'firebase') void cleanupRelayRole().catch(error => console.warn('Relay cleanup after abort:',error));
           renderCouple();
           if (role === 'guest' && pState.phase === 'capture' && pState.p2p?.status === 'connecting' && pState.p2p.attempt > p2pAttemptSeen) {
             p2pAttemptSeen = pState.p2p.attempt;
             void connectPeer('guest', p2pAttemptSeen);
           }
-          if (role === 'host' && pState.phase === 'capture' && pState.photosDone?.host && pState.photosDone?.guest && pState.p2p?.status === 'idle' && !p2pStarted) {
+          if (role === 'host' && pState.phase === 'capture' && pState.photosDone?.host && pState.photosDone?.guest && ['idle','connecting'].includes(pState.p2p?.status || 'idle') && !p2pStarted) {
             p2pStarted = true;
-            void beginP2P();
+            void (async () => {
+              if (pState.p2p?.status === 'connecting') {
+                await mutate(state => { if (state.phase === 'capture') state.p2p = {attempt:0,status:'idle'}; });
+              }
+              await beginP2P();
+            })();
           }
         }
       }, error => showToast(`Kesalahan sinkronisasi Fotobooth: ${error.message}`, 'error')));
@@ -259,7 +314,7 @@ export function mountPhotobooth(root, context) {
   }
   function renderChoose() {
     mode = 'choose';
-    root.innerHTML = `<div class="photo-app">${gameTop('Photobooth ♡','Abadikan momen bersama meski berjauhan.')}<section class="panel photo-mode-panel"><h2>Pilih mode Fotobooth</h2><p>Ambil foto sendiri atau buat satu strip foto bersama pasangan.</p><div class="photo-mode-grid"><button class="photo-mode-card" data-pb="solo"><span>♡</span><strong>Fotobooth Sendiri</strong><small>Empat foto, 16 desain bingkai tematik, filter, dan galeri pribadi di perangkat ini.</small></button><button class="photo-mode-card" data-pb="couple"><span>✿</span><strong>Fotobooth Berdua</strong><small>Empat foto per orang, pengaturan bersama, pratinjau gabungan, dan persetujuan akhir.</small></button></div><p class="small-note">Foto tidak diunggah ke Firebase. Transfer langsung antarpiranti dicoba terlebih dahulu; jika jaringan tidak mendukungnya, tersedia pemindahan manual dengan pemeriksaan file.</p></section></div>`;
+    root.innerHTML = `<div class="photo-app">${gameTop('Photobooth ♡','Abadikan momen bersama meski berjauhan.')}<section class="panel photo-mode-panel"><h2>Pilih mode Fotobooth</h2><p>Ambil foto sendiri atau buat satu strip foto bersama pasangan.</p><div class="photo-mode-grid"><button class="photo-mode-card" data-pb="solo"><span>♡</span><strong>Fotobooth Sendiri</strong><small>Empat foto, 16 desain bingkai tematik, filter, dan galeri pribadi di perangkat ini.</small></button><button class="photo-mode-card" data-pb="couple"><span>✿</span><strong>Fotobooth Berdua</strong><small>Empat foto per orang, pengaturan bersama, pratinjau gabungan, dan persetujuan akhir.</small></button></div><p class="small-note">Foto pribadi tetap tersimpan di perangkat. Untuk sesi berdua, transfer langsung dicoba terlebih dahulu dan Firebase menjadi jalur cadangan otomatis jika koneksi langsung gagal. Foto sementara dihapus setelah kedua perangkat mengonfirmasi penerimaan.</p></section></div>`;
   }
   function frameCatalog(active, attribute = 'solo-frame') {
     const miniCopy = {
@@ -610,6 +665,13 @@ export function mountPhotobooth(root, context) {
     const mismatch=hashes.host&&hashes.guest&&JSON.stringify(hashes.host)!==JSON.stringify(hashes.guest);
     return `${gameTop('Pemindahan foto manual','Koneksi langsung tidak berhasil setelah satu percobaan ulang.','ALTERNATIF TANPA UNGGAH FOTO')}<section class="panel photo-editor-card"><div class="room-alert">Foto tidak diunggah ke server. Kirim delapan file melalui aplikasi lain. Kedua perangkat harus memilih file yang identik dengan urutan: Pembuat ruang 1–4, lalu Tamu 1–4.</div><label class="button button-secondary file-button">Pilih delapan foto yang sama<input type="file" accept="image/*" multiple data-pb-manual hidden></label><p class="small-note">Dipilih: ${manualPhotos.filter(Boolean).length}/8. Pembuat ruang: ${hashes.host?'sudah diperiksa':'menunggu'} · Tamu: ${hashes.guest?'sudah diperiksa':'menunggu'}.</p>${mismatch?'<p class="room-alert">Urutan atau file yang dipilih tidak sama. Pilih ulang delapan file yang persis sama pada kedua perangkat.</p>':''}<div class="pb-manual-preview">${manualPhotos.map((photo,index)=>photo?`<figure><img src="${photo.url}" alt="Foto ${index+1}"><figcaption>${index<4?'Pembuat ruang':'Tamu'} ${index%4+1}</figcaption></figure>`:'').join('')}</div><div class="photo-controls"><button class="button button-primary" data-pb="verify-manual" ${hasCompletePhotoSet(manualPhotos,8)?'':'disabled'}>Periksa kecocokan foto</button><button class="button button-quiet" data-pb="solo-fallback">Lanjutkan sendiri</button><button class="button button-quiet" data-pb="abort-couple">Batalkan sesi</button></div></section>`;
   }
+  function renderRelayTransfer() {
+    const failed = pState?.p2p?.status === 'relay-error' || Boolean(relayErrorText);
+    const uploadPct = Math.round((relayUploadCount / 4) * 100);
+    const downloadPct = Math.round((relayDownloadCount / 4) * 100);
+    return `${gameTop('Mengirim foto pasangan','Jangan tutup halaman. Foto dikirim otomatis dan diperiksa sebelum editor dibuka.','TRANSFER OTOMATIS · PEMULIHAN KONEKSI')}<section class="panel photo-editor-card"><div class="pb-shared-setting-note"><strong>${failed ? 'Koneksi perlu dicoba ulang' : 'Foto kalian sedang diamankan'}</strong><span>${esc(relayErrorText || relayStatusText || 'WebRTC tidak tersedia. Sistem sedang memakai jalur cadangan Firebase secara otomatis.')}</span></div><div class="pb-relay-progress"><strong>Foto milikmu · ${relayUploadCount}/4 terkirim</strong><div class="pb-progress-track"><span style="width:${uploadPct}%"></span></div><strong>Foto pasangan · ${relayDownloadCount}/4 diterima</strong><div class="pb-progress-track"><span style="width:${downloadPct}%"></span></div></div><p class="small-note">Transfer memakai Firebase Realtime Database sebagai jalur cadangan. Foto dikompres, diperiksa dengan checksum, dan disimpan di kedua perangkat sebelum editor dibuka.</p>${failed ? `<div class="photo-controls"><button class="button button-primary" data-pb="retry-relay">Coba kirim kembali</button><button class="button button-quiet" data-pb="abort-couple">Batalkan sesi</button></div>` : `<p class="small-note">Pastikan kedua perangkat tetap membuka halaman ini dan memiliki koneksi internet.</p>`}</section>`;
+  }
+
   function renderSharedStrip() {
     if(!editorData) return '<div class="photo-editor-card"><p>Memulihkan foto lokal untuk editor bersama…</p></div>';
     const selected = frameById(pState.frameId || 'korean');
@@ -685,7 +747,7 @@ export function mountPhotobooth(root, context) {
     if (!pState) { root.innerHTML = '<section class="panel game-panel"><p>Menyiapkan Fotobooth Berdua…</p></section>'; return; }
     if (pState.phase === 'setup') root.innerHTML = `<div class="photo-app">${renderCoupleSetup()}</div>`;
     else if (pState.phase === 'capture') root.innerHTML = `<div class="photo-app">${renderCapture()}</div>`;
-    else if (pState.phase === 'manual') root.innerHTML = `<div class="photo-app">${renderManualTransfer()}</div>`;
+    else if (pState.phase === 'relay' || pState.phase === 'manual') root.innerHTML = `<div class="photo-app">${renderRelayTransfer()}</div>`;
     else if (pState.phase === 'editor') root.innerHTML = `<div class="photo-app">${renderSharedEditor()}</div>`;
     else if (pState.phase === 'finalized') root.innerHTML = `<div class="photo-app">${renderFinalized()}</div>`;
     else root.innerHTML = `<div class="photo-app"><section class="panel game-panel"><h2>Sesi Fotobooth berakhir</h2><button class="button button-quiet" data-pb="back">Kembali ke lobi</button></section></div>`;
@@ -698,21 +760,25 @@ export function mountPhotobooth(root, context) {
     await putLocalMedia('photobooth', localKey(session.sessionId,pState.retakeToken,role,index), blob);
   }
   async function restoreCaptureMedia() {
-    if (restoringCapture || !pState) return;
-    restoringCapture=true;
-    try {
-      const restored=[];
-      for (let index=0;index<4;index++) {
-        if (localPhotos[index]) { restored[index]=localPhotos[index]; continue; }
-        const blob=await getLocalMedia('photobooth',localKey(session.sessionId,pState.retakeToken||0,role,index));
-        if (blob) restored[index]={blob,url:await readDataUrl(blob),name:`foto-${index+1}.jpg`};
-      }
-      if (restored.some(Boolean)) {
-        localPhotos=restored;
-        if (mode==='couple' && pState?.phase==='capture') renderCouple();
-      }
-    } catch (error) { console.warn('Local photo restore:',error); }
-    finally { restoringCapture=false; }
+    if (!pState) return;
+    if (restoringCapture) return restoreCapturePromise;
+    restoringCapture = true;
+    restoreCapturePromise = (async () => {
+      try {
+        const restored=[];
+        for (let index=0;index<4;index++) {
+          if (localPhotos[index]?.blob instanceof Blob) { restored[index]=localPhotos[index]; continue; }
+          const blob=await getLocalMedia('photobooth',localKey(session.sessionId,pState.retakeToken||0,role,index));
+          if (blob) restored[index]={blob,url:await readDataUrl(blob),name:`foto-${index+1}.jpg`};
+        }
+        if (restored.some(Boolean)) {
+          localPhotos=restored;
+          if (mode==='couple' && ['capture','relay','manual'].includes(pState?.phase)) renderCouple();
+        }
+      } catch (error) { console.warn('Local photo restore:',error); }
+    })();
+    try { await restoreCapturePromise; }
+    finally { restoringCapture=false; restoreCapturePromise=null; }
   }
   async function ensureEditorData() {
     const key=`${pState?.retakeToken||0}:${pState?.photoRevision||0}:${pState?.p2p?.status||''}`;
@@ -766,7 +832,7 @@ export function mountPhotobooth(root, context) {
     });
   }
   async function connectPeer(side, attempt) {
-    disposePeer();localSent=false;remoteDone=false;sendStarted=false;incomingFile=null;
+    disposePeer();localSent=false;remoteDone=false;sendStarted=false;p2pTransferError=null;
     remotePhotos=[];
     let timeoutId;
     const negotiation = (async () => {
@@ -784,7 +850,7 @@ export function mountPhotobooth(root, context) {
           channel=rtc.createDataChannel('diri-photo-transfer',{ordered:true});wireDataChannel(channel);
           const offer=await rtc.createOffer();await rtc.setLocalDescription(offer);
           await set(ref(db,`${path}/offer`),{type:offer.type,sdp:offer.sdp});
-          const answer=await waitForValue(`${path}/answer`,18000);
+          const answer=await waitForValue(`${path}/answer`,12000);
           await rtc.setRemoteDescription(new RTCSessionDescription(answer));await flushCandidates();
         } else {
           const channelReady=new Promise(resolve=>{
@@ -794,9 +860,9 @@ export function mountPhotobooth(root, context) {
           await rtc.setRemoteDescription(new RTCSessionDescription(offer));
           const answer=await rtc.createAnswer();await rtc.setLocalDescription(answer);
           await set(ref(db,`${path}/answer`),{type:answer.type,sdp:answer.sdp});await flushCandidates();
-          await Promise.race([channelReady,wait(18000).then(()=>{throw new Error('DataChannel did not arrive.');})]);
+          await Promise.race([channelReady,wait(12000).then(()=>{throw new Error('DataChannel did not arrive.');})]);
         }
-        await waitChannelOpen(18000);
+        await waitChannelOpen(12000);
         return true;
       } catch (error) {
         console.warn('WebRTC connection attempt failed:',error);
@@ -804,7 +870,7 @@ export function mountPhotobooth(root, context) {
       }
     })();
     const timedOut = new Promise(resolve => {
-      timeoutId=setTimeout(()=>{disposePeer();resolve(false);},20000);
+      timeoutId=setTimeout(()=>{disposePeer();resolve(false);},15000);
     });
     const connected=await Promise.race([negotiation,timedOut]);
     clearTimeout(timeoutId);
@@ -822,24 +888,39 @@ export function mountPhotobooth(root, context) {
   }
   function wireDataChannel(dataChannel) {
     dataChannel.binaryType='arraybuffer';
-    dataChannel.onmessage=async event=>{
-      if (typeof event.data==='string') {
-        let message;try{message=JSON.parse(event.data);}catch{return;}
-        if (message.type==='file-start') incomingFile={index:message.index,mime:message.mime,name:message.name,chunks:[]};
-        else if (message.type==='file-end' && incomingFile) {
-          const completed=incomingFile;
-          incomingFile=null;
-          const blob=new Blob(completed.chunks,{type:completed.mime});
-          const key=localKey(session.sessionId,pState?.retakeToken||0,partnerRole,completed.index);
-          await putLocalMedia('photobooth',key,blob);
-          remotePhotos[completed.index]={blob,url:await readDataUrl(blob),name:completed.name};
-          await finishP2PIfReady();
-        } else if (message.type==='all-done') {
-          remoteDone=true;
-          await finishP2PIfReady();
+    let incomingFile = null;
+    let messageQueue = Promise.resolve();
+    // Serialize asynchronous IndexedDB writes so file-start cannot overtake file-end.
+    dataChannel.onmessage=event=>{
+      messageQueue=messageQueue.then(async()=>{
+        if(typeof event.data==='string'){
+          let message;try{message=JSON.parse(event.data);}catch{return;}
+          if(message.type==='file-start'){
+            const index=Number(message.index);
+            if(!Number.isInteger(index)||index<0||index>3||!String(message.mime||'').startsWith('image/'))throw new Error('Informasi foto dari pasangan tidak valid.');
+            incomingFile={index,mime:message.mime,name:message.name,chunks:[],bytes:0};
+          }
+          else if(message.type==='file-end'&&incomingFile){
+            const completed=incomingFile;incomingFile=null;const blob=new Blob(completed.chunks,{type:completed.mime});
+            if(!blob.size||!blob.type.startsWith('image/'))throw new Error('Foto yang diterima tidak valid.');
+            const hash=await hashBlob(blob),key=localKey(session.sessionId,pState?.retakeToken||0,partnerRole,completed.index);
+            await putLocalMedia('photobooth',key,blob);remotePhotos[completed.index]={blob,url:await readDataUrl(blob),name:completed.name,hash};
+            if(dataChannel.readyState!=='open')throw new Error('Koneksi langsung terputus sebelum tanda terima dikirim.');
+            dataChannel.send(JSON.stringify({type:'file-ack',index:completed.index,sha256:hash}));await finishP2PIfReady();
+          }else if(message.type==='file-ack'){
+            const waiter=fileAckWaiters.get(Number(message.index));if(waiter){fileAckWaiters.delete(Number(message.index));waiter.resolve(message);}
+          }else if(message.type==='all-done'){remoteDone=true;await finishP2PIfReady();}
+        }else if(incomingFile){
+          const chunkBytes=event.data.byteLength||event.data.size||0;
+          incomingFile.bytes+=chunkBytes;
+          if(incomingFile.bytes>12*1024*1024)throw new Error('Ukuran satu foto melebihi batas transfer langsung 12 MB.');
+          incomingFile.chunks.push(event.data);
         }
-      } else if (incomingFile) incomingFile.chunks.push(event.data);
+      }).catch(error=>{p2pTransferError=error;console.error('DataChannel receive error:',error);showToast(`Penerimaan foto langsung gagal: ${error.message}`,'error');try{dataChannel.close();}catch{}});
     };
+  }
+  function waitForFileAck(index,timeoutMs=45000){
+    return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{fileAckWaiters.delete(index);reject(new Error(`Konfirmasi penerimaan foto ${index+1} tidak diterima.`));},timeoutMs);fileAckWaiters.set(index,{resolve:value=>{clearTimeout(timer);resolve(value);}});});
   }
   async function sendLocalFiles() {
     if (sendStarted || !channel || channel.readyState!=='open' || !hasCompletePhotoSet(localPhotos, 4)) return;
@@ -853,12 +934,159 @@ export function mountPhotobooth(root, context) {
           while(channel.bufferedAmount>512*1024) await wait(30);
           channel.send(buffer.slice(offset,Math.min(offset+chunkSize,buffer.byteLength)));
         }
+        const ack=waitForFileAck(index);
         channel.send(JSON.stringify({type:'file-end',index}));
+        const receipt=await ack;
+        const expectedHash=await hashBlob(blob);
+        if(!receipt?.sha256||receipt.sha256!==expectedHash)throw new Error(`Pemeriksaan integritas foto ${index+1} dari pasangan gagal.`);
       }
       channel.send(JSON.stringify({type:'all-done',role}));localSent=true;
       await finishP2PIfReady();
-    } catch (error) { showToast(`Transfer foto gagal: ${error.message}`,'error'); }
+    } catch (error) { p2pTransferError=error;showToast(`Transfer langsung belum berhasil: ${error.message}. Sistem akan beralih ke jalur cadangan.`,'error');try{channel?.close();}catch{} }
   }
+  const RELAY_TIMEOUT_MS = 10 * 60 * 1000;
+  function relayBasePath() {
+    const token=Number(pState?.retakeToken||0);
+    const transferId=String(pState?.p2p?.transferId||'legacy');
+    return `roomGames/${code}/${session.sessionId}/photoRelay/${token}_${transferId}`;
+  }
+  async function makeRelayBlob(photo,index) {
+    const source=photo?.blob instanceof Blob?photo.blob:(photo instanceof Blob?photo:null);
+    if(!source||!source.type.startsWith('image/'))throw new Error(`Foto ${index+1} tidak tersedia untuk dikirim.`);
+    if(source.type==='image/jpeg'&&source.size<=RELAY_MAX_PHOTO_BYTES)return source;
+    const objectUrl=URL.createObjectURL(source);
+    try {
+      const image=await loadImage(objectUrl);
+      let scale=Math.min(1,1280/Math.max(image.naturalWidth,image.naturalHeight));
+      for(let pass=0;pass<6;pass++){
+        const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+        const context=canvas.getContext('2d',{alpha:false});if(!context)throw new Error('Kanvas kompresi foto tidak tersedia.');
+        context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);
+        for(const quality of [.82,.74,.66,.58]){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(blob&&blob.size<=RELAY_MAX_PHOTO_BYTES)return blob;}
+        scale*=.78;
+      }
+      throw new Error(`Foto ${index+1} terlalu besar setelah dikompres. Ambil ulang dengan resolusi lebih rendah.`);
+    } finally { URL.revokeObjectURL(objectUrl); }
+  }
+  async function waitForFirebaseOnline(timeoutMs=RELAY_TIMEOUT_MS){
+    return new Promise((resolve,reject)=>{
+      let settled=false,unsubscribe=()=>{},hasShownOffline=false;
+      const finish=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);try{unsubscribe();}catch{}if(error)reject(error);else resolve(value);};
+      const timer=setTimeout(()=>finish(new Error('Firebase belum tersambung selama 10 menit. Foto tetap tersimpan di perangkat; transfer akan dilanjutkan saat koneksi tersedia.')),timeoutMs);
+      unsubscribe=onValue(ref(db,'.info/connected'),snapshot=>{
+        if(snapshot.val()===true)finish(null,true);
+        else if(!hasShownOffline){hasShownOffline=true;relayStatusText='Menunggu koneksi internet dan Firebase pulih. Foto tetap tersimpan di perangkat…';renderCouple();}
+      },error=>finish(error));
+      unsubscribers.push(unsubscribe);
+    });
+  }
+  async function retryRelayWrite(path,value,attempts=8){
+    let lastError;
+    for(let attempt=0;attempt<attempts;attempt++){
+      if(destroyed)throw new Error('Sesi ditutup sebelum transfer selesai.');
+      let timer;
+      try{
+        await waitForFirebaseOnline();
+        relayStatusText=`Mengirim data foto (${attempt+1}/${attempts})…`;renderCouple();
+        await Promise.race([set(ref(db,path),value),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Waktu tunggu penulisan Firebase habis.')),25000);})]);
+        clearTimeout(timer);return true;
+      }catch(error){
+        clearTimeout(timer);lastError=error;
+        const message=`${error?.code||''} ${error?.message||''}`;
+        const permissionDenied=/permission|denied|invalid|unauthorized/i.test(message);
+        const offlineTimeout=/belum tersambung selama 10 menit/i.test(message);
+        if(permissionDenied)throw new Error('Firebase menolak transfer foto. Buka Firebase Console → Realtime Database → Rules, lalu publikasikan ulang firebase-database.rules.json dari ZIP versi terbaru.');
+        // The connection watcher and browser-online watcher will resume this
+        // transfer when connectivity returns; do not make the user wait through
+        // eight repeated ten-minute offline waits.
+        if(offlineTimeout||attempt===attempts-1)break;
+        relayStatusText=`Pengiriman belum dikonfirmasi. Mencoba ulang (${attempt+2}/${attempts})…`;renderCouple();
+        await wait(Math.min(12000,700*(2**attempt)));
+      }
+    }
+    throw lastError||new Error('Foto belum berhasil dikirim ke Firebase.');
+  }
+  function waitForRelayPath(path,timeoutMs=RELAY_TIMEOUT_MS){
+    return new Promise((resolve,reject)=>{
+      let settled=false,unsubscribe=()=>{};
+      const finish=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);try{unsubscribe();}catch{}if(error)reject(error);else resolve(value);};
+      const timer=setTimeout(()=>finish(new Error('Menunggu foto pasangan terlalu lama. Tekan Coba kirim kembali saat koneksi stabil.')),timeoutMs);
+      unsubscribe=onValue(ref(db,path),snapshot=>{if(snapshot.exists())finish(null,snapshot.val());},error=>finish(error));
+      unsubscribers.push(unsubscribe);
+    });
+  }
+  function waitForBothRelayAcks(path,timeoutMs=RELAY_TIMEOUT_MS){
+    return new Promise((resolve,reject)=>{
+      let settled=false,unsubscribe=()=>{};
+      const finish=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);try{unsubscribe();}catch{}if(error)reject(error);else resolve(value);};
+      const timer=setTimeout(()=>finish(new Error('Belum menerima tanda terima dari kedua perangkat. Tekan Coba kirim kembali.')),timeoutMs);
+      unsubscribe=onValue(ref(db,path),snapshot=>{const value=snapshot.val()||{};if(value.host?.count===4&&value.guest?.count===4)finish(null,value);},error=>finish(error));
+      unsubscribers.push(unsubscribe);
+    });
+  }
+  async function cleanupRelayRole(base=relayBasePath()){
+    if(!db||!base)return;
+    const removals=[];
+    for(let index=0;index<4;index++)removals.push(remove(ref(db,`${base}/photos/${role}/${index}`)));
+    removals.push(remove(ref(db,`${base}/status/${role}`)),remove(ref(db,`${base}/acks/${role}`)));
+    await Promise.allSettled(removals);
+  }
+
+  async function startFirebaseRelay(){
+    if(relayStarted||destroyed||!db||!pState||!['relay','manual'].includes(pState.phase))return;
+    relayStarted=true;relayErrorText='';relayUploadCount=0;relayDownloadCount=0;relayStatusText='Menyiapkan empat foto untuk dikirim…';renderCouple();
+    const token=Number(pState.retakeToken||0),base=relayBasePath();
+    try{
+      await restoreCaptureMedia();
+      if(!hasCompletePhotoSet(localPhotos,4))throw new Error('Empat foto lokal belum lengkap. Pastikan semua foto tersimpan sebelum transfer.');
+      const prepared=[];
+      for(let index=0;index<4;index++){
+        const blob=await makeRelayBlob(localPhotos[index],index),dataUrl=await readDataUrl(blob),hash=await hashBlob(blob);
+        const photo={blob,url:dataUrl,dataUrl,name:`foto-${index+1}.jpg`,hash};prepared.push(photo);
+        await putLocalMedia('photobooth',localKey(session.sessionId,token,role,index),blob);
+      }
+      localPhotos=prepared;relayStatusText='Mengirim empat foto milikmu…';renderCouple();
+      for(let index=0;index<4;index++){
+        const payload=buildRelayPhotoPayload({dataUrl:prepared[index].dataUrl,blob:prepared[index].blob,sha256:prepared[index].hash,name:prepared[index].name,index,role});
+        await retryRelayWrite(`${base}/photos/${role}/${index}`,payload);
+        relayUploadCount=index+1;renderCouple();
+      }
+      await retryRelayWrite(`${base}/status/${role}`,{uploaded:true,count:4,retakeToken:token,updatedAt:Date.now()});
+      relayStatusText='Foto milikmu aman. Mengambil empat foto pasangan…';renderCouple();
+      const received=await Promise.all([0,1,2,3].map(async index=>{
+        const payload=await waitForRelayPath(`${base}/photos/${partnerRole}/${index}`);
+        if(!validateRelayPayload(payload,partnerRole,index))throw new Error(`Foto pasangan nomor ${index+1} tidak lolos validasi.`);
+        const blob=dataUrlToBlob(payload.dataUrl);
+        if(blob.size!==payload.bytes||blob.size>RELAY_MAX_PHOTO_BYTES)throw new Error(`Ukuran foto pasangan nomor ${index+1} tidak cocok.`);
+        const hash=await hashBlob(blob);if(hash!==payload.sha256)throw new Error(`Pemeriksaan integritas foto pasangan nomor ${index+1} gagal.`);
+        await putLocalMedia('photobooth',localKey(session.sessionId,token,partnerRole,index),blob);
+        const item={blob,url:await readDataUrl(blob),name:payload.name||`foto-${index+1}.jpg`,hash};remotePhotos[index]=item;relayDownloadCount=remotePhotos.filter(Boolean).length;renderCouple();return item;
+      }));
+      if(!hasCompletePhotoSet(received,4))throw new Error('Belum semua foto pasangan diterima.');
+      await retryRelayWrite(`${base}/acks/${role}`,{count:4,receivedFrom:partnerRole,hashes:received.map(item=>item.hash),ownHashes:prepared.map(item=>item.hash),completedAt:Date.now()});
+      relayStatusText='Foto sudah diterima. Memastikan kedua perangkat menyimpan salinan…';renderCouple();
+      await waitForBothRelayAcks(`${base}/acks`);
+      if(destroyed||token!==Number(pState?.retakeToken||0))return;
+      const host=role==='host'?prepared:received,guest=role==='guest'?prepared:received;
+      for(let index=0;index<4;index++){
+        await putLocalMedia('photobooth',localKey(session.sessionId,token,'host',index),host[index].blob);
+        await putLocalMedia('photobooth',localKey(session.sessionId,token,'guest',index),guest[index].blob);
+      }
+      editorData={host,guest};editorLoadKey=`${token}:${pState?.photoRevision||0}:relay`;
+      await mutate(state=>{
+        if(!['relay','manual'].includes(state.phase)||Number(state.retakeToken||0)!==token)return false;
+        state.phase='editor';state.p2p={...(state.p2p||{}),status:'relay-complete',method:'firebase',completedAt:Date.now()};
+        state.photoRevision=Number(state.photoRevision||0)+1;state.slotRetake=null;state.retakeSlot=null;state.elements=state.elements||[];state.approvals={host:false,guest:false};
+      });
+      showToast('Delapan foto berhasil dikirim dan diverifikasi di kedua perangkat.','success');
+      setTimeout(()=>{if(!destroyed)void remove(ref(db,base)).catch(()=>{});},15000);
+    }catch(error){
+      console.error('Firebase photo relay failed:',error);relayErrorText=error.message||'Transfer foto belum selesai.';relayStatusText='Foto lokal tetap tersimpan. Periksa koneksi lalu coba ulang.';
+      try{await mutate(state=>{if(['relay','manual'].includes(state.phase))state.p2p={...(state.p2p||{}),status:'relay-error',method:'firebase',errorCode:error?.code||'TRANSFER_FAILED',updatedAt:Date.now()};});}catch{}
+      renderCouple();showToast(`Transfer otomatis belum selesai: ${relayErrorText}`,'error');
+    }finally{relayStarted=false;}
+  }
+
   async function finishP2PIfReady() {
     if (!localSent || !remoteDone || !hasCompletePhotoSet(remotePhotos,4) || !hasCompletePhotoSet(localPhotos,4)) return;
     for (let index=0;index<4;index++) await putLocalMedia('photobooth',localKey(session.sessionId,pState?.retakeToken||0,role,index),localPhotos[index].blob);
@@ -874,15 +1102,18 @@ export function mountPhotobooth(root, context) {
       p2pAttemptSeen=attempt;
       const connected=await connectPeer('host',attempt);
       if (connected) {
-        // Allow a separate transfer window after the ~20-second connection attempt.
-        await new Promise(resolve=>{p2pTimer=setTimeout(resolve,30000);const check=setInterval(()=>{if(pState?.phase==='editor'||destroyed){clearInterval(check);clearTimeout(p2pTimer);resolve();}},250);});
+        // Keep the data channel alive long enough for mobile uploads; fall back
+        // only after the direct route has had a real transfer window.
+        await new Promise(resolve=>{p2pTimer=setTimeout(resolve,90000);const check=setInterval(()=>{if(pState?.phase==='editor'||destroyed||channel?.readyState==='closed'||p2pTransferError){clearInterval(check);clearTimeout(p2pTimer);resolve();}},200);});
         if (pState?.phase==='editor') return;
       }
       disposePeer();
       if (attempt===1) { showToast('Koneksi langsung belum berhasil. Mencoba sekali lagi…','error');await wait(800); }
     }
-    await mutate(state=>{if(state.phase==='capture'){state.phase='manual';state.p2p.status='manual-fallback';}});
-    showToast('Koneksi langsung tidak tersedia di jaringan ini. Gunakan pemindahan manual.','error');
+    await mutate(state=>{if(state.phase==='capture'){state.phase='relay';state.p2p={attempt:2,status:'relay',method:'firebase',transferId:randomId(),startedAt:Date.now()};}});
+    relayStatusText='Koneksi langsung tidak tersedia. Beralih otomatis ke transfer cadangan…';
+    showToast('Koneksi langsung tidak tersedia. Foto akan dikirim otomatis melalui jalur cadangan.');
+    void startFirebaseRelay();
   }
   async function restoreManualFotos() {
     if (hasCompletePhotoSet(manualPhotos,8) || !pState) return;
@@ -1221,8 +1452,9 @@ export function mountPhotobooth(root, context) {
       if(action==='couple-ready'){await beginCaptureReady();return;}
       if(action==='couple-photos-ready'){await confirmPhotosReady();return;}
       if(action==='verify-manual'){await verifyManual();return;}
+      if(action==='retry-relay'){relayErrorText='';await mutate(state=>{if(state.phase==='relay')state.p2p={...(state.p2p||{}),status:'relay',method:'firebase',transferId:state.p2p?.transferId||randomId(),updatedAt:Date.now()};});void startFirebaseRelay();return;}
       if(action==='solo-fallback'){await mutate(state=>{state.phase='aborted';});disposePeer();mode='solo';renderSolo();showToast('Sesi berdua dihentikan. Kamu dapat melanjutkan Fotobooth Sendiri.');return;}
-      if(action==='abort-couple'){await mutate(state=>{state.phase='aborted';});return;}
+      if(action==='abort-couple'){await mutate(state=>{state.phase='aborted';});await cleanupRelayRole().catch(()=>{});disposePeer();return;}
       if(action==='select-element'){selectedElementId=button.dataset.elementId;renderCouple();return;}
       if(action==='delete-element'){if(mode==='solo')selectedSoloElementId=button.dataset.elementId||selectedSoloElementId;else selectedElementId=button.dataset.elementId||selectedElementId;await updateSelectedElement('delete-element');if(mode==='solo')renderSolo();else renderCouple();return;}
       if(action==='add-sticker'){const sticker=button.dataset.sticker||STICKERS[Math.floor(Math.random()*STICKERS.length)];await addEditorElement(sticker,'sticker');return;}

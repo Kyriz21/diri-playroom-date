@@ -180,16 +180,23 @@ Enam permainan memiliki tahap pengaturan: **Kuis Cinta, Pilih Salah Satu, Jujur 
 - [ ] Setiap foto dapat diulang sebelum konfirmasi empat foto.
 - [ ] Setelah kedua pemain mengonfirmasi, transfer langsung antarpiranti dicoba.
 - [ ] Transfer langsung diuji pada jaringan berbeda; foto diterima utuh jika koneksi berhasil.
-- [ ] Jika koneksi langsung gagal, satu percobaan ulang dilakukan sebelum pilihan Pemindahan Manual muncul.
-- [ ] Pemindahan Manual meminta delapan file yang sama dengan urutan Pembuat ruang 1–4 lalu Tamu 1–4.
-- [ ] Pemeriksaan SHA-256 menolak file atau urutan yang berbeda.
+- [ ] Jika koneksi langsung gagal atau DataChannel macet, aplikasi otomatis beralih ke Firebase Realtime Database tanpa meminta delapan file secara manual.
+- [ ] Foto lokal dikompres menjadi JPEG maksimum 256 KiB sebelum relay.
+- [ ] Progress unggah dan unduh diperbarui di kedua perangkat.
+- [ ] Foto diterima dengan urutan Pembuat ruang 1–4 dan Tamu 1–4.
+- [ ] Tipe, ukuran, peran, nomor slot, dan SHA-256 diperiksa sebelum foto digunakan.
+- [ ] Setiap transfer menunggu tanda terima dari kedua perangkat sebelum editor dibuka.
+- [ ] Putuskan internet sementara di salah satu perangkat, pulihkan koneksi, lalu pastikan transfer melanjutkan tanpa memilih file lagi.
+- [ ] Muat ulang satu perangkat saat fase relay dan pastikan foto lokal dipulihkan dari IndexedDB serta transfer dapat dilanjutkan.
+- [ ] Uji Firebase Rules v0.9 yang sudah dipublikasikan; permission denied harus menampilkan instruksi Rules, bukan menggantung tanpa penjelasan.
+- [ ] Setelah kedua ACK diterima, node transfer foto sementara di RTDB terhapus.
 - [ ] Pratinjau gabungan delapan foto tampil pada kedua perangkat sebelum persetujuan akhir.
 - [ ] Foto tertentu dapat diminta untuk diulang dan perlu persetujuan pasangan.
 - [ ] Kedua pemain menyetujui pratinjau sebelum unduh, simpan, atau cetak tersedia.
 - [ ] PNG/JPEG dapat diunduh dan hasil dapat dicetak melalui dialog cetak peramban.
 - [ ] Galeri Pribadi lokal dapat menyimpan hasil pada masing-masing perangkat.
 - [ ] Pengambilan ulang seluruh foto memerlukan persetujuan kedua pemain.
-- [ ] Berkas foto tidak muncul pada Realtime Database.
+- [ ] Pada jalur WebRTC, foto tidak disimpan ke RTDB. Pada fallback, foto hanya muncul sementara di node relay dan dihapus setelah ACK kedua perangkat.
 
 ## L. Tampilan dan pemeriksaan akhir
 

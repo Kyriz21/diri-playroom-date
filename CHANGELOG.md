@@ -99,3 +99,16 @@
 - Menambahkan gaya thumbnail khusus agar gambar tidak runtuh/tersembunyi pada layar kecil.
 - Pengambilan kamera menunggu frame video terdekode sebelum menyimpan hasil.
 - Memvalidasi hasil foto sebagai gambar yang benar sebelum slot diisi.
+
+
+## v0.9.0 — Transfer foto berdua yang lebih tangguh
+- Mempertahankan WebRTC DataChannel sebagai jalur transfer langsung, tetapi menambahkan Firebase Realtime Database sebagai jalur relay otomatis jika koneksi langsung gagal atau macet.
+- Menghapus pemindahan manual delapan file dari alur normal; sesi lama berfase `manual` dimigrasikan ke relay otomatis saat kedua pemain sudah mengonfirmasi empat foto.
+- Foto relay dikompres menjadi JPEG maksimum 256 KiB per foto, diunggah per slot dengan ID transfer unik, lalu diterima kembali secara otomatis oleh pasangan.
+- Setiap payload divalidasi berdasarkan peran, nomor slot, tipe MIME, ukuran, dan SHA-256. Foto hanya digunakan setelah checksum cocok.
+- Kedua perangkat menyimpan foto ke IndexedDB lokal dan mengirim ACK; editor dibuka hanya setelah kedua ACK berisi empat foto diterima.
+- Data relay dihapus setelah kedua perangkat mengonfirmasi penyimpanan.
+- Penulisan RTDB mencoba ulang saat koneksi terputus, menunggu `.info/connected`, dan memantau pemulihan Firebase meskipun browser tidak mengirim event `online`.
+- Transfer WebRTC kini meminta ACK untuk setiap foto dan membandingkan SHA-256 penerima dengan file pengirim. Kegagalan kanal menutup DataChannel sehingga fallback dapat berjalan lebih cepat.
+- Firebase Rules menambahkan validasi ukuran, tipe, peran, nomor slot, dan struktur ACK. Rules v0.9 wajib dipublikasikan di Firebase Console.
+- Tidak menambahkan Cloud Storage, Cloud Functions, server sendiri, atau TURN berbayar.

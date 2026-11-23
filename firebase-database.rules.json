@@ -68,6 +68,32 @@
           "signal": {
             ".read": "auth != null && (root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid || root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
             ".write": "auth != null && (root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid || root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000"
+          },
+          "photoRelay": {
+            ".read": "auth != null && (root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid || root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
+            "$transferKey": {
+              ".write": "auth != null && (root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid || root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid) && !newData.exists() && data.child('acks').child('host').child('count').val() === 4 && data.child('acks').child('guest').child('count').val() === 4",
+              "photos": {
+                "$role": {
+                  "$index": {
+                    ".write": "auth != null && ((($role === 'host') && root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid) || (($role === 'guest') && root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid)) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
+                    ".validate": "($role === 'host' || $role === 'guest') && $index.matches(/^[0-3]$/) && newData.hasChildren(['dataUrl','mime','bytes','sha256','index','role']) && newData.child('dataUrl').isString() && newData.child('dataUrl').val().length <= 360000 && newData.child('mime').val() === 'image/jpeg' && newData.child('bytes').isNumber() && newData.child('bytes').val() <= 262144 && newData.child('sha256').isString() && newData.child('sha256').val().length === 64 && newData.child('index').isNumber() && newData.child('index').val() >= 0 && newData.child('index').val() <= 3 && newData.child('role').val() === $role"
+                  }
+                }
+              },
+              "status": {
+                "$role": {
+                  ".write": "auth != null && ((($role === 'host') && root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid) || (($role === 'guest') && root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid)) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
+                  ".validate": "($role === 'host' || $role === 'guest') && newData.child('uploaded').val() === true && newData.child('count').val() === 4"
+                }
+              },
+              "acks": {
+                "$role": {
+                  ".write": "auth != null && ((($role === 'host') && root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid) || (($role === 'guest') && root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid)) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
+                  ".validate": "($role === 'host' || $role === 'guest') && newData.child('count').val() === 4 && newData.child('receivedFrom').isString()"
+                }
+              }
+            }
           }
         },
         ".write": "auth != null && root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid && !newData.exists()"

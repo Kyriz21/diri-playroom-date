@@ -1,4 +1,4 @@
-# Diri. Playroom Date — Direct Editor Update v0.3
+# Diri. Playroom Date — Reliable Photo Transfer v0.9
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; mini-games dan aktivitas lain akan ditambahkan setelah Photobooth stabil.
 
@@ -16,12 +16,12 @@ Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur 
 
 Foundation ini menggunakan **LDR Playroom Review Build v1.2** sebagai basis teknis, bukan mengulang semua dari nol. Modul yang dipertahankan meliputi:
 
-- 16 desain frame tematik asli: Koran, Buronan, Komik, Sinema, Korean Four-Cut, Film Analog, Polaroid, Kartu Pos, Botani, Kawaii, Majalah, Y2K, Arkade, Surat Cinta, Ulang Tahun, dan Doodle.
+- 18 desain frame tematik asli: Koran, Buronan, Komik, Sinema, Korean Four-Cut, Film Analog, Polaroid, Kartu Pos, Botani, Kawaii, Majalah, Y2K, Arkade, Surat Cinta, Ulang Tahun, dan Doodle.
 - Editor teks/stiker yang dapat digeser dengan mouse atau layar sentuh.
 - Kamera browser dan pemilihan foto dari galeri.
 - Empat slot foto pribadi, pratinjau, dan retake per slot.
 - Pengaturan frame/filter, ekspor PNG/JPEG, cetak, dan galeri lokal.
-- Untuk mode berdua: satu pengaturan bersama, empat foto per orang, transfer langsung WebRTC/STUN dengan fallback pemindahan manual, pratinjau gabungan delapan foto, retake bersama, dan persetujuan sebelum ekspor/cetak.
+- Untuk mode berdua: satu pengaturan bersama, empat foto per orang, transfer langsung WebRTC/STUN dengan fallback otomatis Firebase Realtime Database, pratinjau gabungan delapan foto, retake bersama, dan persetujuan sebelum ekspor/cetak.
 - Fondasi autentikasi anonim, kode sesi, status kehadiran, dan aturan Realtime Database.
 
 Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis hanya ketika pengguna membuat atau bergabung ke sesi. Karena itu, mode Foto Sendiri tetap dapat digunakan sebelum Firebase project baru dibuat atau dikonfigurasi.
@@ -39,7 +39,7 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 
 - Hosting statis: GitHub Pages.
 - Backend sesi berdua: Firebase Spark, Anonymous Authentication, dan Realtime Database.
-- Foto: IndexedDB/local browser untuk mode sendiri; WebRTC/STUN atau pemindahan manual untuk mode berdua.
+- Foto: IndexedDB/local browser untuk mode sendiri; WebRTC DataChannel sebagai jalur cepat, lalu Firebase Realtime Database sebagai relay sementara otomatis jika koneksi langsung gagal. Foto relay dikompres ke JPEG maksimum 256 KiB per foto, diverifikasi SHA-256, dan dihapus dari database setelah kedua perangkat menyimpan salinan dan mengirim tanda terima.
 - Tidak memakai Firebase Cloud Storage, Cloud Functions, server sendiri, database tambahan, atau TURN berbayar.
 - Kamera browser memerlukan HTTPS (GitHub Pages memenuhi syarat secure context).
 
@@ -70,6 +70,18 @@ Lalu buka `http://localhost:8000`. Foto Sendiri dapat dicoba secara lokal. Kamer
 
 **Jangan hapus repository atau Firebase lama sampai project baru berhasil diuji.** Simpan backup ZIP build lama untuk rollback. Setelah project baru stabil dan tidak ada data yang masih dibutuhkan, barulah project lama boleh dihapus.
 
+## Transfer foto berdua v0.9
+
+1. Kedua perangkat mengambil empat foto dan menyimpannya di IndexedDB lokal.
+2. WebRTC dicoba sebagai jalur langsung. Setiap foto harus mendapat ACK dan checksum SHA-256 yang cocok sebelum pengiriman dianggap berhasil.
+3. Jika ICE/DataChannel gagal atau macet, aplikasi beralih otomatis ke RTDB relay; pengguna tidak diminta memilih delapan file secara manual.
+4. Setiap perangkat mengompres empat fotonya menjadi JPEG maksimal 256 KiB per foto, mengunggah ke path transfer unik, lalu mengambil empat foto pasangan.
+5. Penerima memeriksa tipe, ukuran, nomor slot, peran pengirim, dan SHA-256 sebelum menyimpan file.
+6. Kedua perangkat mengirim ACK setelah semua foto pasangan tersimpan secara lokal. Editor dibuka setelah kedua ACK diterima.
+7. Data relay dihapus setelah kedua perangkat menyelesaikan penyimpanan. Jika salah satu perangkat terputus, klien menunggu Firebase tersambung lagi dan mencoba ulang.
+
+**Wajib:** setelah mengganti source ke v0.9, publikasikan ulang `firebase-database.rules.json` dari ZIP di Firebase Console → Realtime Database → Rules. Rules baru memvalidasi ukuran, tipe, peran, dan nomor slot foto relay. Tanpa Rules ini transfer dapat ditolak.
+
 ## Pemeriksaan dan batasan yang belum diuji
 
 Build ini sudah melewati pemeriksaan sintaks JavaScript dan unit test lokal. Hal yang tetap memerlukan uji nyata:
@@ -78,7 +90,7 @@ Build ini sudah melewati pemeriksaan sintaks JavaScript dan unit test lokal. Hal
 - Interaksi drag dengan mouse dan layar sentuh.
 - Firebase Rules pada project baru.
 - Auto-start sesi setelah pasangan bergabung dari dua perangkat.
-- WebRTC/STUN pada jaringan berbeda dan fallback pemindahan manual.
+- WebRTC/STUN pada jaringan berbeda dan fallback otomatis Firebase RTDB pada skenario WebRTC diblokir.
 - Pratinjau gabungan, persetujuan, PNG/JPEG, dan dialog cetak.
 
 Lihat `REVIEW-BUILD-QA.md`, `KNOWN-LIMITATIONS.md`, dan `SECURITY-NOTES.md` sebelum uji dua perangkat.
@@ -97,7 +109,7 @@ Lihat `REVIEW-BUILD-QA.md`, `KNOWN-LIMITATIONS.md`, dan `SECURITY-NOTES.md` sebe
 Memperbaiki interupsi `video.play()` ketika tampilan sesi berdua dirender ulang oleh pembaruan Firebase. Kamera sekarang mencoba kembali pada elemen video terbaru dan menunggu preview aktif sebelum mengaktifkan tombol ambil foto.
 ## Firebase configuration
 
-The Web App configuration in `js/firebase.js` is connected to the `diri-playroom-date` Firebase project supplied by the project owner. Firebase Web configuration values are client-side identifiers; protect database access with Authentication and Realtime Database Rules.
+The Web App configuration in `js/firebase.js` is already connected to the `diri-playroom-date` Firebase project supplied by the project owner. Do not replace the project configuration. Confirm that Anonymous Authentication, the Realtime Database, the GitHub Pages authorized domain, and the v0.9 Rules are enabled/published. Firebase Web configuration values are client-side identifiers; protect database access with Authentication and Realtime Database Rules.
 
 ## Foto Sendiri flow
 

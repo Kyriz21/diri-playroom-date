@@ -1,89 +1,64 @@
-# Firebase setup — Diri. Playroom Date
+# Firebase setup — Diri. Playroom Date v0.9
 
-Mode **Foto Sendiri tidak memakai Firebase**. Firebase hanya dibutuhkan untuk Buat Sesi Berdua dan Gabung Sesi.
+Project Firebase `diri-playroom-date` dan Web App sudah dibuat oleh pemilik project. Konfigurasi lengkap sudah disimpan di `js/firebase.js`; jangan menggantinya dengan konfigurasi project lama.
 
-Konfigurasi ini dirancang untuk Firebase **Spark (gratis)**. Jangan aktifkan billing/Blaze untuk fondasi awal.
+## 1. Periksa konfigurasi Web App
 
-## 1. Buat project Firebase baru
+Buka Firebase Console → Project settings → General → Your apps. Pastikan Web App berada di project `diri-playroom-date`. File `js/firebase.js` sudah memakai konfigurasi yang diberikan pemilik project, termasuk database di region `asia-southeast1`.
 
-1. Buka https://console.firebase.google.com/.
-2. Pilih **Add project**.
-3. Nama project: `Diri Playroom Date`.
-4. Selesaikan proses pembuatan project.
-5. Pada Project Overview, pilih ikon Web `</>` untuk menambahkan Web App.
-6. Nama app: `Diri. Playroom Date`.
-7. Salin konfigurasi Web App yang diberikan Firebase.
+Jangan menaruh Admin SDK service-account JSON, private key, atau token administrator di repository. Firebase Web config adalah konfigurasi client-side; akses data tetap dilindungi Authentication dan Realtime Database Rules.
 
-Jangan menyalin konfigurasi project LDR Playroom lama. File `js/firebase.js` pada project baru sengaja memakai placeholder.
-
-## 2. Isi konfigurasi Web App
-
-Buka `js/firebase.js`, lalu ganti nilai pada `firebaseConfig` menggunakan nilai persis dari Firebase Console:
-
-```js
-export const firebaseConfig = {
-  apiKey: '...',
-  authDomain: '...firebaseapp.com',
-  databaseURL: 'https://...firebasedatabase.app',
-  projectId: '...',
-  storageBucket: '...',
-  messagingSenderId: '...',
-  appId: '...'
-};
-```
-
-Pastikan `databaseURL` disalin dari halaman Realtime Database, bukan ditebak dari Project ID. Jangan menaruh Admin SDK service-account JSON atau private key dalam repository.
-
-## 3. Aktifkan Anonymous Authentication
+## 2. Pastikan Anonymous Authentication aktif
 
 1. Firebase Console → Build → Authentication.
-2. Pilih Get started jika diminta.
-3. Buka Sign-in method.
-4. Pilih Anonymous → Enable → Save.
+2. Buka Sign-in method.
+3. Pilih Anonymous dan pastikan statusnya Enabled.
 
-Setelah GitHub Pages aktif, buka Authentication → Settings → Authorized domains. Tambahkan domain GitHub Pages, misalnya `username.github.io` (tanpa `https://` dan tanpa nama repository/path).
-
-## 4. Buat Realtime Database
+## 3. Pastikan Realtime Database tersedia
 
 1. Firebase Console → Build → Realtime Database.
-2. Pilih Create Database.
-3. Pilih lokasi dekat pengguna; `asia-southeast1` (Singapore) cocok untuk deployment awal di Indonesia.
-4. Setelah database dibuat, salin URL database ke `databaseURL` di `js/firebase.js`.
-5. Buka tab Rules.
-6. Salin seluruh isi `firebase-database.rules.json` ke editor Rules.
-7. Klik Publish.
+2. Pastikan database yang URL-nya sama dengan `databaseURL` pada `js/firebase.js` sudah ada.
+3. Database project ini menggunakan region `asia-southeast1`.
 
-Jangan mengubah Rules menjadi `.read: true` atau `.write: true`. Jika terjadi `permission_denied`, periksa project ID, database URL, Authentication, dan Rules—jangan membuka database untuk publik.
+## 4. WAJIB: publikasikan Firebase Rules v0.9
 
-## 5. Alur sesi dalam versi awal
+Versi v0.9 menambahkan jalur relay foto sementara di Realtime Database ketika WebRTC gagal. Rules lama mungkin belum memiliki validasi untuk jalur tersebut.
 
-- Pembuat sesi membuat kode enam karakter dan menunggu pasangan.
-- Saat Tamu bergabung dengan kode, klien menandai pilihan Photobooth dan kesiapan kedua pihak.
-- Pembuat sesi memulai sesi Photobooth secara otomatis.
-- Tidak ada lobi pemilihan game atau tombol Ready manual pada tahap ini.
-- Jika Tamu keluar, klien Pembuat akan mengembalikan room ke layar undangan sehingga kode dapat dipakai lagi.
+1. Ekstrak ZIP v0.9.
+2. Buka file `firebase-database.rules.json`.
+3. Firebase Console → Build → Realtime Database → tab **Rules**.
+4. Cadangkan Rules yang sedang aktif.
+5. Ganti isi editor Rules dengan seluruh isi `firebase-database.rules.json` dari ZIP v0.9.
+6. Klik **Publish**.
+7. Jangan mengubah Rules menjadi `.read: true` atau `.write: true`.
 
-## 6. GitHub Pages
+Rules v0.9 membatasi node relay ke anggota sesi, membatasi foto ke JPEG maksimum 256 KiB, dan memvalidasi peran, nomor slot, tipe, ukuran, serta struktur tanda terima. Jika Firebase menampilkan `PERMISSION_DENIED`, periksa bahwa Rules v0.9 benar-benar sudah dipublikasikan.
 
-1. Upload isi project ke root repository baru.
-2. GitHub → Settings → Pages.
-3. Source: Deploy from a branch.
-4. Branch: `main`.
-5. Folder: `/(root)`.
-6. Save dan periksa tab Actions sampai deployment berhasil.
-7. Tambahkan domain Pages ke Firebase Authorized domains seperti langkah 3.
+## 5. Authorized domain
+
+Setelah GitHub Pages aktif, buka Authentication → Settings → Authorized domains. Pastikan domain GitHub Pages terdaftar, misalnya `username.github.io` tanpa `https://` dan tanpa path repository.
+
+## 6. Alur transfer foto bersama
+
+- Kedua perangkat mengambil empat foto dan menyimpan salinan lokal terlebih dahulu.
+- WebRTC DataChannel dicoba sebagai jalur langsung. Setiap foto harus memperoleh ACK dan checksum yang cocok.
+- Jika koneksi langsung gagal atau macet, kedua perangkat otomatis berpindah ke Firebase Realtime Database sebagai relay sementara. Tidak perlu memilih delapan file secara manual.
+- Foto dikompres menjadi JPEG maksimum 256 KiB per file, diverifikasi SHA-256, dan disimpan ke IndexedDB pada kedua perangkat.
+- Editor bersama baru dibuka setelah kedua perangkat mengirim ACK untuk empat foto yang diterima.
+- Node relay dihapus setelah kedua ACK diterima. Jika seluruh internet atau Firebase tidak tersedia, transfer menunggu koneksi pulih; foto lokal tidak dihapus.
 
 ## 7. Uji dua perangkat
 
-- Perangkat A: laptop sebagai Pembuat.
-- Perangkat B: HP sebagai Tamu.
+- Perangkat A: laptop atau HP sebagai Pembuat ruang.
+- Perangkat B: HP pasangan sebagai Tamu.
 - Gunakan browser/profile berbeda agar Anonymous UID tidak sama.
-- Uji Buat Sesi, Salin Kode, Gabung Sesi, kamera, empat foto per perangkat, pratinjau delapan foto, retake, persetujuan, unduh, dan cetak.
+- Uji kamera, empat foto per perangkat, WebRTC, lalu fallback RTDB ketika koneksi peer diblokir, progres 4/4, ACK dua pihak, editor bersama, retake, unduh, dan cetak.
+- Uji putus internet sementara pada salah satu perangkat lalu pulihkan; transfer harus melanjutkan tanpa meminta pemilihan file manual.
 
 ## 8. Batasan penting
 
-- Tidak ada Cloud Storage atau Cloud Functions.
-- Foto tidak ditulis ke Realtime Database.
-- Transfer langsung bergantung pada dukungan browser dan jaringan WebRTC/STUN; fallback manual tetap disediakan.
-- Foto Sendiri menggunakan IndexedDB lokal. Menghapus data situs/browser dapat menghapus galeri lokal.
-- Firebase Rules bukan pengganti backend tepercaya. Baca `SECURITY-NOTES.md`.
+- Foto Sendiri tetap lokal dan tidak memakai Firebase.
+- Tidak menggunakan Firebase Storage, Cloud Functions, server sendiri, atau TURN berbayar.
+- Firebase Realtime Database relay hanya dipakai saat WebRTC gagal. Foto relay sementara memakai kuota penyimpanan dan unduhan RTDB.
+- Tidak ada sistem transfer online yang dapat menjamin penyelesaian ketika kedua jalur internet dan Firebase benar-benar tidak tersedia. Aplikasi mempertahankan foto lokal dan mencoba lagi setelah koneksi pulih.
+- Baca `SECURITY-NOTES.md` dan `KNOWN-LIMITATIONS.md` sebelum digunakan rutin.
