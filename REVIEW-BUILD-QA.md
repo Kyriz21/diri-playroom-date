@@ -160,7 +160,7 @@ Enam permainan memiliki tahap pengaturan: **Kuis Cinta, Pilih Salah Satu, Jujur 
 - [ ] Ulangi drag menggunakan layar sentuh HP.
 - [ ] Pastikan elemen tetap berada dalam kanvas setelah digeser.
 - [ ] Pastikan posisi elemen yang tampil pada pratinjau sama dengan hasil PNG/JPEG/cetak.
-- [ ] Coba tombol panah, ubah ukuran, dan hapus elemen sebagai kontrol alternatif.
+- [ ] Tarik pegangan ↘ untuk mengubah ukuran, gunakan cubit dua jari pada HP, dan ketuk tanda × untuk menghapus elemen.
 - [ ] Filter dan pengaturan kecerahan, kontras, warna, serta temperatur dapat digunakan.
 - [ ] Stiker dan teks terlihat pada pratinjau.
 - [ ] PNG dan JPEG dapat diunduh.
@@ -213,3 +213,14 @@ Temuan:
 
 - [ ] Tidak ada kendala penghambat utama.
 - [ ] Kendala lain dicatat dan diprioritaskan sebelum penggunaan rutin.
+
+
+## Editor hiasan langsung — v0.3
+- [ ] Tidak ada tombol panah atau A+/A− di bawah pratinjau.
+- [ ] Seret hiasan di pratinjau untuk memindahkan.
+- [ ] Tarik pegangan ↘ pada sudut elemen untuk mengubah ukurannya.
+- [ ] Cubit dua jari pada area pratinjau untuk mengubah ukuran hiasan di HP/tablet.
+- [ ] Putar roda mouse saat kursor di atas hiasan untuk mengubah ukuran di desktop.
+- [ ] Tanda × hanya terlihat pada elemen yang dipilih dan menghapus elemen tersebut.
+- [ ] Hasil PNG/JPEG mempertahankan posisi serta ukuran teks/stiker.
+- [ ] Pada mode berdua, perubahan posisi/ukuran tersimpan dan terlihat di perangkat pasangan setelah interaksi selesai.

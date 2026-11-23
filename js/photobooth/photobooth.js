@@ -1,13 +1,13 @@
 import { putLocalMedia, getLocalMedia, deleteLocalMedia, setLocalValue, getLocalValue, cleanupExpiredMedia } from '../services/local-store.js';
 import { nextPhotoSlot, hasCompletePhotoSet } from '../games/logic.js';
-import { FRAMES, frameById, clampPosition, drawFrameBackground, drawPhotoSlotBorder } from './frame-art.js';
+import { FRAMES, frameById, clampPosition, drawFrameBackground, drawPhotoSlotBorder, drawFrameOverlay } from './frame-art.js';
 
 // Firebase is loaded only for a shared session. Standalone Photobooth stays local and
 // can be used even before a Firebase project is configured.
 let db, ref, get, set, update, remove, onValue, runTransaction, serverTimestamp;
 
 const FILTERS = ['Asli','Merah Muda','Film Hangat','Vintage','Hitam Putih','Lavender','Cerah','Nuansa Dingin'];
-const STICKERS = ['♡','✿','☾','☆','🌷','🦋','🎀','✨','💌','🌼'];
+const STICKERS = ['♡','✿','☾','☆','🌷','🦋','🎀','✨','💌','🌼','🧸','🐻','☁️','⭐','💗','🍒'];
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const randomId = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -76,7 +76,9 @@ export function mountPhotobooth(root, context) {
   let editorLoadKey = '';
   let selectedElementId = null;
   let selectedSoloElementId = null;
-  let activeDrag = null;
+  let activeGesture = null;
+  let wheelSaveTimer = null;
+  let pendingWheelScale = null;
   let soloPhotos = [];
   let soloElements = [];
   let soloFrame = 'korean';
@@ -115,6 +117,8 @@ export function mountPhotobooth(root, context) {
     root.removeEventListener('pointermove', onPointerMove);
     root.removeEventListener('pointerup', onPointerUp);
     root.removeEventListener('pointercancel', onPointerUp);
+    root.removeEventListener('wheel', onElementWheel);
+    if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
   }
 
   async function touchRoom() {
@@ -231,6 +235,47 @@ export function mountPhotobooth(root, context) {
       return `<button type="button" class="pb-frame-card ${active===id?'active':''}" data-pb="${attribute}" data-frame="${id}" aria-pressed="${active===id}"><span class="pb-frame-mini ${id}"><span class="pb-mini-masthead">${esc(top)}</span><span class="pb-mini-sub">${esc(sub)}</span><span class="pb-mini-photos"><i>01</i><i>02</i><i>03</i><i>04</i></span><span class="pb-mini-footer">${esc(foot)}</span><span class="pb-mini-mark" aria-hidden="true">${id==='wanted'?'★':id==='newspaper'?'✦':id==='comic'?'!':id==='cinema'?'▶':id==='kawaii'?'♡':id==='film'?'▣':id==='postcard'?'✉':id==='botanical'?'❀':id==='arcade'?'✧':id==='birthday'?'✷':'✦'}</span></span><strong>${name}</strong>${active===id?'<small>Terpilih</small>':'<small>Lihat contoh</small>'}</button>`;
     }).join('')}</div>`;
   }
+
+  const frameCopy = {
+    newspaper: {kicker:'THE DAILY D I R I',title:'THE LOVE TIMES',sub:'EDISI SPESIAL · KISAH DUA HATI · VOL. 01',foot:'EXTRA! EXTRA! KABAR BAIK: KITA BERTEMU DI SINI',mark:'✦'},
+    wanted: {kicker:'WANTED · REWARD POSTER',title:'DICARI',sub:'HILANG KARENA MENCURI HATI',foot:'HADIAH: SATU PELUKAN TANPA BATAS',mark:'★'},
+    comic: {kicker:'ISSUE #01 · CERITA KITA',title:'BOOM! OUR STORY',sub:'DUA TOKOH · SATU CERITA · BANYAK TAWA',foot:'TO BE CONTINUED… ♡',mark:'💥'},
+    cinema: {kicker:'A DIRI. ORIGINAL',title:'OUR MOVIE NIGHT',sub:'STARRING: YOU & ME · TAKE 01',foot:'THE BEST SCENE IS WITH YOU',mark:'▶'},
+    korean: {kicker:'오늘도, 우리 둘',title:'FOUR CUTS',sub:'ONE DAY · FOUR LITTLE MOMENTS',foot:'오늘도 함께라서 좋아 ♡',mark:'♡'},
+    film: {kicker:'36 EXP · ISO 400',title:'ANALOG MOMENTS',sub:'NO FILTER NEEDED · JUST US',foot:'DIRI. FILM LAB · DEVELOPED WITH LOVE',mark:'▣'},
+    polaroid: {kicker:'PHOTO DIARY · NO. 01',title:'little moments',sub:'THE ONES WE WANT TO KEEP',foot:'yang ingin diulang lagi ♡',mark:'✧'},
+    postcard: {kicker:'POST CARD · FROM US',title:'SALAM DARI KITA',sub:'WISH YOU WERE HERE · ALWAYS',foot:'DI MANA PUN, TETAP DEKAT',mark:'✉'},
+    botanical: {kicker:'A LITTLE GARDEN',title:'BLOOMING TOGETHER',sub:'GROW SLOW · LOVE DEEP',foot:'TUMBUH BERSAMA, PELAN-PELAN',mark:'❀'},
+    kawaii: {kicker:'CUTIE ALERT · 100%',title:'CUTE LITTLE US',sub:'YOU + ME = HAPPY',foot:'PELUK JAUH, DEKAT DI HATI ♡',mark:'ʕ•ᴥ•ʔ'},
+    magazine: {kicker:'SPECIAL COUPLE ISSUE',title:'TOGETHER',sub:'THE COVER STORY · NO. 01',foot:'COVER STARS: YOU & ME',mark:'✦'},
+    y2k: {kicker:'DIGITAL LOVE · 2000s',title:'★ US 4EVER ★',sub:'PIXEL HEARTS · REAL FEELINGS',foot:'LOVE LEVEL: 1000%',mark:'✧'},
+    arcade: {kicker:'PLAYER 1 + PLAYER 2',title:'LOVE LEVEL: MAX',sub:'INSERT COIN · START THE MEMORY',foot:'HIGH SCORE: US TWO',mark:'▣'},
+    loveletter: {kicker:'UNTUK ORANG FAVORITKU',title:'A LITTLE LOVE NOTE',sub:'SOME MOMENTS FEEL LIKE HOME',foot:'DENGAN SAYANG, AKU ♡',mark:'💌'},
+    birthday: {kicker:'TODAY IS A LITTLE MAGIC',title:'HARI SPESIAL KITA!',sub:'MAKE A WISH · MAKE A MEMORY',foot:'MORE LAUGHTER, MORE US!',mark:'✷'},
+    doodle: {kicker:'HAPPY SCRIBBLES · VOL. 01',title:'OUR HAPPY DOODLES',sub:'TINY CHAOS · BIG MEMORIES',foot:'CORETAN KECIL, KENANGAN BESAR',mark:'✿'}
+  };
+
+  function renderFrameHeader(frame) {
+    const id = frame[0], copy = frameCopy[id] || frameCopy.korean;
+    return `<header class="pb-strip-header pb-themed-header ${id}"><span class="pb-theme-kicker">${copy.kicker}</span><strong class="pb-theme-title">${copy.title}</strong><span class="pb-theme-subtitle">${copy.sub}</span><span class="pb-theme-mark" aria-hidden="true">${copy.mark}</span></header>`;
+  }
+  function renderFrameFooter(frame) {
+    const copy = frameCopy[frame[0]] || frameCopy.korean;
+    return `<footer class="pb-strip-footer pb-themed-footer ${frame[0]}"><span>${copy.foot}</span><b>Diri. ♡</b></footer>`;
+  }
+  function renderStickerPicker(action) {
+    return `<div class="pb-sticker-picker" aria-label="Pilih hiasan transparan">${STICKERS.map(sticker=>`<button type="button" data-pb="${action}" data-sticker="${esc(sticker)}" aria-label="Tambah hiasan ${esc(sticker)}">${esc(sticker)}</button>`).join('')}</div>`;
+  }
+  function photoCaption(frame, index, roleLabel = '') {
+    const number = String(index + 1).padStart(2, '0');
+    const id = frame[0];
+    const captions = {
+      newspaper:`FOTO UTAMA · ${number}`, wanted:`TERSANGKA #${number}`, comic:['POW!','WOW!','LOVE!','YAY!'][index % 4],
+      kawaii:['CUTIE 01','HAPPY FACE','SWEET MOMENT','BESTIES'][index % 4], film:`FRAME ${number} · 36 EXP`,
+      magazine:`COVER SHOT ${number}`, postcard:`POSTMARK ${number}`, doodle:`DOODLE SHOT ${number}`
+    };
+    return `${roleLabel ? `${roleLabel} · ` : ''}${captions[id] || `SHOT ${number}`}`;
+  }
   function renderFilterControls(filter, values, prefix = 'solo') {
     return `<div class="filter-chip-grid">${FILTERS.map(item => `<button type="button" class="filter-chip ${filter===item?'active':''}" data-pb="${prefix}-filter" data-filter="${item}">${item}</button>`).join('')}</div><div class="adjust-grid"><label>Kecerahan <input type="range" min="60" max="140" value="${values.brightness}" data-adjust="${prefix}-brightness"></label><label>Kontras <input type="range" min="60" max="140" value="${values.contrast}" data-adjust="${prefix}-contrast"></label><label>Warna <input type="range" min="0" max="180" value="${values.saturation}" data-adjust="${prefix}-saturation"></label><label>Temperatur <input type="range" min="-60" max="60" value="${values.temperature}" data-adjust="${prefix}-temperature"></label></div>`;
   }
@@ -239,11 +284,11 @@ export function mountPhotobooth(root, context) {
   function renderSoloPreview() {
     const selected = frameById(soloFrame);
     const cssFilter = imageFilter(soloFilter, soloAdjust);
-    const elements = soloElements.map((element,index) => `<button type="button" class="pb-deco ${selectedSoloElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) scale(${Number(element.scale||1)})" data-pb="select-solo-element" data-element-id="${esc(element.id)}" data-drag-element="solo">${esc(element.text)}</button>`).join('');
+    const elements = soloElements.map(element => `<button type="button" class="pb-deco ${element.kind==='sticker'?'sticker':''} ${selectedSoloElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) scale(${clampElementScale(element.scale)})" data-pb="select-solo-element" data-element-id="${esc(element.id)}" data-drag-element="solo" aria-label="Pindahkan ${esc(element.text)}">${esc(element.text)}<span class="pb-element-remove" data-pb="delete-element" data-element-id="${esc(element.id)}" aria-label="Hapus hiasan" title="Hapus hiasan">×</span><span class="pb-element-resize" data-element-resize aria-label="Tarik untuk mengubah ukuran" title="Tarik untuk mengubah ukuran">↘</span></button>`).join('');
     const photoCards = [0,1,2,3].map(index => soloPhotos[index]
-      ? `<div class="pb-solo-photo"><img src="${soloPhotos[index]}" style="filter:${cssFilter}" alt="Foto ${index+1}"><small>SHOT ${String(index+1).padStart(2,'0')}</small></div>`
-      : `<div class="pb-solo-photo empty"><span>FOTO ${String(index+1).padStart(2,'0')}</span></div>`).join('');
-    return `<div class="pb-strip-header"><span>${esc(selected[1])}</span><b>Diri. ♡</b></div><div class="pb-solo-photos">${photoCards}</div><div class="pb-strip-footer"><span>momen kecil kita</span><b>♡</b></div>${elements}`;
+      ? `<figure class="pb-solo-photo pb-photo-card ${soloFrame}"><img src="${soloPhotos[index]}" style="filter:${cssFilter}" alt="Foto ${index+1}"><figcaption>${photoCaption(selected,index)}</figcaption></figure>`
+      : `<figure class="pb-solo-photo pb-photo-card empty ${soloFrame}"><span>FOTO ${String(index+1).padStart(2,'0')}</span><figcaption>${photoCaption(selected,index)}</figcaption></figure>`).join('');
+    return `${renderFrameHeader(selected)}<div class="pb-frame-ornaments ${soloFrame}" aria-hidden="true"><span class="ornament-a">${selected[0]==='comic'?'POW!':selected[0]==='kawaii'?'♡':selected[0]==='wanted'?'★':'✦'}</span><span class="ornament-b">${selected[0]==='comic'?'WOW!':selected[0]==='kawaii'?'✿':selected[0]==='wanted'?'REWARD':'♡'}</span></div><div class="pb-solo-photos">${photoCards}</div>${renderFrameFooter(selected)}${elements}`;
   }
   async function renderGallery() {
     const holder = root.querySelector('#pb-gallery-list');
@@ -264,7 +309,7 @@ export function mountPhotobooth(root, context) {
   }
   function renderSolo() {
     mode = 'solo';
-    root.innerHTML = `<div class="photo-app">${gameTop('Fotobooth Sendiri','Empat jepretan menjadi satu kenangan.','SESI PRIBADI · TERSIMPAN DI PERANGKAT')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Siap mengabadikan momen?</b><small>Buka kamera atau pilih empat foto dari galeri.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture" ${stream && nextPhotoSlot(soloPhotos)>=0?'':'disabled'}>Ambil foto</button><label class="button button-quiet" for="pb-solo-files">Pilih empat foto</label><input id="pb-solo-files" type="file" accept="image/*" multiple hidden></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${soloPhotos[index]?`<img src="${soloPhotos[index]}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="solo-retake-slot" data-index="${index}">Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${soloPhotos.filter(Boolean).length}/4 foto siap. File tersimpan di peramban ini.</p></section><section class="panel photo-editor-card"><h2>Pilih bingkai</h2>${frameCatalog(soloFrame)}<h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><button class="button button-secondary" data-pb="solo-sticker">Tambah stiker</button><form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Pilih teks atau stiker, lalu seret langsung pada pratinjau. Tombol panah tetap tersedia untuk penyesuaian kecil.</p><div class="element-tools"><button class="button button-small" data-pb="move-left" ${selectedSoloElementId?'':'disabled'}>←</button><button class="button button-small" data-pb="move-right" ${selectedSoloElementId?'':'disabled'}>→</button><button class="button button-small" data-pb="move-up" ${selectedSoloElementId?'':'disabled'}>↑</button><button class="button button-small" data-pb="move-down" ${selectedSoloElementId?'':'disabled'}>↓</button><button class="button button-small" data-pb="size-up" ${selectedSoloElementId?'':'disabled'}>A+</button><button class="button button-small" data-pb="size-down" ${selectedSoloElementId?'':'disabled'}>A−</button><button class="button button-small button-quiet" data-pb="delete-element" ${selectedSoloElementId?'':'disabled'}>Hapus pilihan</button></div><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Simpan ke Galeri Pribadi</button><button class="button button-quiet" data-pb="solo-reset">Ulangi semua foto</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
+    root.innerHTML = `<div class="photo-app">${gameTop('Fotobooth Sendiri','Empat jepretan menjadi satu kenangan.','SESI PRIBADI · TERSIMPAN DI PERANGKAT')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Siap mengabadikan momen?</b><small>Buka kamera atau pilih empat foto dari galeri.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture" ${stream && nextPhotoSlot(soloPhotos)>=0?'':'disabled'}>Ambil foto</button><label class="button button-quiet" for="pb-solo-files">Pilih empat foto</label><input id="pb-solo-files" type="file" accept="image/*" multiple hidden></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${soloPhotos[index]?`<img src="${soloPhotos[index]}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="solo-retake-slot" data-index="${index}">Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${soloPhotos.filter(Boolean).length}/4 foto siap. File tersimpan di peramban ini.</p></section><section class="panel photo-editor-card"><h2>Pilih bingkai</h2>${frameCatalog(soloFrame)}<h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Atur langsung pada foto: seret bagian tengah hiasan untuk memindahkan, tarik pegangan ↘ di sudut untuk mengubah ukuran, atau cubit dengan dua jari di HP. Di komputer, roda mouse di atas hiasan juga dapat mengubah ukuran. Ketuk × untuk menghapus hiasan terpilih.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Simpan ke Galeri Pribadi</button><button class="button button-quiet" data-pb="solo-reset">Ulangi semua foto</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
     attachCameraToCurrentVideo();
     void renderGallery();
   }
@@ -343,10 +388,10 @@ export function mountPhotobooth(root, context) {
     const ctx = canvas.getContext('2d');
     drawFrameBackground(ctx, selected, canvas.width, canvas.height, couple);
     const css = imageFilter(filter, values);
-    const header = couple ? 205 : 190;
-    const footer = couple ? 145 : 130;
+    const header = couple ? 270 : 245;
+    const footer = couple ? 155 : 145;
     const marginX = couple ? 72 : 76;
-    const gapY = couple ? 22 : 22;
+    const gapY = couple ? 54 : 42;
     const slotH = (canvas.height - header - footer - gapY * 3) / 4;
     const gapX = couple ? 24 : 0;
     const slotW = couple ? (canvas.width - marginX * 2 - gapX) / 2 : canvas.width - marginX * 2;
@@ -380,21 +425,23 @@ export function mountPhotobooth(root, context) {
         drawPhotoSlotBorder(ctx, selected, x, y, slotW, slotH, index);
       }
     }
+    // The same floating theme ornaments shown in the browser preview are painted
+    // over the photos in the exported image, keeping preview and print consistent.
+    drawFrameOverlay(ctx, selected, canvas.width, canvas.height, couple);
     // Decorations use normalized coordinates in both the preview and exported image.
     (elements || []).forEach(element => {
       ctx.save();
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const fontSize = canvas.width * 0.062 * Math.max(0.5, Math.min(2, Number(element.scale || 1)));
-      ctx.font = `700 ${fontSize}px Georgia`;
+      const baseSize = element.kind === 'sticker' ? 0.1 : 0.07;
+      const fontSize = canvas.width * baseSize * clampElementScale(element.scale);
+      ctx.font = `700 ${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Georgia, sans-serif`;
       const text = String(element.text || '');
-      const textWidth = Math.min(canvas.width * 0.78, ctx.measureText(text).width);
-      const padX = canvas.width * 0.025, padY = canvas.width * 0.014;
       const x = canvas.width * clampPosition(element.x), y = canvas.height * clampPosition(element.y);
-      const boxWidth = textWidth + padX * 2, boxHeight = fontSize * 1.2 + padY * 2;
-      ctx.fillStyle = 'rgba(255,255,255,.72)'; ctx.strokeStyle = 'rgba(95,70,95,.28)'; ctx.lineWidth = Math.max(1, canvas.width * .001);
-      ctx.shadowColor = 'rgba(30,20,30,.12)'; ctx.shadowBlur = canvas.width * .008;
-      ctx.beginPath(); ctx.roundRect(x - boxWidth/2, y - boxHeight/2, boxWidth, boxHeight, canvas.width * .022); ctx.fill(); ctx.stroke();
-      ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = canvas.width * .005;
+      // Stickers and user text are floating elements: no opaque card or white backing.
+      ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = canvas.width * .009;
+      ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, fontSize * .075); ctx.strokeStyle = 'rgba(255,255,255,.82)';
+      ctx.strokeText(text, x, y, canvas.width * .78);
+      ctx.shadowColor = 'rgba(25,15,25,.22)'; ctx.shadowBlur = canvas.width * .006;
       ctx.fillStyle = element.color || selected[3]; ctx.fillText(text, x, y, canvas.width * .78); ctx.restore();
     });
     const type = mime === 'image/jpeg' ? 'image/jpeg' : 'image/png';
@@ -430,9 +477,9 @@ export function mountPhotobooth(root, context) {
     if(!editorData) return '<div class="photo-editor-card"><p>Memulihkan foto lokal untuk editor bersama…</p></div>';
     const selected = frameById(pState.frameId || 'korean');
     const css = imageFilter(sharedFilter(), sharedAdjustments());
-    const rows = [0,1,2,3].map(index => `<div class="pb-couple-row"><img src="${editorData.host[index]?.url || ''}" alt="Foto Pembuat ruang ${index+1}" style="filter:${css}"><img src="${editorData.guest[index]?.url || ''}" alt="Foto Tamu ${index+1}" style="filter:${css}"></div>`).join('');
-    const elements = (pState.elements || []).map(element => `<button type="button" class="pb-shared-element ${selectedElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) scale(${Number(element.scale||1)});color:${esc(element.color||selected[3])}" data-pb="select-element" data-element-id="${esc(element.id)}" data-drag-element="couple">${esc(element.text)}</button>`).join('');
-    return `<div class="pb-couple-strip ${selected[0]}"><div class="pb-strip-header"><span>${esc(selected[1])}</span><b>Diri. ♡</b></div><div class="pb-couple-rows">${rows}</div><div class="pb-strip-footer"><span>dua tempat, satu kenangan</span><b>♡</b></div>${elements}</div>`;
+    const rows = [0,1,2,3].map(index => `<div class="pb-couple-row"><figure class="pb-couple-photo pb-photo-card ${selected[0]}"><img src="${editorData.host[index]?.url || ''}" alt="Foto Pembuat ruang ${index+1}" style="filter:${css}"><figcaption>${photoCaption(selected,index,'PEMBUAT')}</figcaption></figure><figure class="pb-couple-photo pb-photo-card ${selected[0]}"><img src="${editorData.guest[index]?.url || ''}" alt="Foto Tamu ${index+1}" style="filter:${css}"><figcaption>${photoCaption(selected,index,'TAMU')}</figcaption></figure></div>`).join('');
+    const elements = (pState.elements || []).map(element => `<button type="button" class="pb-shared-element ${element.kind==='sticker'?'sticker':''} ${selectedElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) scale(${clampElementScale(element.scale)});color:${esc(element.color||selected[3])}" data-pb="select-element" data-element-id="${esc(element.id)}" data-drag-element="couple" aria-label="Pindahkan ${esc(element.text)}">${esc(element.text)}<span class="pb-element-remove" data-pb="delete-element" data-element-id="${esc(element.id)}" aria-label="Hapus hiasan" title="Hapus hiasan">×</span><span class="pb-element-resize" data-element-resize aria-label="Tarik untuk mengubah ukuran" title="Tarik untuk mengubah ukuran">↘</span></button>`).join('');
+    return `<div class="pb-couple-strip ${selected[0]}">${renderFrameHeader(selected)}<div class="pb-frame-ornaments ${selected[0]}" aria-hidden="true"><span class="ornament-a">${selected[0]==='comic'?'POW!':selected[0]==='kawaii'?'♡':selected[0]==='wanted'?'★':'✦'}</span><span class="ornament-b">${selected[0]==='comic'?'WOW!':selected[0]==='kawaii'?'✿':selected[0]==='wanted'?'REWARD':'♡'}</span></div><div class="pb-couple-rows">${rows}</div>${renderFrameFooter(selected)}${elements}</div>`;
   }
   function renderSharedEditor() {
     const approvals=pState?.approvals||{};
@@ -441,7 +488,7 @@ export function mountPhotobooth(root, context) {
     const ownFotos=editorData?.[role]||[];
     const slotGrid=ownFotos.length===4?`<div class="pb-retake-grid">${ownFotos.map((photo,index)=>`<figure><img src="${photo?.url||''}" alt="Foto ${index+1} milikmu"><figcaption>Foto ${index+1}</figcaption><button class="button button-small button-quiet" data-pb="request-slot-retake" data-index="${index}" ${slotRequest?'disabled':''}>Ulangi foto ini</button></figure>`).join('')}</div>`:'<p class="small-note">Memuat foto untuk opsi pengambilan ulang…</p>';
     const retakeNotice=slotRequest?`<div class="room-alert"><strong>Permintaan ulang foto</strong><p>${slotRequest.role==='host'?'Pembuat ruang':'Tamu'} meminta mengulang foto nomor ${Number(slotRequest.index)+1}.</p><p>Pembuat ruang: ${slotRequest.approvals?.host?'setuju':'menunggu'} · Tamu: ${slotRequest.approvals?.guest?'setuju':'menunggu'}</p>${slotRequest.role===role?`<button class="button button-quiet" data-pb="cancel-slot-retake">Batalkan permintaan</button>`:`<button class="button button-primary" data-pb="approve-slot-retake">Setuju, ulangi foto</button>`}</div>`:'';
-    return `${gameTop('Pratinjau gabungan berdua','Periksa hasil delapan foto pada satu strip. Kalian dapat meminta pengambilan ulang sebelum menyetujui hasil akhir.','PRATINJAU SEBELUM CETAK')}<div class="photo-layout"><section class="panel shared-editor-panel"><h2>Pratinjau hasil gabungan</h2><div class="pb-shared-preview">${renderSharedStrip()}</div><p class="small-note">Kolom kiri adalah Pembuat ruang, kolom kanan adalah Tamu. Inilah susunan yang akan diunduh atau dicetak.</p>${retakeNotice}<h2>Ulangi foto tertentu</h2><p class="small-note">Pilih salah satu foto milikmu. Pasangan perlu menyetujui sebelum kamera dibuka kembali untuk satu foto tersebut.</p>${slotGrid}<div class="photo-controls"><button class="button button-secondary" data-pb="add-sticker">Tambah stiker</button><form data-pb-form="couple-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Pilih stiker atau teks, lalu seret langsung pada pratinjau. Setelah dilepas, posisinya tersinkron ke pasangan. Tombol panah tetap tersedia sebagai alternatif.</p><div class="element-tools"><button class="button button-small" data-pb="move-left" ${selected?'':'disabled'}>←</button><button class="button button-small" data-pb="move-right" ${selected?'':'disabled'}>→</button><button class="button button-small" data-pb="move-up" ${selected?'':'disabled'}>↑</button><button class="button button-small" data-pb="move-down" ${selected?'':'disabled'}>↓</button><button class="button button-small" data-pb="size-up" ${selected?'':'disabled'}>A+</button><button class="button button-small" data-pb="size-down" ${selected?'':'disabled'}>A−</button><button class="button button-small button-quiet" data-pb="delete-element" ${selected?'':'disabled'}>Hapus pilihan</button><button class="button button-small button-quiet" data-pb="undo-own">Batalkan hiasanku</button></div><div class="approval-grid"><span class="ready-chip ${approvals.host?'done':''}">Pembuat ruang · ${approvals.host?'Setuju':'Menunggu'}</span><span class="ready-chip ${approvals.guest?'done':''}">Tamu · ${approvals.guest?'Setuju':'Menunggu'}</span></div><div class="photo-controls"><button class="button button-primary" data-pb="final-approve">${approvals[role]?'Batalkan persetujuan':'Setujui hasil akhir'}</button><button class="button button-quiet" data-pb="retake-all">Minta ulang seluruh foto</button></div><p class="small-note">Tombol unduh/cetak tersedia setelah kalian berdua menyetujui pratinjau ini.</p></section></div>`;
+    return `${gameTop('Pratinjau gabungan berdua','Periksa hasil delapan foto pada satu strip. Kalian dapat meminta pengambilan ulang sebelum menyetujui hasil akhir.','PRATINJAU SEBELUM CETAK')}<div class="photo-layout"><section class="panel shared-editor-panel"><h2>Pratinjau hasil gabungan</h2><div class="pb-shared-preview">${renderSharedStrip()}</div><p class="small-note">Kolom kiri adalah Pembuat ruang, kolom kanan adalah Tamu. Inilah susunan yang akan diunduh atau dicetak.</p>${retakeNotice}<h2>Ulangi foto tertentu</h2><p class="small-note">Pilih salah satu foto milikmu. Pasangan perlu menyetujui sebelum kamera dibuka kembali untuk satu foto tersebut.</p>${slotGrid}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('add-sticker')}<form data-pb-form="couple-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Atur langsung pada foto: seret bagian tengah hiasan untuk memindahkan, tarik pegangan ↘ di sudut untuk mengubah ukuran, atau cubit dengan dua jari di HP. Di komputer, roda mouse di atas hiasan juga dapat mengubah ukuran. Perubahan posisi dan ukuran tersinkron ke pasangan saat interaksi selesai. Ketuk × untuk menghapus hiasan terpilih.</p><div class="approval-grid"><span class="ready-chip ${approvals.host?'done':''}">Pembuat ruang · ${approvals.host?'Setuju':'Menunggu'}</span><span class="ready-chip ${approvals.guest?'done':''}">Tamu · ${approvals.guest?'Setuju':'Menunggu'}</span></div><div class="photo-controls"><button class="button button-primary" data-pb="final-approve">${approvals[role]?'Batalkan persetujuan':'Setujui hasil akhir'}</button><button class="button button-quiet" data-pb="retake-all">Minta ulang seluruh foto</button></div><p class="small-note">Tombol unduh/cetak tersedia setelah kalian berdua menyetujui pratinjau ini.</p></section></div>`;
   }
 
   async function requestSlotRetake(index) {
@@ -740,45 +787,28 @@ export function mountPhotobooth(root, context) {
     const latest=(await get(publicRef)).val();
     if (!(latest?.manualHashes?.host && latest?.manualHashes?.guest)) showToast('Pemeriksaan tersimpan. Menunggu pasangan memilih delapan file yang sama.');
   }
-  async function addEditorElement(text) {
+  async function addEditorElement(text, kind = 'text') {
     const clean=String(text||'').trim().slice(0,50);if(!clean)return;
     const id=randomId();selectedElementId=id;
-    await mutate(state=>{if(state.phase!=='editor')return false;state.elements=state.elements||[];state.elements.push({id,text:clean,x:.5+(Math.random()-.5)*.16,y:.48+(Math.random()-.5)*.16,scale:1,color:'#a45f82',createdBy:myUid,createdAt:Date.now()});state.approvals={host:false,guest:false};});
+    await mutate(state=>{if(state.phase!=='editor')return false;state.elements=state.elements||[];state.elements.push({id,kind,text:clean,x:.5+(Math.random()-.5)*.16,y:.48+(Math.random()-.5)*.16,scale:1,color:'#a45f82',createdBy:myUid,createdAt:Date.now()});state.approvals={host:false,guest:false};});
   }
   async function updateSelectedElement(action) {
+    if (action !== 'delete-element') return;
     if (mode === 'solo') {
       if (!selectedSoloElementId) return;
-      const element = soloElements.find(item => item.id === selectedSoloElementId); if (!element) return;
-      const step = .025;
-      if (action === 'move-left') element.x = clampPosition(element.x - step);
-      if (action === 'move-right') element.x = clampPosition(element.x + step);
-      if (action === 'move-up') element.y = clampPosition(element.y - step);
-      if (action === 'move-down') element.y = clampPosition(element.y + step);
-      if (action === 'size-up') element.scale = Math.min(2, Number(element.scale || 1) + .15);
-      if (action === 'size-down') element.scale = Math.max(.5, Number(element.scale || 1) - .15);
-      if (action === 'delete-element') { soloElements = soloElements.filter(item => item.id !== selectedSoloElementId); selectedSoloElementId = null; }
-      renderSolo(); return;
+      soloElements = soloElements.filter(item => item.id !== selectedSoloElementId);
+      selectedSoloElementId = null;
+      return;
     }
-    if(!selectedElementId)return;
-    await mutate(state=>{
-      if(state.phase!=='editor')return false;
-      const element=(state.elements||[]).find(item=>item.id===selectedElementId);if(!element)return false;
-      const step=.025;
-      if(action==='move-left')element.x=clampPosition(element.x-step);
-      if(action==='move-right')element.x=clampPosition(element.x+step);
-      if(action==='move-up')element.y=clampPosition(element.y-step);
-      if(action==='move-down')element.y=clampPosition(element.y+step);
-      if(action==='size-up')element.scale=Math.min(2,Number(element.scale||1)+.15);
-      if(action==='size-down')element.scale=Math.max(.5,Number(element.scale||1)-.15);
-      if(action==='delete-element')state.elements=state.elements.filter(item=>item.id!==selectedElementId);
-      state.approvals={host:false,guest:false};
+    if (!selectedElementId) return;
+    await mutate(state => {
+      if (state.phase !== 'editor') return false;
+      state.elements = (state.elements || []).filter(item => item.id !== selectedElementId);
+      state.approvals = {host:false,guest:false};
     });
-    if(action==='delete-element') selectedElementId=null;
+    selectedElementId = null;
   }
-  async function undoOwnElement() {
-    if (mode === 'solo') { if (soloElements.length) { soloElements.pop(); selectedSoloElementId = null; renderSolo(); } return; }
-    await mutate(state=>{if(state.phase!=='editor')return false;const index=(state.elements||[]).map(item=>item.createdBy).lastIndexOf(myUid);if(index<0)return false;state.elements.splice(index,1);state.approvals={host:false,guest:false};});
-  }
+
   async function approveFinal() {
     await mutate(state=>{if(state.phase!=='editor')return false;state.approvals=state.approvals||{host:false,guest:false};state.approvals[role]=!state.approvals[role];if(state.approvals.host&&state.approvals.guest)state.phase='finalized';});
   }
@@ -847,60 +877,178 @@ export function mountPhotobooth(root, context) {
     }
   }
 
-  // Drag hiasan/teks langsung pada pratinjau. Posisi disimpan ternormalisasi (0–1).
+  // Manipulasi langsung pada pratinjau: seret untuk memindahkan, cubit untuk mengubah ukuran.
+  // Koordinat posisi dan skala disimpan dalam nilai ternormalisasi agar konsisten di HP/laptop.
+  function clampElementScale(value) {
+    const number = Number(value);
+    return Math.min(3, Math.max(.35, Number.isFinite(number) ? number : 1));
+  }
+  function gestureElement(type, id) {
+    return type === 'solo'
+      ? soloElements.find(item => item.id === id)
+      : (pState?.elements || []).find(item => item.id === id);
+  }
+  function stageBox(stage) {
+    const rect = stage.getBoundingClientRect();
+    return { left:rect.left + stage.clientLeft, top:rect.top + stage.clientTop, width:stage.clientWidth, height:stage.clientHeight };
+  }
+  function applyGestureTransform(gesture) {
+    if (!gesture?.node) return;
+    gesture.node.style.left = `${gesture.x * 100}%`;
+    gesture.node.style.top = `${gesture.y * 100}%`;
+    gesture.node.style.transform = `translate(-50%,-50%) scale(${clampElementScale(gesture.scale)})`;
+  }
   function onPointerDown(event) {
-    const node = event.target.closest('[data-drag-element]');
-    if (!node || event.button > 0) return;
+    if (event.target.closest('.pb-element-remove')) return;
+
+    // Sentuhan kedua pada area strip mengubah gerakan menjadi pinch-to-resize.
+    if (activeGesture && activeGesture.stage.contains(event.target) && !activeGesture.pointers.has(event.pointerId)) {
+      activeGesture.pointers.set(event.pointerId, { x:event.clientX, y:event.clientY });
+      if (activeGesture.pointers.size >= 2) {
+        const points = [...activeGesture.pointers.values()].slice(0,2);
+        activeGesture.mode = 'pinch';
+        activeGesture.startDistance = Math.max(1, Math.hypot(points[1].x-points[0].x, points[1].y-points[0].y));
+        activeGesture.startScale = clampElementScale(activeGesture.scale);
+        activeGesture.changed = false;
+        try { activeGesture.stage.setPointerCapture(event.pointerId); } catch {}
+        event.preventDefault();
+      }
+      return;
+    }
+
+    const resizeHandle = event.target.closest('.pb-element-resize');
+    const node = resizeHandle?.closest('[data-drag-element]') || event.target.closest('[data-drag-element]');
+    if (!node || (event.pointerType === 'mouse' && event.button !== 0)) return;
     const type = node.dataset.dragElement;
     const stage = node.closest(type === 'solo' ? '#solo-strip' : '.pb-couple-strip');
     if (!stage) return;
-    const rect = stage.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const box = {left:rect.left + stage.clientLeft,top:rect.top + stage.clientTop,width:stage.clientWidth,height:stage.clientHeight};
+    const box = stageBox(stage);
     if (!box.width || !box.height) return;
+    const element = gestureElement(type, node.dataset.elementId);
+    if (!element) return;
     const startX = clampPosition(Number.parseFloat(node.style.left) / 100);
     const startY = clampPosition(Number.parseFloat(node.style.top) / 100);
     const offsetX = startX * box.width - (event.clientX - box.left);
     const offsetY = startY * box.height - (event.clientY - box.top);
-    activeDrag = { type, id: node.dataset.elementId, node, stage, pointerId: event.pointerId, startX, startY, offsetX, offsetY, x: startX, y: startY, moved: false };
-    if (type === 'solo') selectedSoloElementId = activeDrag.id;
-    else selectedElementId = activeDrag.id;
+    const startScale = clampElementScale(element.scale);
+    const nodeRect = node.getBoundingClientRect();
+    const centerX = nodeRect.left + nodeRect.width / 2;
+    const centerY = nodeRect.top + nodeRect.height / 2;
+    const startDistance = Math.max(1, Math.hypot(event.clientX-centerX, event.clientY-centerY));
+    activeGesture = {
+      type, id:node.dataset.elementId, node, stage, mode:resizeHandle ? 'resize' : 'drag',
+      pointers:new Map([[event.pointerId, {x:event.clientX,y:event.clientY}]]),
+      startX, startY, x:startX, y:startY,
+      offsetX, offsetY, scale:startScale, startScale, startDistance, centerX, centerY, changed:false, ended:false
+    };
+    if (type === 'solo') selectedSoloElementId = activeGesture.id;
+    else selectedElementId = activeGesture.id;
     node.classList.add('dragging');
     try { node.setPointerCapture(event.pointerId); } catch {}
     event.preventDefault();
   }
   function onPointerMove(event) {
-    if (!activeDrag || activeDrag.pointerId !== event.pointerId) return;
-    const rect = activeDrag.stage.getBoundingClientRect();
-    const box = {left:rect.left + activeDrag.stage.clientLeft,top:rect.top + activeDrag.stage.clientTop,width:activeDrag.stage.clientWidth,height:activeDrag.stage.clientHeight};
-    if (!box.width || !box.height) return;
-    const x = clampPosition((event.clientX - box.left + activeDrag.offsetX) / box.width);
-    const y = clampPosition((event.clientY - box.top + activeDrag.offsetY) / box.height);
-    if (Math.abs(x - activeDrag.startX) + Math.abs(y - activeDrag.startY) > .003) activeDrag.moved = true;
-    activeDrag.x = x; activeDrag.y = y;
-    activeDrag.node.style.left = `${x * 100}%`; activeDrag.node.style.top = `${y * 100}%`;
-    if (activeDrag.type === 'solo') {
-      const element = soloElements.find(item => item.id === activeDrag.id);
-      if (element) { element.x = x; element.y = y; }
+    const gesture = activeGesture;
+    if (!gesture || !gesture.pointers.has(event.pointerId) || gesture.ended) return;
+    gesture.pointers.set(event.pointerId, {x:event.clientX,y:event.clientY});
+
+    if (gesture.mode === 'pinch') {
+      if (gesture.pointers.size < 2) return;
+      const points = [...gesture.pointers.values()].slice(0,2);
+      const distance = Math.max(1, Math.hypot(points[1].x-points[0].x, points[1].y-points[0].y));
+      gesture.scale = clampElementScale(gesture.startScale * distance / gesture.startDistance);
+      if (Math.abs(gesture.scale-gesture.startScale) > .008) gesture.changed = true;
+      const element = gestureElement(gesture.type, gesture.id);
+      if (element) element.scale = gesture.scale;
+      applyGestureTransform(gesture);
+      event.preventDefault();
+      return;
     }
+
+    const pointer = gesture.pointers.get(event.pointerId);
+    if (gesture.mode === 'resize') {
+      const distance = Math.max(1, Math.hypot(pointer.x-gesture.centerX, pointer.y-gesture.centerY));
+      gesture.scale = clampElementScale(gesture.startScale * distance / gesture.startDistance);
+      if (Math.abs(gesture.scale-gesture.startScale) > .008) gesture.changed = true;
+      const element = gestureElement(gesture.type, gesture.id);
+      if (element) element.scale = gesture.scale;
+      applyGestureTransform(gesture);
+      event.preventDefault();
+      return;
+    }
+    const box = stageBox(gesture.stage);
+    if (!box.width || !box.height) return;
+    const x = clampPosition((pointer.x - box.left + gesture.offsetX) / box.width);
+    const y = clampPosition((pointer.y - box.top + gesture.offsetY) / box.height);
+    if (Math.abs(x-gesture.startX)+Math.abs(y-gesture.startY) > .003) gesture.changed = true;
+    gesture.x = x; gesture.y = y;
+    const element = gestureElement(gesture.type, gesture.id);
+    if (element) { element.x = x; element.y = y; }
+    applyGestureTransform(gesture);
     event.preventDefault();
   }
   async function onPointerUp(event) {
-    if (!activeDrag || (event.pointerId !== undefined && activeDrag.pointerId !== event.pointerId)) return;
-    const drag = activeDrag; activeDrag = null; drag.node.classList.remove('dragging');
-    if (!drag.moved || drag.x === null || drag.y === null) {
-      if (drag.type === 'solo') renderSolo();
+    const gesture = activeGesture;
+    if (!gesture || !gesture.pointers.has(event.pointerId)) return;
+    gesture.pointers.delete(event.pointerId);
+    // Saat satu jari dari pinch dilepas, jangan lanjutkan sebagai gerakan satu jari.
+    if (gesture.mode === 'pinch' && gesture.pointers.size > 0) {
+      gesture.ended = true;
+      return;
+    }
+    if (gesture.pointers.size > 0) return;
+    activeGesture = null;
+    gesture.node.classList.remove('dragging');
+    if (!gesture.changed) {
+      if (gesture.type === 'solo') renderSolo();
       else renderCouple();
       return;
     }
-    if (drag.type === 'solo') { renderSolo(); return; }
+    if (gesture.type === 'solo') {
+      renderSolo();
+      return;
+    }
     try {
       await mutate(state => {
         if (state.phase !== 'editor') return false;
-        const element = (state.elements || []).find(item => item.id === drag.id); if (!element) return false;
-        element.x = drag.x; element.y = drag.y; state.approvals = {host:false,guest:false};
+        const element = (state.elements || []).find(item => item.id === gesture.id);
+        if (!element) return false;
+        element.x = gesture.x; element.y = gesture.y; element.scale = clampElementScale(gesture.scale);
+        state.approvals = {host:false,guest:false};
       });
-    } catch (error) { showToast(`Posisi hiasan tidak tersimpan: ${error.message}`, 'error'); }
+    } catch (error) { showToast(`Perubahan hiasan tidak tersimpan: ${error.message}`, 'error'); }
+  }
+  function onElementWheel(event) {
+    const node = event.target.closest('[data-drag-element]');
+    if (!node) return;
+    event.preventDefault();
+    const type = node.dataset.dragElement;
+    const id = node.dataset.elementId;
+    const element = gestureElement(type, id);
+    if (!element) return;
+    if (type === 'solo') selectedSoloElementId = id;
+    else selectedElementId = id;
+    root.querySelectorAll('[data-drag-element].selected').forEach(item => { if (item !== node) item.classList.remove('selected'); });
+    const scale = clampElementScale(Number(element.scale || 1) * (event.deltaY < 0 ? 1.08 : .92));
+    element.scale = scale;
+    node.classList.add('selected');
+    node.style.transform = `translate(-50%,-50%) scale(${scale})`;
+    if (type === 'solo') return;
+    pendingWheelScale = {id, scale};
+    if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
+    wheelSaveTimer = setTimeout(async () => {
+      const pending = pendingWheelScale; pendingWheelScale = null; wheelSaveTimer = null;
+      if (!pending || destroyed) return;
+      try {
+        await mutate(state => {
+          if (state.phase !== 'editor') return false;
+          const target = (state.elements || []).find(item => item.id === pending.id);
+          if (!target) return false;
+          target.scale = clampElementScale(pending.scale);
+          state.approvals = {host:false,guest:false};
+        });
+      } catch (error) { showToast(`Ukuran hiasan tidak tersimpan: ${error.message}`, 'error'); }
+    }, 220);
   }
 
   // ----------------------------- Event handling ------------------------------
@@ -917,7 +1065,7 @@ export function mountPhotobooth(root, context) {
       if(action==='solo-reset'){soloPhotos=[];soloElements=[];selectedSoloElementId=null;renderSolo();return;}
       if(action==='solo-retake-slot'){const index=Number(button.dataset.index);if(index>=0&&index<4){soloPhotos[index]=null;renderSolo();}return;}
       if(action==='couple-retake-slot'){const index=Number(button.dataset.index);if(index>=0&&index<4&&pState?.photosDone?.[role]!==true){localPhotos[index]=null;await deleteLocalMedia('photobooth',localKey(session.sessionId,pState.retakeToken||0,role,index));renderCouple();}return;}
-      if(action==='solo-sticker'){const id=randomId();soloElements.push({id,text:STICKERS[Math.floor(Math.random()*STICKERS.length)],x:.5,y:.5,scale:1,color:'#a45f82'});selectedSoloElementId=id;renderSolo();return;}
+      if(action==='solo-sticker'){const id=randomId();soloElements.push({id,kind:'sticker',text:button.dataset.sticker||STICKERS[Math.floor(Math.random()*STICKERS.length)],x:.5,y:.5,scale:1,color:'#a45f82'});selectedSoloElementId=id;renderSolo();return;}
       if(action==='solo-frame'){soloFrame=button.dataset.frame;renderSolo();return;}
       if(action==='solo-filter'){soloFilter=button.dataset.filter;renderSolo();return;}
       if(action==='select-solo-element'){selectedSoloElementId=button.dataset.elementId;renderSolo();return;}
@@ -935,9 +1083,8 @@ export function mountPhotobooth(root, context) {
       if(action==='solo-fallback'){await mutate(state=>{state.phase='aborted';});disposePeer();mode='solo';renderSolo();showToast('Sesi berdua dihentikan. Kamu dapat melanjutkan Fotobooth Sendiri.');return;}
       if(action==='abort-couple'){await mutate(state=>{state.phase='aborted';});return;}
       if(action==='select-element'){selectedElementId=button.dataset.elementId;renderCouple();return;}
-      if(['move-left','move-right','move-up','move-down','size-up','size-down','delete-element'].includes(action)){await updateSelectedElement(action);return;}
-      if(action==='undo-own'){await undoOwnElement();return;}
-      if(action==='add-sticker'){await addEditorElement(STICKERS[Math.floor(Math.random()*STICKERS.length)]);return;}
+      if(action==='delete-element'){if(mode==='solo')selectedSoloElementId=button.dataset.elementId||selectedSoloElementId;else selectedElementId=button.dataset.elementId||selectedElementId;await updateSelectedElement('delete-element');if(mode==='solo')renderSolo();else renderCouple();return;}
+      if(action==='add-sticker'){const sticker=button.dataset.sticker||STICKERS[Math.floor(Math.random()*STICKERS.length)];await addEditorElement(sticker,'sticker');return;}
       if(action==='final-approve'){await approveFinal();return;}
       if(action==='request-slot-retake'){await requestSlotRetake(Number(button.dataset.index));return;}
       if(action==='approve-slot-retake'){await approveSlotRetake();return;}
@@ -981,7 +1128,7 @@ export function mountPhotobooth(root, context) {
     const form=event.target.closest('[data-pb-form]');if(!form)return;event.preventDefault();
     try {
       const text=form.elements.text.value;
-      if(form.dataset.pbForm==='solo-text'){const clean=String(text||'').trim().slice(0,50);if(clean){const id=randomId();soloElements.push({id,text:clean,x:.5,y:.5,scale:1,color:'#a45f82'});selectedSoloElementId=id;renderSolo();}}
+      if(form.dataset.pbForm==='solo-text'){const clean=String(text||'').trim().slice(0,50);if(clean){const id=randomId();soloElements.push({id,kind:'text',text:clean,x:.5,y:.5,scale:1,color:'#a45f82'});selectedSoloElementId=id;renderSolo();}}
       if(form.dataset.pbForm==='couple-text'){await addEditorElement(text);}
     } catch(error) { showToast(error.message,'error'); }
   }
@@ -992,6 +1139,7 @@ export function mountPhotobooth(root, context) {
   root.addEventListener('pointermove',onPointerMove);
   root.addEventListener('pointerup',onPointerUp);
   root.addEventListener('pointercancel',onPointerUp);
+  root.addEventListener('wheel',onElementWheel,{passive:false});
   void init();
   return { destroy:cleanup };
 }

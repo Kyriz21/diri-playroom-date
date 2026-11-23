@@ -1,0 +1,19 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visual Check Frames</title><style>
+*{box-sizing:border-box}body{margin:0;padding:24px;background:#f3f0f4;color:#29242f;font:14px Arial,sans-serif}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.card{padding:12px;background:#fff;border:1px solid #e5dce8;border-radius:12px;box-shadow:0 4px 18px #251a2911;min-width:0}.card h2{font-size:14px;margin:0 0 10px}.card canvas{width:100%;height:auto;display:block;border-radius:4px;background:#fff}.subtitle{color:#7c7280;font-size:12px;margin-bottom:18px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><h1>Pratinjau 16 Bingkai DiRi</h1><div class="subtitle">Pemeriksaan visual lokal untuk desain frame dan hasil ekspor.</div><main id="grid" class="grid"></main><script type="module">
+import {FRAMES,drawFrameBackground,drawPhotoSlotBorder,drawFrameOverlay} from './js/photobooth/frame-art.js';
+const root=document.querySelector('#grid');
+for(const frame of FRAMES){
+ const article=document.createElement('article');article.className='card';const title=document.createElement('h2');title.textContent=frame[1];const canvas=document.createElement('canvas');canvas.width=420;canvas.height=780;article.append(title,canvas);root.append(article);
+ const ctx=canvas.getContext('2d');drawFrameBackground(ctx,frame,canvas.width,canvas.height,true);
+ const head=270,footer=155,margin=72,gapY=22,gapX=24,slotH=(canvas.height-head-footer-gapY*3)/4,slotW=(canvas.width-margin*2-gapX)/2;
+ for(let r=0;r<4;r++)for(let c=0;c<2;c++){
+  const x=margin+c*(slotW+gapX),y=head+r*(slotH+gapY);
+  const gr=ctx.createLinearGradient(x,y,x+slotW,y+slotH);gr.addColorStop(0,['#caa9a8','#a8b6c0','#b9c8aa','#d5b8a0'][(r+c)%4]);gr.addColorStop(1,['#eee1dc','#dfe5e7','#e7e5d5','#f1e2d9'][(r+c)%4]);
+  ctx.fillStyle='#fff';ctx.fillRect(x-4,y-4,slotW+8,slotH+8);ctx.fillStyle=gr;ctx.fillRect(x,y,slotW,slotH);
+  ctx.fillStyle='#ffffff77';ctx.beginPath();ctx.arc(x+slotW*.5,y+slotH*.34,slotW*.18,0,Math.PI*2);ctx.fill();ctx.fillRect(x+slotW*.27,y+slotH*.58,slotW*.46,slotH*.23);
+  drawPhotoSlotBorder(ctx,frame,x,y,slotW,slotH,r+c*4);
+ }
+ drawFrameOverlay(ctx,frame,canvas.width,canvas.height,true);
+}
+</script></body></html>

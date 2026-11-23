@@ -1,4 +1,4 @@
-# Diri. Playroom Date — Foundation v0.1
+# Diri. Playroom Date — Direct Editor Update v0.3
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; mini-games dan aktivitas lain akan ditambahkan setelah Photobooth stabil.
 
@@ -25,6 +25,15 @@ Foundation ini menggunakan **LDR Playroom Review Build v1.2** sebagai basis tekn
 - Fondasi autentikasi anonim, kode sesi, status kehadiran, dan aturan Realtime Database.
 
 Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis hanya ketika pengguna membuat atau bergabung ke sesi. Karena itu, mode Foto Sendiri tetap dapat digunakan sebelum Firebase project baru dibuat atau dikonfigurasi.
+
+## Pembaruan visual Photobooth v0.2
+
+- Hiasan/stiker kini tampil tanpa kotak putih, latar kartu, atau border. Palet menyediakan 16 pilihan yang dapat dipilih satu per satu.
+- Hasil ekspor PNG/JPEG mengikuti konsep hiasan transparan; simbol dan teks digambar langsung tanpa latar kotak.
+- Ornamen utama setiap tema juga digambar pada hasil ekspor dengan posisi yang diselaraskan dengan pratinjau. Bingkai Koran, Buronan, Komik, dan Kawaii memiliki komposisi visual khusus.
+- Frame memiliki komposisi tematik: Koran, Poster Buronan, Komik Pop Art, Kawaii, Korean Four-Cut, Film Analog, Polaroid, Kartu Pos, Botani, Majalah, Y2K, Arkade, Surat Cinta, Ulang Tahun, dan Doodle.
+- Foto mendapatkan caption dan gaya kartu sesuai tema. Pratinjau browser serta renderer ekspor menggunakan identitas tema yang sama.
+- Jarak baris pada hasil ekspor diperlebar untuk memberi ruang bagi label foto.
 
 ## Teknologi dan batasan biaya
 
@@ -73,3 +82,12 @@ Build ini sudah melewati pemeriksaan sintaks JavaScript dan unit test lokal. Hal
 - Pratinjau gabungan, persetujuan, PNG/JPEG, dan dialog cetak.
 
 Lihat `REVIEW-BUILD-QA.md`, `KNOWN-LIMITATIONS.md`, dan `SECURITY-NOTES.md` sebelum uji dua perangkat.
+
+
+### Editor hiasan langsung (v0.3)
+- Seret teks atau stiker langsung pada pratinjau untuk memindahkan.
+- Tarik pegangan ↘ pada sudut elemen untuk mengubah ukurannya langsung.
+- Pada HP/tablet, gunakan dua jari untuk mencubit elemen dan mengubah ukurannya.
+- Pada desktop, arahkan kursor ke elemen dan putar roda mouse untuk mengubah ukurannya.
+- Pilih elemen lalu tekan tanda × kecil untuk menghapusnya.
+- Tidak ada lagi toolbar panah atau tombol A+/A−.

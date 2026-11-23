@@ -1,27 +1,22 @@
-# Build verification — Diri. Playroom Date foundation v0.1
-
-## Source-based checks
-- [x] Project metadata and page title use `Diri. Playroom Date`.
-- [x] Landing page exposes Buat Sesi Berdua, Gabung Sesi, and Foto Sendiri.
-- [x] Entry point does not statically import Firebase.
-- [x] Photobooth module dynamically imports Firebase only for a shared session.
-- [x] Standalone Photobooth uses local IndexedDB and skips room/session setup.
-- [x] New room defaults to Photobooth; the guest join flow marks the guest ready.
-- [x] The host auto-starts Photobooth once both players are present and ready.
-- [x] The guest leaving clears their slot; the host returns the session to the invite screen.
-- [x] Old Firebase project credentials are removed and replaced with setup placeholders.
-- [x] `index.html` remains at the repository root for GitHub Pages.
+# Build Verification — Diri. Playroom Date v0.3.0
 
 ## Automated checks
-- `npm test`: **26 passed, 0 failed**.
-- `node --check`: all JavaScript files under `js/` pass syntax validation.
-- `firebase-database.rules.json`: valid JSON.
-- Old Firebase project ID `ldr-playroom-diri` does not appear in the new source tree.
+- `node --check js/photobooth/photobooth.js` — pass
+- `npm test` — 29 tests pass
+- ZIP integrity (`unzip -t`) — pass after packaging
 
-## Not yet verified on live services/devices
-- Firebase project for Diri. Playroom Date has not yet been created/configured.
-- Create/Join auto-start has not yet been tested against deployed Firebase Rules on two devices.
-- Camera and drag interactions have not been tested with physical devices.
-- WebRTC/STUN, manual transfer, final preview, download, and print still require browser-level testing.
+## Editor interaction changes
+- Toolbar panah dan A+/A− dihapus dari editor.
+- Seret bagian utama stiker/teks untuk memindahkan.
+- Pegangan ↘ pada elemen terpilih dapat diseret untuk mengubah ukuran.
+- Pinch dua jari pada area pratinjau dapat mengubah ukuran elemen yang sedang digerakkan.
+- Roda mouse di atas elemen mengubah ukuran pada desktop.
+- Tanda × pada elemen terpilih menghapus elemen tersebut.
+- Skala ekspor PNG/JPEG memakai rentang yang sama dengan editor (0.35–3.0) serta ukuran dasar sesuai jenis elemen.
 
-Unit tests and syntax checks do not prove live Firebase, camera, or cross-device behavior. Follow `REVIEW-BUILD-QA.md` after deployment.
+## Still requires physical device testing
+- Pinch gesture pada Safari iOS dan Chrome Android.
+- Drag dan pegangan resize pada layar sentuh/mouse dengan browser dan zoom berbeda.
+- Roda mouse dan trackpad pada desktop.
+- Sinkronisasi skala ke pasangan pada sesi Firebase nyata.
+- Perbandingan ukuran elemen pratinjau dengan PNG/JPEG hasil unduhan.

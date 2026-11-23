@@ -131,7 +131,6 @@
 .pb-couple-row img{display:block;width:100%;aspect-ratio:1.12;object-fit:cover;min-width:0}
 .pb-shared-element{position:absolute;z-index:4;transform:translate(-50%,-50%);border:0;background:rgba(255,255,255,.55);border-radius:8px;padding:3px 7px;font-family:Georgia,serif;cursor:pointer}
 .pb-shared-element.selected{outline:2px dashed #d18eaf}
-.element-tools{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}
 .pb-shared-preview{max-width:600px;margin:16px auto}
 .photo-app .room-alert{margin:12px 0}
 .hidden{display:none!important}
@@ -299,3 +298,176 @@
 .pb-strip.doodle .pb-solo-photo,.pb-couple-strip.doodle .pb-couple-row img{border:4px dashed #4c5261;border-radius:10px}
 @media(max-width:860px){.pb-frame-catalog{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.pb-frame-catalog{grid-template-columns:repeat(2,minmax(0,1fr))}.pb-frame-mini{min-height:142px}}
+
+/* Diri. Playroom Date v0.2 — richer original frame artwork and transparent stickers. */
+.pb-strip,.pb-couple-strip{position:relative;isolation:isolate;overflow:hidden;border-radius:9px}
+.pb-strip-header.pb-themed-header,.pb-couple-strip .pb-themed-header{display:grid;position:relative;isolation:isolate;gap:5px;min-height:112px;padding:15px 18px 13px;text-align:center;align-content:center;overflow:hidden}
+.pb-themed-header .pb-theme-kicker{display:block;font:800 9px/1.2 Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;opacity:.78}
+.pb-themed-header .pb-theme-title{display:block;font:900 clamp(25px,8cqw,46px)/.98 Georgia,serif;letter-spacing:.025em}
+.pb-themed-header .pb-theme-subtitle{display:block;font:750 clamp(8px,2.1cqw,11px)/1.3 Arial,sans-serif;letter-spacing:.09em}
+.pb-themed-header .pb-theme-mark{position:absolute;right:15px;top:12px;font-size:clamp(22px,7cqw,42px);line-height:1;filter:drop-shadow(0 2px 0 rgba(255,255,255,.55));}
+.pb-themed-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:12px 17px;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+.pb-frame-ornaments{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.pb-frame-ornaments>span{position:absolute;display:block;font-weight:900;line-height:1;pointer-events:none;text-shadow:0 2px 0 rgba(255,255,255,.55),0 3px 8px rgba(40,20,30,.12)}
+.pb-frame-ornaments .ornament-a{left:2.5%;top:21%;font-size:clamp(22px,7cqw,44px);transform:rotate(-14deg)}
+.pb-frame-ornaments .ornament-b{right:2.5%;bottom:14%;font-size:clamp(18px,5cqw,32px);transform:rotate(12deg)}
+.pb-solo-photo.pb-photo-card,.pb-couple-photo.pb-photo-card{position:relative;display:grid;grid-template-rows:1fr auto;gap:0;min-width:0;min-height:0;margin:0;padding:7px;overflow:visible;background:#fff;border:0;box-shadow:none;aspect-ratio:auto}
+.pb-solo-photo.pb-photo-card img,.pb-couple-photo.pb-photo-card img{display:block;width:100%;height:auto;min-width:0;aspect-ratio:1.12;object-fit:cover;border:0;border-radius:0;box-shadow:none}
+.pb-photo-card figcaption{display:block;min-height:17px;padding:4px 4px 1px;overflow:hidden;font:800 8px/1.2 Arial,sans-serif;letter-spacing:.08em;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.pb-solo-photo.pb-photo-card.empty{display:grid;place-items:center;aspect-ratio:1.42;background:rgba(255,255,255,.4);}
+.pb-photo-card.empty span{font:700 12px Georgia,serif}
+.pb-couple-rows{gap:10px;padding:5px 7px 8px}
+.pb-couple-row{align-items:start;gap:9px;padding:0;background:transparent}
+.pb-deco,.pb-shared-element{position:absolute;z-index:9;display:grid;place-items:center;max-width:85%;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;font:700 7cqw/1.1 "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",Georgia,sans-serif;text-align:center;white-space:pre-wrap;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto;text-shadow:0 2px 0 rgba(255,255,255,.9),0 4px 8px rgba(40,20,30,.16)}
+.pb-deco.sticker,.pb-shared-element.sticker{font-size:10cqw;filter:drop-shadow(0 2px 2px rgba(50,30,50,.16))}
+.pb-deco.selected,.pb-shared-element.selected{outline:1.5px dashed #c77da5!important;outline-offset:7px;background:transparent!important;border:0!important;border-radius:0!important}
+.pb-deco.dragging,.pb-shared-element.dragging{cursor:grabbing;filter:drop-shadow(0 4px 5px rgba(30,20,30,.22));}
+
+/* NEWSPAPER — masthead, edition line, newsprint columns and photo credits. */
+.pb-strip.newspaper,.pb-couple-strip.newspaper{background-color:#f1ead8;background-image:repeating-linear-gradient(0deg,rgba(60,50,35,.035) 0 1px,transparent 1px 5px);border:8px double #29251f;border-radius:1px;color:#29251f;padding:8px 11px 7px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}
+.pb-themed-header.newspaper{min-height:135px;border-bottom:4px double #29251f;background:linear-gradient(90deg,transparent 0 49.7%,rgba(40,35,28,.08) 50%,transparent 50.3%)}
+.pb-themed-header.newspaper .pb-theme-title{font:900 clamp(25px,8.5cqw,48px)/.95 Georgia,serif;letter-spacing:-.045em;text-transform:uppercase}
+.pb-themed-header.newspaper .pb-theme-kicker{border-bottom:1px solid #29251f;padding-bottom:6px}
+.pb-themed-header.newspaper .pb-theme-subtitle{border-top:2px solid #29251f;border-bottom:1px solid #29251f;padding:5px 0}
+.pb-themed-header.newspaper::before,.pb-themed-header.newspaper::after{position:absolute;top:50%;font:900 9px Georgia,serif;letter-spacing:.08em;writing-mode:vertical-rl}
+.pb-themed-header.newspaper::before{content:"BREAKING NEWS";left:4px;transform:translateY(-50%) rotate(180deg)}
+.pb-themed-header.newspaper::after{content:"VOL. 01";right:4px;transform:translateY(-50%)}
+.pb-strip.newspaper .pb-solo-photos,.pb-couple-strip.newspaper .pb-couple-rows{background:repeating-linear-gradient(90deg,transparent 0 48.8%,rgba(40,35,28,.08) 49.6% 50.4%,transparent 51.2% 100%)}
+.pb-strip.newspaper .pb-photo-card,.pb-couple-strip.newspaper .pb-photo-card{background:#f8f4e9;border:3px double #29251f;padding:5px 5px 2px;box-shadow:2px 3px 0 rgba(40,35,28,.13)}
+.pb-strip.newspaper .pb-photo-card img,.pb-couple-strip.newspaper .pb-photo-card img{border:1px solid #29251f;filter:grayscale(.28) contrast(1.04)}
+.pb-strip.newspaper .pb-photo-card figcaption,.pb-couple-strip.newspaper .pb-photo-card figcaption{font:800 7px Georgia,serif;letter-spacing:.1em}
+.pb-themed-footer.newspaper{border-top:4px double #29251f;font:800 8px Georgia,serif}
+.pb-frame-ornaments.newspaper .ornament-a{content:"";color:#8e2525}.pb-frame-ornaments.newspaper .ornament-b{color:#8e2525}
+
+/* WANTED — aged paper, red ink, distressed photo edges and reward seal. */
+.pb-strip.wanted,.pb-couple-strip.wanted{background-color:#ddc79f;background-image:repeating-linear-gradient(0deg,rgba(93,61,35,.07) 0 2px,transparent 2px 8px),radial-gradient(ellipse at 15% 15%,rgba(255,249,220,.55),transparent 48%),radial-gradient(ellipse at 82% 78%,rgba(117,75,39,.12),transparent 42%);border:12px double #67452d;border-radius:2px;color:#4d3423;box-shadow:inset 0 0 0 3px rgba(255,246,218,.5);padding:8px 12px}
+.pb-themed-header.wanted{min-height:142px;border-bottom:3px solid #67452d}
+.pb-themed-header.wanted .pb-theme-kicker{color:#9d3d32;font:900 10px Georgia,serif;letter-spacing:.23em}
+.pb-themed-header.wanted .pb-theme-title{font:1000 clamp(38px,12cqw,65px)/.9 Georgia,serif;letter-spacing:.12em;text-shadow:1px 2px 0 #f7e6bd,2px 3px 0 rgba(80,50,30,.28)}
+.pb-themed-header.wanted .pb-theme-subtitle{font:900 8px Georgia,serif;letter-spacing:.17em}
+.pb-themed-header.wanted::before{content:"REWARD";position:absolute;left:8px;top:42px;padding:5px 8px;border:2px solid #a13f32;color:#a13f32;font:900 8px Georgia,serif;letter-spacing:.12em;transform:rotate(-13deg)}
+.pb-themed-header.wanted::after{content:"★";position:absolute;right:12px;bottom:9px;color:#9a633f;font-size:32px;text-shadow:1px 1px #f7e7c5}
+.pb-strip.wanted .pb-photo-card,.pb-couple-strip.wanted .pb-photo-card{padding:7px 7px 4px;background:#ead7ad;border:5px double #68452d;box-shadow:3px 4px 0 rgba(83,54,33,.24);clip-path:polygon(1% 0,99% 1%,100% 98%,98% 100%,2% 99%,0 2%)}
+.pb-strip.wanted .pb-photo-card img,.pb-couple-strip.wanted .pb-photo-card img{border:2px solid #9a7147;filter:sepia(.22) contrast(1.04)}
+.pb-strip.wanted .pb-photo-card figcaption,.pb-couple-strip.wanted .pb-photo-card figcaption{color:#963b31;font:900 8px Georgia,serif;letter-spacing:.15em}
+.pb-themed-footer.wanted{border-top:3px double #67452d;color:#82392f;font:900 9px Georgia,serif;letter-spacing:.1em}
+.pb-frame-ornaments.wanted .ornament-a{left:1%;top:43%;color:#9b3e31;font-size:clamp(27px,8cqw,48px)}
+.pb-frame-ornaments.wanted .ornament-b{right:1%;bottom:36%;color:#9b3e31;font-size:clamp(21px,6cqw,35px)}
+
+/* COMIC — halftone paper, impact title, angled panels and speech-bubble accents. */
+.pb-strip.comic,.pb-couple-strip.comic{background-color:#ffe95d;background-image:radial-gradient(#e2bd34 1.2px,transparent 1.6px),linear-gradient(135deg,#fff4b6,#ffe35a);background-size:9px 9px,auto;border:7px solid #171717;border-radius:2px;color:#171717;box-shadow:7px 7px 0 #248db8;padding:7px 10px}
+.pb-themed-header.comic{min-height:122px;border-bottom:5px solid #171717}
+.pb-themed-header.comic .pb-theme-kicker{font:900 9px "Arial Black",Arial,sans-serif;letter-spacing:.18em}
+.pb-themed-header.comic .pb-theme-title{display:inline-block;justify-self:center;padding:7px 18px;background:#e83e35;border:4px solid #171717;color:#fff;font:1000 clamp(25px,8cqw,45px)/1 "Arial Black",Impact,sans-serif;letter-spacing:-.03em;text-shadow:2px 2px 0 #171717;transform:rotate(-2deg);box-shadow:5px 5px 0 #171717}
+.pb-themed-header.comic .pb-theme-subtitle{font:900 8px "Arial Black",Arial,sans-serif;letter-spacing:.12em}
+.pb-themed-header.comic::before,.pb-themed-header.comic::after{position:absolute;display:grid;place-items:center;aspect-ratio:1;border:3px solid #171717;border-radius:50%;font:1000 13px "Arial Black",Arial,sans-serif;color:#171717;box-shadow:3px 3px 0 #171717}
+.pb-themed-header.comic::before{content:"POW!";left:4px;top:13px;width:48px;background:#55c4e4;transform:rotate(-13deg)}
+.pb-themed-header.comic::after{content:"WOW!";right:5px;top:15px;width:47px;background:#f45e55;transform:rotate(12deg)}
+.pb-strip.comic .pb-photo-card,.pb-couple-strip.comic .pb-photo-card{padding:6px;background:#fff;border:5px solid #171717;box-shadow:5px 5px 0 #2e92bb;transform:rotate(-.8deg)}
+.pb-strip.comic .pb-photo-card:nth-child(even),.pb-couple-strip.comic .pb-photo-card:nth-child(even){transform:rotate(.8deg)}
+.pb-strip.comic .pb-photo-card img,.pb-couple-strip.comic .pb-photo-card img{border:2px solid #171717}
+.pb-strip.comic .pb-photo-card figcaption,.pb-couple-strip.comic .pb-photo-card figcaption{color:#171717;font:1000 9px "Arial Black",Arial,sans-serif;letter-spacing:.15em}
+.pb-themed-footer.comic{border-top:5px solid #171717;font:1000 9px "Arial Black",Arial,sans-serif;text-align:center}
+.pb-frame-ornaments.comic .ornament-a{left:1%;top:28%;color:#e83e35;font:1000 clamp(25px,7cqw,42px) "Arial Black",Arial,sans-serif;transform:rotate(-15deg);-webkit-text-stroke:1px #171717}
+.pb-frame-ornaments.comic .ornament-b{right:1%;bottom:23%;color:#36a9d0;font:1000 clamp(25px,7cqw,42px) "Arial Black",Arial,sans-serif;transform:rotate(12deg);-webkit-text-stroke:1px #171717}
+
+/* KAWAII — soft sticker-book layout with mascot faces and floating flowers. */
+.pb-strip.kawaii,.pb-couple-strip.kawaii{background-color:#fff2f6;background-image:radial-gradient(rgba(235,160,190,.25) 1.4px,transparent 1.7px),linear-gradient(145deg,#fff9fb,#ffeef5);background-size:16px 16px,auto;border:5px solid #efb5ca;border-radius:24px;color:#875d78;padding:9px 12px;box-shadow:0 8px 0 rgba(220,150,185,.18)}
+.pb-themed-header.kawaii{min-height:125px;border-bottom:2px dashed #e7a5c0}
+.pb-themed-header.kawaii .pb-theme-title{font:1000 clamp(25px,8cqw,43px)/1 "Arial Rounded MT Bold","Trebuchet MS",sans-serif;color:#bd7295;text-shadow:2px 3px 0 #fff,3px 5px 0 rgba(221,143,177,.24)}
+.pb-themed-header.kawaii .pb-theme-kicker{color:#bd7295;letter-spacing:.16em}
+.pb-themed-header.kawaii .pb-theme-subtitle{color:#98718b;font-weight:800}
+.pb-themed-header.kawaii::before{content:"ʕ•ᴥ•ʔ";position:absolute;left:4px;top:32px;font-size:clamp(23px,7cqw,39px);transform:rotate(-12deg);filter:drop-shadow(0 2px 1px rgba(180,120,150,.17))}
+.pb-themed-header.kawaii::after{content:"♡ ✿ ♡";position:absolute;right:4px;top:38px;color:#dc8eae;font-size:clamp(16px,4.5cqw,26px);transform:rotate(9deg)}
+.pb-strip.kawaii .pb-photo-card,.pb-couple-strip.kawaii .pb-photo-card{padding:7px;background:#fff;border:2px solid #efc4d4;border-radius:19px;box-shadow:0 4px 0 rgba(222,158,187,.18)}
+.pb-strip.kawaii .pb-photo-card img,.pb-couple-strip.kawaii .pb-photo-card img{border-radius:13px}
+.pb-strip.kawaii .pb-photo-card figcaption,.pb-couple-strip.kawaii .pb-photo-card figcaption{color:#bd7295;font:900 8px "Trebuchet MS",sans-serif;letter-spacing:.08em}
+.pb-themed-footer.kawaii{border-top:2px dashed #e7a5c0;color:#b67696;font:800 9px "Trebuchet MS",sans-serif;text-transform:none}
+.pb-frame-ornaments.kawaii .ornament-a{left:1%;top:34%;color:#eea8c5;font-size:clamp(24px,7cqw,42px)}
+.pb-frame-ornaments.kawaii .ornament-b{right:1%;bottom:25%;color:#c5a5e2;font-size:clamp(23px,7cqw,40px)}
+
+/* Other themes gain their own printed material, not only a recolored border. */
+.pb-themed-header.korean{background:linear-gradient(135deg,#fff9fc,#fbeaf3);border-bottom:2px solid #edc5d8;border-radius:15px 15px 0 0}
+.pb-themed-header.korean .pb-theme-title{font:900 clamp(24px,7.5cqw,40px) Arial,sans-serif;letter-spacing:.13em;color:#9d6d84}
+.pb-themed-header.film{background:#30271f;color:#f1dfbd;border-bottom:5px solid #e8d6b2;font-family:"Courier New",monospace}
+.pb-themed-header.film::before,.pb-themed-header.film::after{content:"";position:absolute;left:0;right:0;height:7px;background:repeating-linear-gradient(90deg,#e8d6b2 0 12px,transparent 12px 22px)}
+.pb-themed-header.film::before{top:0}.pb-themed-header.film::after{bottom:0}
+.pb-themed-header.polaroid{background:#eee8dd;border-bottom:13px solid #fff;box-shadow:0 4px 0 rgba(65,50,40,.12);color:#675c50}
+.pb-themed-header.polaroid .pb-theme-title{font-style:italic;font-weight:500}
+.pb-themed-header.postcard{background:#f7f0e4;border:2px dashed #c66d65;color:#345f73}
+.pb-themed-header.postcard::after{content:"✉";position:absolute;right:11px;top:17px;font-size:32px;transform:rotate(12deg)}
+.pb-themed-header.botanical{background:linear-gradient(135deg,#eef3e7,#f8f1e8);border-bottom:2px solid #a6b49a;color:#456049}
+.pb-themed-header.botanical::before,.pb-themed-header.botanical::after{content:"❀";position:absolute;top:20px;color:#c48ba0;font-size:34px}
+.pb-themed-header.botanical::before{left:8px}.pb-themed-header.botanical::after{right:8px}
+.pb-themed-header.magazine{background:#fffaf6;border-bottom:5px solid #25212a;color:#25212a}
+.pb-themed-header.magazine .pb-theme-title{font:1000 clamp(34px,11cqw,60px)/.9 Arial,sans-serif;letter-spacing:-.08em}
+.pb-themed-header.y2k{background:linear-gradient(130deg,#e8e1ff,#f8e4f2 55%,#d7eafa);border-bottom:3px solid #9887dd;color:#534b8e}
+.pb-themed-header.arcade{background:#17152b;color:#60f4df;border-bottom:3px dashed #60f4df;font-family:"Courier New",monospace}
+.pb-themed-header.loveletter{background:#fff2f0;border-bottom:2px dashed #c98596;color:#854d60}
+.pb-themed-header.loveletter .pb-theme-title{font-style:italic;font-weight:500}
+.pb-themed-header.birthday{background:radial-gradient(circle at 15% 20%,#f4c76b 0 3px,transparent 4px),radial-gradient(circle at 85% 25%,#e99ab4 0 4px,transparent 5px),linear-gradient(135deg,#fff5e7,#ffebd8);border-bottom:3px dotted #eea064;color:#875878}
+.pb-themed-header.doodle{background:#fffdf3;border:3px dashed #636b70;color:#46515b}
+.pb-themed-header.doodle .pb-theme-title{font-family:"Trebuchet MS",cursive;letter-spacing:-.03em}
+.pb-strip.polaroid .pb-photo-card,.pb-couple-strip.polaroid .pb-photo-card{padding:7px 7px 17px;background:#fff;border:1px solid #ddd7cb;box-shadow:2px 4px 8px rgba(40,30,20,.16)}
+.pb-strip.film .pb-photo-card,.pb-couple-strip.film .pb-photo-card{padding:6px;background:#171411;border:2px solid #e8d6b2}
+.pb-strip.film .pb-photo-card figcaption,.pb-couple-strip.film .pb-photo-card figcaption{color:#efddb9;font:800 7px "Courier New",monospace}
+.pb-strip.postcard .pb-photo-card,.pb-couple-strip.postcard .pb-photo-card{padding:6px;background:#fff9ee;border:2px solid #315c72;box-shadow:2px 3px 0 rgba(49,92,114,.15)}
+.pb-strip.botanical .pb-photo-card,.pb-couple-strip.botanical .pb-photo-card{padding:7px;background:#fffdf7;border:2px solid #9eaf91;border-radius:12px;box-shadow:0 4px 8px rgba(75,100,70,.1)}
+.pb-strip.magazine .pb-photo-card,.pb-couple-strip.magazine .pb-photo-card{padding:6px;background:#fff;border:2px solid #25212a;box-shadow:4px 4px 0 #d54b74}
+.pb-strip.arcade .pb-photo-card,.pb-couple-strip.arcade .pb-photo-card{padding:6px;background:#201d3b;border:2px solid #57f5df;box-shadow:0 0 9px rgba(87,245,223,.28)}
+.pb-strip.loveletter .pb-photo-card,.pb-couple-strip.loveletter .pb-photo-card{padding:7px;background:#fff9f6;border:2px dashed #c98596;border-radius:11px}
+.pb-strip.birthday .pb-photo-card,.pb-couple-strip.birthday .pb-photo-card{padding:7px;background:#fff;border:2px solid #efa36b;border-radius:15px;box-shadow:3px 4px 0 rgba(239,156,98,.18)}
+.pb-strip.doodle .pb-photo-card,.pb-couple-strip.doodle .pb-photo-card{padding:7px;background:#fffef8;border:2px dashed #626c74;border-radius:9px}
+
+@media(max-width:600px){
+  .pb-themed-header.pb-themed-header{min-height:102px;padding:14px 12px 11px}
+  .pb-themed-header .pb-theme-title{font-size:clamp(22px,8cqw,35px)}
+  .pb-themed-header.wanted{min-height:122px}
+  .pb-themed-header.comic{min-height:110px}
+  .pb-frame-ornaments .ornament-a{left:1%;}.pb-frame-ornaments .ornament-b{right:1%;}
+  .pb-strip.wanted,.pb-couple-strip.wanted{border-width:8px;padding:6px 8px}
+  .pb-couple-rows{gap:8px;padding:4px}
+  .pb-photo-card figcaption{font-size:6px;min-height:13px}
+}
+
+/* More expressive thumbnails in the selectable frame catalogue. */
+.pb-frame-mini.newspaper{position:relative;background-color:#f1ead8;background-image:repeating-linear-gradient(0deg,rgba(40,35,28,.06) 0 1px,transparent 1px 4px);border:5px double #29251f;border-radius:1px;color:#29251f}
+.pb-frame-mini.newspaper .pb-mini-masthead{font:1000 16px Georgia,serif;text-transform:uppercase;letter-spacing:-.06em;border-bottom:3px double #29251f;padding-bottom:4px}
+.pb-frame-mini.newspaper .pb-mini-sub{font:800 6px Georgia,serif;letter-spacing:.08em}
+.pb-frame-mini.newspaper .pb-mini-photos i{border:2px double #29251f;filter:grayscale(.8);background:repeating-linear-gradient(0deg,#d9d4c8 0 4px,#eee9dc 4px 8px)}
+.pb-frame-mini.newspaper .pb-mini-footer{border-top:2px solid #29251f;padding-top:3px}
+.pb-frame-mini.wanted{position:relative;background-color:#ddc79f;background-image:repeating-linear-gradient(0deg,rgba(93,61,35,.09) 0 2px,transparent 2px 6px),radial-gradient(ellipse at 50% 50%,#ead8b3,#cfb78d);border:7px double #67452d;color:#4d3423;box-shadow:inset 0 0 0 2px rgba(255,247,220,.5)}
+.pb-frame-mini.wanted::before{content:"★ REWARD ★";position:absolute;right:4px;top:32px;padding:3px 4px;border:1px solid #a43f32;color:#a43f32;background:transparent;font:900 6px Georgia,serif;transform:rotate(9deg)}
+.pb-frame-mini.wanted .pb-mini-masthead{font:1000 22px Georgia,serif;letter-spacing:.15em;text-shadow:1px 1px #f5e7c9}
+.pb-frame-mini.wanted .pb-mini-sub{border-block:2px solid #67452d;padding:3px 0;font:900 6px Georgia,serif}
+.pb-frame-mini.wanted .pb-mini-photos i{border:3px double #68452d;filter:sepia(.7);background:linear-gradient(135deg,#b7a185,#e5d2ad)}
+.pb-frame-mini.comic{position:relative;background-color:#ffe95d;background-image:radial-gradient(#dcb82e 1px,transparent 1.5px);background-size:7px 7px;border:5px solid #171717;box-shadow:4px 4px 0 #238db7}
+.pb-frame-mini.comic::before{content:"POW!";position:absolute;left:3px;top:36px;padding:4px;background:#4fc2e5;border:2px solid #171717;color:#171717;font:1000 9px Impact,Arial,sans-serif;transform:rotate(-12deg)}
+.pb-frame-mini.comic::after{content:"WOW!";position:absolute;right:3px;bottom:25px;padding:4px;background:#f04b41;border:2px solid #171717;color:#fff;font:1000 8px Impact,Arial,sans-serif;transform:rotate(10deg)}
+.pb-frame-mini.comic .pb-mini-masthead{background:#e83e35;color:#fff;padding:4px 2px;border:3px solid #171717;font:1000 14px Impact,Arial,sans-serif;transform:rotate(-2deg)}
+.pb-frame-mini.comic .pb-mini-photos i{border:3px solid #171717;border-radius:0;box-shadow:3px 3px 0 #238db7}
+.pb-frame-mini.kawaii{position:relative;background-color:#fff2f6;background-image:radial-gradient(rgba(235,160,190,.28) 1px,transparent 1.5px);background-size:10px 10px;border:4px solid #efb5ca;border-radius:18px;color:#875d78}
+.pb-frame-mini.kawaii::before{content:"ʕ•ᴥ•ʔ";position:absolute;top:30px;left:4px;font-size:18px;transform:rotate(-9deg)}
+.pb-frame-mini.kawaii::after{content:"♡ ✿ ♡";position:absolute;right:3px;bottom:23px;color:#d98cae;font-size:13px;transform:rotate(8deg)}
+.pb-frame-mini.kawaii .pb-mini-masthead{font:1000 13px "Trebuchet MS",sans-serif;color:#bd7295;text-shadow:1px 2px #fff}
+.pb-frame-mini.kawaii .pb-mini-photos i{border:2px solid #fff;border-radius:9px;box-shadow:0 2px 0 #e9b6cb}
+.pb-frame-mini.doodle{position:relative;background-image:radial-gradient(#a4aa9b 1px,transparent 1.5px);background-size:12px 12px}
+.pb-frame-mini.doodle::before{content:"✿";position:absolute;left:4px;top:36px;color:#d988a7;font-size:19px;transform:rotate(-15deg)}
+.pb-frame-mini.doodle::after{content:"♡";position:absolute;right:5px;bottom:23px;color:#d988a7;font-size:18px;transform:rotate(12deg)}
+.pb-sticker-picker{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 13px}
+.pb-sticker-picker button{display:grid;place-items:center;min-width:38px;min-height:38px;padding:4px 7px;border:1px solid #eee0ec;border-radius:12px;background:#fff;color:#715d70;font:24px/1 "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;cursor:pointer;transition:transform .15s,border-color .15s}
+.pb-sticker-picker button:hover{transform:translateY(-2px) scale(1.04);border-color:#d59ab9}
+.pb-photo-card.wanted{clip-path:polygon(1% 0,7% 1%,14% 0,21% 1%,28% 0,35% 1%,42% 0,49% 1%,56% 0,63% 1%,70% 0,77% 1%,84% 0,91% 1%,99% 0,100% 10%,99% 19%,100% 28%,99% 37%,100% 46%,99% 55%,100% 64%,99% 73%,100% 82%,99% 91%,100% 100%,91% 99%,82% 100%,73% 99%,64% 100%,55% 99%,46% 100%,37% 99%,28% 100%,19% 99%,10% 100%,0 99%,1% 90%,0 81%,1% 72%,0 63%,1% 54%,0 45%,1% 36%,0 27%,1% 18%,0 9%)}
+
+
+/* Diri. Playroom Date v0.3 — direct manipulation on the photo preview. */
+.pb-strip,.pb-couple-strip{touch-action:none;overscroll-behavior:contain}
+.pb-deco,.pb-shared-element{touch-action:none;cursor:grab;-webkit-tap-highlight-color:transparent}
+.pb-element-remove{position:absolute;top:-.72em;right:-.78em;z-index:20;display:none;place-items:center;width:25px;height:25px;padding:0;border:1px solid rgba(151,76,112,.28);border-radius:50%;background:rgba(255,255,255,.96);box-shadow:0 2px 7px rgba(42,25,37,.18);color:#994d70;font:700 16px/1 Arial,sans-serif;text-shadow:none;cursor:pointer;touch-action:manipulation;pointer-events:auto}
+.pb-deco.selected .pb-element-remove,.pb-shared-element.selected .pb-element-remove{display:grid}
+.pb-deco.selected,.pb-shared-element.selected{outline:1.5px dashed rgba(199,125,165,.8)!important;outline-offset:8px}
+.pb-deco.dragging,.pb-shared-element.dragging{cursor:grabbing}
+@media(hover:hover){.pb-element-remove{opacity:.78}.pb-element-remove:hover{opacity:1;transform:scale(1.08)}}
+
+.pb-element-resize{position:absolute;right:-.78em;bottom:-.78em;z-index:20;display:none;place-items:center;width:32px;height:32px;padding:0;border:1px solid rgba(151,76,112,.28);border-radius:50%;background:rgba(255,255,255,.96);box-shadow:0 2px 7px rgba(42,25,37,.18);color:#994d70;font:700 20px/1 Arial,sans-serif;text-shadow:none;cursor:nwse-resize;touch-action:none;pointer-events:auto}
+.pb-deco.selected .pb-element-resize,.pb-shared-element.selected .pb-element-resize{display:grid}

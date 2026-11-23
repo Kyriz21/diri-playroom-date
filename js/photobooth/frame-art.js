@@ -73,6 +73,59 @@ function drawPaperNoise(ctx, width, height, color = '#745d43') {
   ctx.restore();
 }
 
+function burst(ctx, x, y, outer, inner, fill, stroke = '#231d20', points = 12) {
+  ctx.save(); ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const angle = -Math.PI / 2 + i * Math.PI / points;
+    const radius = i % 2 ? inner : outer;
+    const px = x + Math.cos(angle) * radius, py = y + Math.sin(angle) * radius;
+    if (!i) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(2, outer * .055); ctx.stroke(); }
+  ctx.restore();
+}
+
+function drawBear(ctx, x, y, size, fur, cheek = '#ef9db4') {
+  ctx.save();
+  circle(ctx, x - size * .34, y - size * .34, size * .23, fur, '#654f50', Math.max(2, size * .035));
+  circle(ctx, x + size * .34, y - size * .34, size * .23, fur, '#654f50', Math.max(2, size * .035));
+  circle(ctx, x, y, size * .48, fur, '#654f50', Math.max(2, size * .035));
+  circle(ctx, x - size * .17, y - size * .02, size * .045, '#382e35');
+  circle(ctx, x + size * .17, y - size * .02, size * .045, '#382e35');
+  circle(ctx, x - size * .27, y + size * .16, size * .09, cheek);
+  circle(ctx, x + size * .27, y + size * .16, size * .09, cheek);
+  ctx.strokeStyle = '#654f50'; ctx.lineWidth = Math.max(2, size * .025); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x - size * .09, y + size * .18); ctx.quadraticCurveTo(x, y + size * .29, x + size * .09, y + size * .18); ctx.stroke();
+  ctx.restore();
+}
+
+function drawComicBubble(ctx, x, y, width, height, text, fill, ink, rotate = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rotate);
+  ctx.fillStyle = fill; ctx.strokeStyle = ink; ctx.lineWidth = Math.max(4, width * .025);
+  ctx.beginPath(); ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-width * .16, height * .34); ctx.lineTo(-width * .27, height * .54); ctx.lineTo(-width * .02, height * .37); ctx.closePath(); ctx.fill(); ctx.stroke();
+  label(ctx, text, 0, 0, height * .34, ink, 'Arial', 'center', '900');
+  ctx.restore();
+}
+
+function drawLeaf(ctx, x, y, size, angle, color) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(size * .55, -size * .65, size * 1.1, -size * .5, size, 0); ctx.bezierCurveTo(size * .65, size * .55, size * .2, size * .42, 0, 0); ctx.fill();
+  ctx.strokeStyle = '#647b60'; ctx.lineWidth = Math.max(1, size * .045); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(size * .88, 0); ctx.stroke(); ctx.restore();
+}
+
+function drawJaggedFrame(ctx, x, y, width, height, color, lineWidth = 12, seed = 0) {
+  const step = Math.max(18, Math.min(width, height) * .06);
+  const points = [];
+  for (let px = 0; px <= width; px += step) points.push([x + px, y + ((Math.floor(px / step) + seed) % 2 ? -lineWidth * .22 : lineWidth * .22)]);
+  for (let py = 0; py <= height; py += step) points.push([x + width + ((Math.floor(py / step) + seed) % 2 ? -lineWidth * .22 : lineWidth * .22), y + py]);
+  for (let px = width; px >= 0; px -= step) points.push([x + px, y + height + ((Math.floor(px / step) + seed) % 2 ? -lineWidth * .22 : lineWidth * .22)]);
+  for (let py = height; py >= 0; py -= step) points.push([x + ((Math.floor(py / step) + seed) % 2 ? -lineWidth * .22 : lineWidth * .22), y + py]);
+  ctx.save(); ctx.beginPath(); points.forEach(([px, py], index) => index ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.closePath();
+  ctx.strokeStyle = color; ctx.lineWidth = lineWidth; ctx.lineJoin = 'round'; ctx.stroke(); ctx.restore();
+}
+
 export function drawFrameBackground(ctx, frame, width, height, couple = false) {
   const [id, name, bg, ink, theme, accent] = frame;
   ctx.save(); ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
@@ -80,34 +133,58 @@ export function drawFrameBackground(ctx, frame, width, height, couple = false) {
   switch (theme) {
     case 'newspaper': {
       drawPaperNoise(ctx, width, height, ink);
-      ctx.strokeStyle = ink; ctx.lineWidth = 8; ctx.strokeRect(edge, edge, width - edge * 2, height - edge * 2);
+      ctx.strokeStyle = ink; ctx.lineWidth = 7; ctx.strokeRect(edge, edge, width - edge * 2, height - edge * 2);
       ctx.lineWidth = 2; ctx.strokeRect(edge + 14, edge + 14, width - (edge + 14) * 2, height - (edge + 14) * 2);
-      label(ctx, 'KABAR KITA', width / 2, 92, width * 0.085, ink, 'Georgia', 'center', 'bold');
-      line(ctx, edge + 28, 148, width - edge - 28, 148, ink, 5);
-      label(ctx, 'EDISI KHUSUS  •  KISAH DUA HATI', width / 2, 180, width * 0.025, ink, 'Georgia', 'center', 'bold');
-      line(ctx, edge + 28, 207, width - edge - 28, 207, ink, 2);
-      label(ctx, 'KABAR BAIK: KITA BERTEMU DI SINI', width / 2, height - 92, width * 0.031, accent, 'Georgia', 'center', 'bold');
-      label(ctx, 'BERITA UTAMA SEPANJANG MASA', width / 2, height - 48, width * 0.019, ink);
+      label(ctx, 'THE DAILY D I R I', width / 2, 66, width * 0.027, ink, 'Georgia', 'center', 'bold');
+      line(ctx, edge + 28, 94, width - edge - 28, 94, ink, 2);
+      label(ctx, 'THE LOVE TIMES', width / 2, 145, width * 0.085, ink, 'Georgia', 'center', 'bold');
+      line(ctx, edge + 28, 190, width - edge - 28, 190, ink, 5);
+      label(ctx, 'EDISI SPESIAL  •  KISAH DUA HATI  •  VOL. 01', width / 2, 220, width * 0.023, ink, 'Georgia', 'center', 'bold');
+      line(ctx, edge + 28, 246, width - edge - 28, 246, ink, 2);
+      label(ctx, 'EXTRA! EXTRA!', width * .19, height - 104, width * .032, accent, 'Georgia', 'center', 'bold');
+      label(ctx, 'KABAR BAIK: KITA BERTEMU DI SINI', width / 2, height - 70, width * 0.029, ink, 'Georgia', 'center', 'bold');
+      label(ctx, 'BERITA UTAMA SEPANJANG MASA  •  CETAKAN KENANGAN', width / 2, height - 39, width * 0.017, ink);
+      // Newspaper column rules and tiny classified-style sidebars.
+      line(ctx, edge + 28, 270, edge + 28, height - 285, ink, 1);
+      line(ctx, width - edge - 28, 270, width - edge - 28, height - 285, ink, 1);
+      label(ctx, '♡', edge + 42, height * .53, width * .05, accent, 'Georgia', 'center', 'bold');
+      label(ctx, '♥', width - edge - 42, height * .68, width * .05, accent, 'Georgia', 'center', 'bold');
       break;
     }
     case 'wanted': {
       drawPaperNoise(ctx, width, height, '#76502f');
-      ctx.strokeStyle = '#71492e'; ctx.lineWidth = 18; ctx.strokeRect(24, 24, width - 48, height - 48);
-      ctx.strokeStyle = '#9c7046'; ctx.lineWidth = 4; ctx.strokeRect(48, 48, width - 96, height - 96);
-      label(ctx, 'DICARI', width / 2, 88, width * 0.095, ink, 'Georgia', 'center', 'bold');
-      label(ctx, 'HILANG KARENA MENCURI HATI', width / 2, 152, width * 0.028, ink, 'Georgia', 'center', 'bold');
-      star(ctx, width * .16, 90, 20, accent); star(ctx, width * .84, 90, 20, accent);
-      label(ctx, 'HADIAH:', width / 2, height - 116, width * 0.035, ink, 'Georgia', 'center', 'bold');
-      label(ctx, 'SATU PELUKAN TANPA BATAS', width / 2, height - 67, width * 0.04, accent, 'Georgia', 'center', 'bold');
+      // A printed wanted poster with an inked red seal and paper fibres.
+      ctx.strokeStyle = '#71492e'; ctx.lineWidth = 20; ctx.strokeRect(24, 24, width - 48, height - 48);
+      ctx.strokeStyle = '#9c7046'; ctx.lineWidth = 4; ctx.strokeRect(52, 52, width - 104, height - 104);
+      label(ctx, 'WANTED', width / 2, 73, width * .035, '#873c30', 'Georgia', 'center', 'bold');
+      line(ctx, width * .19, 101, width * .81, 101, '#71492e', 3);
+      label(ctx, 'DICARI', width / 2, 150, width * 0.105, ink, 'Georgia', 'center', 'bold');
+      label(ctx, 'HILANG KARENA MENCURI HATI', width / 2, 200, width * 0.027, ink, 'Georgia', 'center', 'bold');
+      burst(ctx, width * .12, 151, width * .047, width * .025, '#cda85f', '#71492e', 8);
+      burst(ctx, width * .88, 151, width * .047, width * .025, '#cda85f', '#71492e', 8);
+      ctx.save(); ctx.translate(width * .82, 214); ctx.rotate(-.13);
+      ctx.strokeStyle = '#a43f32'; ctx.lineWidth = 6; ctx.strokeRect(-width * .12, -22, width * .24, 44);
+      label(ctx, 'REWARD', 0, -2, width * .026, '#a43f32', 'Georgia', 'center', 'bold');
+      label(ctx, '♡', 0, 17, width * .018, '#a43f32', 'Georgia', 'center', 'bold');
+      ctx.restore();
+      line(ctx, width * .2, height - 154, width * .8, height - 154, '#71492e', 3);
+      label(ctx, 'HADIAH BAGI YANG MENEMUKAN:', width / 2, height - 119, width * 0.024, ink, 'Georgia', 'center', 'bold');
+      label(ctx, 'SATU PELUKAN TANPA BATAS', width / 2, height - 72, width * 0.039, '#9b493a', 'Georgia', 'center', 'bold');
+      label(ctx, 'KASUS #D-014  •  TERAKHIR TERLIHAT DI HATI', width / 2, height - 40, width * 0.018, ink);
       break;
     }
     case 'comic': {
       ctx.fillStyle = '#fff4bf'; ctx.fillRect(20, 20, width - 40, height - 40);
-      for (let r = 0; r < 14; r++) for (let c = 0; c < 8; c++) circle(ctx, 30 + c * (width / 8), 30 + r * (height / 14), 4, '#e8bf33');
-      rounded(ctx, width * .18, 38, width * .64, 112, 18, accent, '#171717', 9);
-      label(ctx, 'KISAH KITA!', width / 2, 94, width * .064, '#fff', 'Impact, sans-serif', 'center', 'bold');
+      for (let r = 0; r < 18; r++) for (let c = 0; c < 11; c++) circle(ctx, 30 + c * (width / 11), 30 + r * (height / 18), 3 + (c % 3), '#e8bf33');
+      burst(ctx, width * .16, 111, 82, 48, '#38a9d6', '#171717', 13);
+      label(ctx, 'WOW!', width * .16, 111, width * .034, '#171717', 'Arial', 'center', '900');
+      rounded(ctx, width * .27, 39, width * .46, 115, 22, '#e53935', '#171717', 10);
+      label(ctx, 'OUR STORY!', width / 2, 95, width * .062, '#fff', 'Impact, sans-serif', 'center', 'bold');
+      drawComicBubble(ctx, width * .82, 114, width * .24, 88, 'LOVE!', '#fff', '#171717', .12);
+      line(ctx, 45, 180, width - 45, 180, '#171717', 7);
       label(ctx, 'DUA TOKOH  •  SATU CERITA  •  BANYAK TAWA', width / 2, height - 70, width * .025, ink, 'Arial', 'center', 'bold');
-      star(ctx, width * .12, height - 95, 30, '#f6b51b'); star(ctx, width * .88, height - 95, 30, '#38a9d6');
+      burst(ctx, width * .13, height - 92, 54, 28, '#f6b51b', '#171717', 10);
+      burst(ctx, width * .87, height - 92, 54, 28, '#38a9d6', '#171717', 10);
       break;
     }
     case 'cinema': {
@@ -161,12 +238,11 @@ export function drawFrameBackground(ctx, frame, width, height, couple = false) {
     }
     case 'kawaii': {
       rounded(ctx, 18, 18, width - 36, height - 36, 34, '#fff8fa', '#f0b7ca', 12);
-      label(ctx, 'CUTE LITTLE US', width / 2, 86, width * .057, ink, 'Arial', 'center', 'bold');
-      // Original bear-face doodles, not characters from an existing franchise.
-      for (const x of [width * .16, width * .84]) {
-        circle(ctx, x, 84, 24, '#d6b69e'); circle(ctx, x - 16, 66, 10, '#d6b69e'); circle(ctx, x + 16, 66, 10, '#d6b69e');
-        circle(ctx, x - 7, 84, 3, '#493d42'); circle(ctx, x + 7, 84, 3, '#493d42');
-      }
+      label(ctx, 'A LITTLE BIT OF CUTE', width / 2, 62, width * .025, accent, 'Arial', 'center', 'bold');
+      label(ctx, 'CUTE LITTLE US', width / 2, 122, width * .061, ink, 'Arial', 'center', 'bold');
+      drawBear(ctx, width * .13, 117, 62, '#d9b99f'); drawBear(ctx, width * .87, 117, 62, '#c8b6e6', '#efb1c8');
+      heart(ctx, width * .5, 72, 28, '#f2a4c0');
+      star(ctx, width * .27, 157, 17, '#f2c85f'); star(ctx, width * .73, 157, 17, '#91c9bd');
       label(ctx, '♡  peluk jauh, dekat di hati  ♡', width / 2, height - 68, width * .028, accent, 'Georgia');
       break;
     }
@@ -229,15 +305,33 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
   const [, , , ink, theme, accent] = frame;
   ctx.save();
   switch (theme) {
-    case 'newspaper':
+    case 'newspaper': {
+      ctx.fillStyle = '#f8f3e6'; ctx.fillRect(x - 8, y - 8, width + 16, height + 16);
       ctx.strokeStyle = ink; ctx.lineWidth = 7; ctx.strokeRect(x - 6, y - 6, width + 12, height + 12);
-      ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.strokeRect(x + 5, y + 5, width - 10, height - 10); break;
-    case 'wanted':
-      ctx.strokeStyle = '#68452d'; ctx.lineWidth = 16; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16);
-      ctx.strokeStyle = '#c59a63'; ctx.lineWidth = 4; ctx.strokeRect(x + 6, y + 6, width - 12, height - 12); break;
-    case 'comic':
-      ctx.fillStyle = accent; ctx.fillRect(x - 12, y - 12, width + 24, height + 24);
-      ctx.strokeStyle = '#141414'; ctx.lineWidth = 13; ctx.strokeRect(x - 7, y - 7, width + 14, height + 14); break;
+      ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.strokeRect(x + 5, y + 5, width - 10, height - 10);
+      line(ctx, x + 12, y + height - 19, x + width - 12, y + height - 19, ink, 1);
+      label(ctx, `FOTO UTAMA  •  ${String(index + 1).padStart(2, '0')}`, x + width / 2, y + height + 21, Math.max(13, width * .025), ink, 'Georgia', 'center', 'bold');
+      break;
+    }
+    case 'wanted': {
+      ctx.fillStyle = '#f0dfb8'; ctx.fillRect(x - 12, y - 12, width + 24, height + 24);
+      drawJaggedFrame(ctx, x - 7, y - 7, width + 14, height + 14, '#68452d', 16, index);
+      ctx.strokeStyle = '#c59a63'; ctx.lineWidth = 4; ctx.strokeRect(x + 7, y + 7, width - 14, height - 14);
+      ctx.save(); ctx.translate(x + width - 26, y + 26); ctx.rotate(.17); ctx.fillStyle = '#a43f32';
+      ctx.beginPath(); ctx.arc(0, 0, Math.min(23, width * .07), 0, Math.PI * 2); ctx.fill();
+      label(ctx, '★', 0, 1, Math.min(29, width * .09), '#f7e8c9', 'Georgia', 'center', 'bold'); ctx.restore();
+      label(ctx, `TERSANGKA #${String(index + 1).padStart(2, '0')}`, x + width / 2, y + height + 25, Math.max(14, width * .026), '#8f3e32', 'Georgia', 'center', 'bold');
+      break;
+    }
+    case 'comic': {
+      ctx.save(); ctx.fillStyle = '#20202a'; ctx.fillRect(x - 15, y - 10, width + 23, height + 23); ctx.restore();
+      ctx.fillStyle = accent; ctx.fillRect(x - 9, y - 9, width + 18, height + 18);
+      ctx.strokeStyle = '#141414'; ctx.lineWidth = 13; ctx.strokeRect(x - 7, y - 7, width + 14, height + 14);
+      burst(ctx, x + 22, y + 22, Math.min(29, width * .08), Math.min(16, width * .045), '#fff', '#141414', 8);
+      burst(ctx, x + width - 22, y + height - 22, Math.min(29, width * .08), Math.min(16, width * .045), '#fff', '#141414', 8);
+      label(ctx, ['POW!','WOW!','LOVE!','YAY!'][index % 4], x + width / 2, y + height + 25, Math.max(14, width * .04), '#171717', 'Arial', 'center', '900');
+      break;
+    }
     case 'cinema':
       ctx.strokeStyle = '#d7b46e'; ctx.lineWidth = 13; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16);
       ctx.strokeStyle = '#fff0ce'; ctx.lineWidth = 3; ctx.strokeRect(x + 5, y + 5, width - 10, height - 10); break;
@@ -252,8 +346,11 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
       ctx.fillStyle = '#fffdf7'; ctx.fillRect(x - 9, y - 9, width + 18, height + 18);
       ctx.strokeStyle = '#9aae8b'; ctx.lineWidth = 6; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16); break;
     case 'kawaii':
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 24; ctx.strokeRect(x - 12, y - 12, width + 24, height + 24);
-      ctx.strokeStyle = accent; ctx.lineWidth = 6; ctx.strokeRect(x - 5, y - 5, width + 10, height + 10); break;
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.roundRect(x - 13, y - 13, width + 26, height + 26, 25); ctx.fill();
+      ctx.strokeStyle = accent; ctx.lineWidth = 7; ctx.stroke(); ctx.restore();
+      drawBear(ctx, x + 25, y + 22, Math.min(38, width * .11), '#d9b99f');
+      heart(ctx, x + width - 22, y + height - 18, Math.min(24, width * .07), '#ed9fbd');
+      break;
     case 'magazine':
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 26; ctx.strokeRect(x - 13, y - 13, width + 26, height + 26);
       ctx.strokeStyle = accent; ctx.lineWidth = 5; ctx.strokeRect(x - 5, y - 5, width + 10, height + 10); break;
@@ -280,5 +377,46 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
     star(ctx, x + 22, y + 22, 18, '#fff', 5); star(ctx, x + width - 22, y + height - 22, 18, '#fff', 5);
   }
   if (theme === 'magazine') label(ctx, `SHOT ${String(index + 1).padStart(2, '0')}`, x + width - 10, y + height + 37, 22, accent, 'Arial', 'right', 'bold');
+  if (!['newspaper', 'wanted', 'comic', 'magazine'].includes(theme)) {
+    const n = String(index + 1).padStart(2, '0');
+    const caption = theme === 'kawaii' ? ['CUTIE 01','HAPPY FACE','SWEET MOMENT','BESTIES'][index % 4]
+      : theme === 'film' ? `FRAME ${n} · 36 EXP`
+      : theme === 'postcard' ? `POSTMARK ${n}`
+      : theme === 'doodle' ? `DOODLE SHOT ${n}`
+      : `SHOT ${n}`;
+    const captionColor = theme === 'film' || theme === 'arcade' ? '#f1dfbd' : ink;
+    label(ctx, caption, x + width / 2, y + height + 25, Math.max(12, width * .022), captionColor, theme === 'arcade' || theme === 'film' ? 'Courier New' : 'Arial', 'center', 'bold');
+  }
+  ctx.restore();
+}
+
+export function drawFrameOverlay(ctx, frame, width, height, couple = false) {
+  const [id, , , ink, theme, accent] = frame;
+  const leftX = width * .045, rightX = width * .955;
+  // Keep canvas ornaments aligned with the CSS preview positions per theme.
+  const ornamentPositions = {
+    wanted: [.43, .64], comic: [.28, .77], kawaii: [.34, .75]
+  };
+  const [upperRatio, lowerRatio] = ornamentPositions[theme] || [.21, .86];
+  const upperY = height * upperRatio, lowerY = height * lowerRatio;
+  ctx.save();
+  if (theme === 'wanted') {
+    star(ctx, leftX, upperY, width * .035, '#a43f32', 8, width * .019);
+    label(ctx, 'REWARD', rightX, lowerY, width * .024, '#a43f32', 'Georgia', 'center', 'bold');
+  } else if (theme === 'comic') {
+    burst(ctx, leftX, upperY, width * .043, width * .024, '#55c4e4', '#171717', 9);
+    label(ctx, 'POW!', leftX, upperY, width * .027, '#171717', 'Arial', 'center', '900');
+    burst(ctx, rightX, lowerY, width * .04, width * .022, '#f45e55', '#171717', 9);
+    label(ctx, 'WOW!', rightX, lowerY, width * .025, '#fff', 'Arial', 'center', '900');
+  } else if (theme === 'kawaii') {
+    heart(ctx, leftX, upperY, width * .05, '#eea8c5');
+    star(ctx, rightX, lowerY, width * .035, '#d5a4df');
+  } else if (theme === 'newspaper') {
+    label(ctx, '✦', leftX, upperY, width * .04, accent, 'Georgia', 'center', 'bold');
+    label(ctx, '♡', rightX, lowerY, width * .04, accent, 'Georgia', 'center', 'bold');
+  } else {
+    label(ctx, theme === 'botanical' ? '❀' : theme === 'birthday' ? '✷' : '✦', leftX, upperY, width * .043, accent, 'Georgia', 'center', 'bold');
+    label(ctx, theme === 'loveletter' ? '♡' : theme === 'postcard' ? '✉' : '♡', rightX, lowerY, width * .04, accent, 'Georgia', 'center', 'bold');
+  }
   ctx.restore();
 }
