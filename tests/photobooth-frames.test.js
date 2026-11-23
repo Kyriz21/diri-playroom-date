@@ -214,3 +214,21 @@ test('canvas regression test memeriksa foto sintetis sebelum dan sesudah bingkai
   assert.match(fixture, /getImageData\(slot\.x\+slot\.w\*\.75/);
   assert.match(fixture, /document\.body\.dataset\.done/);
 });
+
+test('editor Foto Sendiri merender thumbnail dari sumber foto yang dinormalisasi', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source, /function photoPreviewSource\(photo\)/);
+  assert.match(source, /photoPreviewSource\(soloPhotos\[index\]\)/);
+  assert.match(source, /class="pb-mini-photo"/);
+  assert.match(source, /loading="eager" decoding="sync"/);
+  assert.match(source, /Hasil foto tidak terbaca/);
+});
+
+test('pengambilan kamera menunggu frame video terdekode sebelum menyimpan foto', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source, /requestVideoFrameCallback/);
+  assert.match(source, /readyState < HTMLMediaElement\.HAVE_CURRENT_DATA/);
+  assert.match(source, /Foto berhasil diambil tetapi gambarnya kosong/);
+});

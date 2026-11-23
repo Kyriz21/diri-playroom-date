@@ -91,3 +91,11 @@
 - Alur mode pribadi: pilih bingkai → ambil empat foto → editor/hiasan → unduh.
 - Alur berpasangan: pilih bingkai bersama → masing-masing ambil empat foto → transfer dan pratinjau gabungan → editor bersama → persetujuan → unduh/cetak.
 - Pengambilan foto standar mode berpasangan menggunakan kamera, bukan unggah empat foto dari galeri. Pemindahan manual tetap tersedia hanya sebagai fallback transfer ketika koneksi langsung gagal.
+
+
+## v0.8.0 — Perbaikan pratinjau empat foto
+- Normalisasi sumber foto untuk thumbnail editor Foto Sendiri (data URL, url, dataUrl, src, data).
+- Setiap slot editor menampilkan thumbnail atau pesan slot yang jelas; tidak lagi hanya menampilkan angka tanpa konteks.
+- Menambahkan gaya thumbnail khusus agar gambar tidak runtuh/tersembunyi pada layar kecil.
+- Pengambilan kamera menunggu frame video terdekode sebelum menyimpan hasil.
+- Memvalidasi hasil foto sebagai gambar yang benar sebelum slot diisi.

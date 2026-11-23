@@ -111,7 +111,7 @@ Katalog kini memiliki 18 tema, termasuk Dunia Mainan dan Polaroid Sosial. Dua de
 Katalog berisi 18 tema. Dua tambahan baru: **Dunia Mainan** (tema kartun ceria dengan maskot orisinal) dan **Polaroid Sosial** (kartu foto instan miring di atas latar kuning).
 
 
-## Photobooth flow in v0.7
+## Photobooth flow in v0.8
 - Solo: pilih bingkai, ambil empat foto dari kamera, masuk editor, tambahkan emoji/teks tanpa latar, lalu unduh/simpan.
 - Berdua: pilih bingkai dan pengaturan bersama, ambil empat foto per pemain, tinjau strip gabungan, tambahkan emoji/teks bersama, setujui hasil, lalu unduh/cetak.
 - Export menggambar foto terlebih dahulu dan hanya menggambar garis/ornamen bingkai setelahnya; area foto tidak boleh ditimpa bidang putih.

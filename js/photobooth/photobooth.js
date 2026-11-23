@@ -31,6 +31,16 @@ function loadImage(source) {
     image.src = source;
   });
 }
+function photoPreviewSource(photo) {
+  if (typeof photo === 'string') return photo;
+  if (photo && typeof photo === 'object') {
+    if (typeof photo.dataUrl === 'string') return photo.dataUrl;
+    if (typeof photo.url === 'string') return photo.url;
+    if (typeof photo.src === 'string') return photo.src;
+    if (typeof photo.data === 'string') return photo.data;
+  }
+  return '';
+}
 async function loadPhotoForExport(photo, label) {
   let source = typeof photo === 'string' ? photo : (photo?.url || photo?.dataUrl || photo?.src || '');
   let temporaryUrl = '';
@@ -319,9 +329,12 @@ export function mountPhotobooth(root, context) {
     const selected = frameById(soloFrame);
     const cssFilter = imageFilter(soloFilter, soloAdjust);
     const elements = soloElements.map(element => `<button type="button" class="pb-deco ${element.kind==='sticker'?'sticker':''} ${selectedSoloElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) scale(${clampElementScale(element.scale)})" data-pb="select-solo-element" data-element-id="${esc(element.id)}" data-drag-element="solo" aria-label="Pindahkan ${esc(element.text)}">${esc(element.text)}<span class="pb-element-remove" data-pb="delete-element" data-element-id="${esc(element.id)}" aria-label="Hapus hiasan" title="Hapus hiasan">×</span><span class="pb-element-resize" data-element-resize aria-label="Tarik untuk mengubah ukuran" title="Tarik untuk mengubah ukuran">↘</span></button>`).join('');
-    const photoCards = [0,1,2,3].map(index => soloPhotos[index]
-      ? `<figure class="pb-solo-photo pb-photo-card ${soloFrame}"><img src="${soloPhotos[index]}" style="filter:${cssFilter}" alt="Foto ${index+1}"><figcaption>${photoCaption(selected,index)}</figcaption></figure>`
-      : `<figure class="pb-solo-photo pb-photo-card empty ${soloFrame}"><span>FOTO ${String(index+1).padStart(2,'0')}</span><figcaption>${photoCaption(selected,index)}</figcaption></figure>`).join('');
+    const photoCards = [0,1,2,3].map(index => {
+      const source = photoPreviewSource(soloPhotos[index]);
+      return source
+        ? `<figure class="pb-solo-photo pb-photo-card ${soloFrame}"><img src="${esc(source)}" style="filter:${cssFilter}" alt="Foto ${index+1}" loading="eager" decoding="sync"><figcaption>${photoCaption(selected,index)}</figcaption></figure>`
+        : `<figure class="pb-solo-photo pb-photo-card empty ${soloFrame}"><span>Foto ${index+1} belum tersedia</span><figcaption>${photoCaption(selected,index)}</figcaption></figure>`;
+    }).join('');
     return `${renderFrameHeader(selected)}<div class="pb-frame-ornaments ${soloFrame}" aria-hidden="true"><span class="ornament-a">${selected[0]==='comic'?'POW!':selected[0]==='kawaii'?'♡':selected[0]==='wanted'?'★':'✦'}</span><span class="ornament-b">${selected[0]==='comic'?'WOW!':selected[0]==='kawaii'?'✿':selected[0]==='wanted'?'REWARD':'♡'}</span></div><div class="pb-solo-photos">${photoCards}</div>${renderFrameFooter(selected)}${elements}`;
   }
   async function renderGallery() {
@@ -389,7 +402,7 @@ export function mountPhotobooth(root, context) {
       return;
     }
     const complete = hasCompletePhotoSet(soloPhotos,4);
-    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${soloPhotos.map((photo,index)=>`<figure><img src="${photo}" alt="Foto ${index+1}"><figcaption>${index+1}</figcaption></figure>`).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Seret emoji atau teks langsung pada pratinjau untuk memindahkannya. Tarik pegangan sudut atau cubit untuk mengubah ukuran. Hiasan emoji tidak diberi kotak/latar tambahan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
+    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${[0,1,2,3].map(index=>{const source=photoPreviewSource(soloPhotos[index]);return `<figure class="pb-mini-photo">${source?`<img src="${esc(source)}" alt="Foto ${index+1}" loading="eager" decoding="sync">`:`<span class="pb-mini-missing">Foto ${index+1} belum tersedia</span>`}<figcaption>Foto ${index+1}</figcaption></figure>`;}).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Seret emoji atau teks langsung pada pratinjau untuk memindahkannya. Tarik pegangan sudut atau cubit untuk mengubah ukuran. Hiasan emoji tidak diberi kotak/latar tambahan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
     void renderGallery();
   }
 
@@ -414,14 +427,37 @@ export function mountPhotobooth(root, context) {
       await wait(1000);
     }
     if (countdown) countdown.textContent = '';
+    // Wait for a fresh decoded camera frame; videoWidth alone can be non-zero
+    // while the first frame is still blank on some mobile browsers.
+    const activeVideo = root.querySelector('#pb-video');
+    if (!activeVideo || activeVideo !== video || !stream || !stream.getVideoTracks().some(track => track.readyState === 'live')) {
+      throw new Error('Koneksi kamera berubah. Buka kamera kembali sebelum mengambil foto.');
+    }
+    if (activeVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Kamera belum mengirim gambar. Tunggu sebentar lalu coba lagi.')), 4000);
+        activeVideo.addEventListener('loadeddata', () => { clearTimeout(timeout); resolve(); }, { once:true });
+      });
+    }
+    if (typeof activeVideo.requestVideoFrameCallback === 'function') {
+      await new Promise(resolve => activeVideo.requestVideoFrameCallback(() => resolve()));
+    } else {
+      await wait(180);
+    }
+    if (!activeVideo.videoWidth || !activeVideo.videoHeight || activeVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      throw new Error('Pratinjau kamera belum siap. Coba buka kamera kembali.');
+    }
     const canvas = document.createElement('canvas');
-    canvas.width = Math.min(1600, video.videoWidth);
-    canvas.height = Math.round(canvas.width * video.videoHeight / video.videoWidth);
+    canvas.width = Math.min(1600, activeVideo.videoWidth);
+    canvas.height = Math.round(canvas.width * activeVideo.videoHeight / activeVideo.videoWidth);
     const ctx = canvas.getContext('2d');
-    ctx.translate(canvas.width,0); ctx.scale(-1,1); ctx.drawImage(video,0,0,canvas.width,canvas.height);
+    ctx.translate(canvas.width,0); ctx.scale(-1,1); ctx.drawImage(activeVideo,0,0,canvas.width,canvas.height);
     const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg',0.88));
     if (!blob) throw new Error('Foto tidak berhasil dibuat.');
     const data = await readDataUrl(blob);
+    if (typeof data !== 'string' || !data.startsWith('data:image/')) throw new Error('Hasil foto tidak terbaca. Silakan ambil ulang.');
+    const capturedImage = await loadImage(data);
+    if (!capturedImage.naturalWidth || !capturedImage.naturalHeight) throw new Error('Foto berhasil diambil tetapi gambarnya kosong. Silakan ulangi.');
     const nextIndex = Number.isInteger(index) && index >= 0 ? index : (targetMode === 'solo' ? nextPhotoSlot(soloPhotos) : nextPhotoSlot(localPhotos));
     if (nextIndex < 0 || nextIndex >= 4) throw new Error('Keempat slot foto sudah terisi. Pilih foto yang ingin diulangi.');
     if (targetMode === 'solo') {
