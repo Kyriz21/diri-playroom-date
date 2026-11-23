@@ -31,6 +31,29 @@ function loadImage(source) {
     image.src = source;
   });
 }
+async function loadPhotoForExport(photo, label) {
+  let source = typeof photo === 'string' ? photo : (photo?.url || photo?.dataUrl || photo?.src || '');
+  let temporaryUrl = '';
+  if (!source && photo instanceof Blob) {
+    temporaryUrl = URL.createObjectURL(photo);
+    source = temporaryUrl;
+  } else if (!source && photo?.blob instanceof Blob) {
+    temporaryUrl = URL.createObjectURL(photo.blob);
+    source = temporaryUrl;
+  }
+  if (typeof source !== 'string' || !source) {
+    throw new Error(`${label} tidak memiliki sumber gambar yang dapat diekspor. Ambil ulang foto tersebut.`);
+  }
+  try {
+    const image = await loadImage(source);
+    if (!(image.naturalWidth > 0 && image.naturalHeight > 0)) {
+      throw new Error(`${label} berhasil dipilih tetapi tidak memiliki ukuran gambar yang valid.`);
+    }
+    return image;
+  } finally {
+    if (temporaryUrl) URL.revokeObjectURL(temporaryUrl);
+  }
+}
 async function hashBlob(blob) {
   const bytes = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
   return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');
@@ -82,7 +105,7 @@ export function mountPhotobooth(root, context) {
   let wheelSaveTimer = null;
   let pendingWheelScale = null;
   let soloPhotos = [];
-  let soloPhase = 'capture'; // Capture four photos first, then open the editor.
+  let soloPhase = 'frame'; // Choose a frame first, then capture four photos, then edit.
   let soloElements = [];
   let soloFrame = 'korean';
   let soloFilter = 'Asli';
@@ -354,14 +377,19 @@ export function mountPhotobooth(root, context) {
   }
   function renderSolo() {
     mode = 'solo';
+    if (soloPhase === 'frame') {
+      root.innerHTML = `<div class="photo-app">${gameTop('Pilih bingkai fotomu','Pilih desain strip terlebih dahulu. Setelah itu buka kamera dan ambil empat foto.','SESI PRIBADI · LANGKAH 1 DARI 3')}<section class="panel photo-editor-card"><h2>Katalog bingkai</h2>${frameCatalog(soloFrame)}<div class="photo-controls"><button class="button button-primary" data-pb="solo-start-capture">${hasCompletePhotoSet(soloPhotos,4)?'Lanjut ke editor':'Lanjut ke pengambilan foto'}</button></div></section></div>`;
+      return;
+    }
     if (soloPhase === 'capture') {
       const count = soloPhotos.filter(Boolean).length;
-      root.innerHTML = `<div class="photo-app">${gameTop('Fotobooth Sendiri','Ambil empat foto terlebih dahulu, seperti sesi berdua. Setelah itu kamu bisa menghias dan memilih bingkai.','SESI PRIBADI · TERSIMPAN DI PERANGKAT')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Empat momen untuk strip fotomu</b><small>Buka kamera, lalu ambil foto satu per satu.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture" ${stream && nextPhotoSlot(soloPhotos)>=0?'':'disabled'}>Ambil foto berikutnya</button></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${soloPhotos[index]?`<img src="${soloPhotos[index]}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="solo-retake-slot" data-index="${index}">Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${count}/4 foto sudah diambil. Kamu bisa mengulang foto mana pun sebelum lanjut.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-continue" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Lanjut ke editor</button><button class="button button-quiet" data-pb="solo-reset">Ulangi semua foto</button></div></section></div></div>`;
+      const selectedFrame = frameById(soloFrame);
+      root.innerHTML = `<div class="photo-app">${gameTop('Ambil empat foto','Bingkai sudah dipilih. Ambil foto satu per satu, lalu periksa hasilnya sebelum masuk editor.','SESI PRIBADI · LANGKAH 2 DARI 3')}<div class="photo-layout"><section class="panel photo-camera-card"><p class="small-note">Bingkai pilihan: <strong>${esc(selectedFrame[1])}</strong> <button class="button button-small button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></p><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Empat momen untuk strip fotomu</b><small>Buka kamera, lalu ambil foto satu per satu.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture" ${stream && nextPhotoSlot(soloPhotos)>=0?'':'disabled'}>Ambil foto berikutnya</button></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${soloPhotos[index]?`<img src="${soloPhotos[index]}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="solo-retake-slot" data-index="${index}">Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${count}/4 foto sudah diambil. Kamu bisa mengulang foto mana pun sebelum lanjut.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-continue" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Lanjut ke editor</button><button class="button button-quiet" data-pb="solo-reset">Ulangi semua foto</button></div></section></div></div>`;
       if (stream) void attachCameraToCurrentVideo().catch(error => { if (error?.name !== 'AbortError') showToast(error.message, 'error'); });
       return;
     }
     const complete = hasCompletePhotoSet(soloPhotos,4);
-    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Pilih bingkai, filter, dan hiasan. Semua perubahan terlihat langsung pada pratinjau.','SESI PRIBADI · EDITOR FOTO')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${soloPhotos.map((photo,index)=>`<figure><img src="${photo}" alt="Foto ${index+1}"><figcaption>${index+1}</figcaption></figure>`).join('')}</div><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><h2>Pilih bingkai</h2>${frameCatalog(soloFrame)}<h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Atur langsung pada foto: seret bagian tengah hiasan untuk memindahkan, tarik pegangan ↘ di sudut untuk mengubah ukuran, atau cubit dengan dua jari di HP. Di komputer, roda mouse di atas hiasan juga dapat mengubah ukuran. Ketuk × untuk menghapus hiasan terpilih.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
+    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${soloPhotos.map((photo,index)=>`<figure><img src="${photo}" alt="Foto ${index+1}"><figcaption>${index+1}</figcaption></figure>`).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Seret emoji atau teks langsung pada pratinjau untuk memindahkannya. Tarik pegangan sudut atau cubit untuk mengubah ukuran. Hiasan emoji tidak diberi kotak/latar tambahan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
     void renderGallery();
   }
 
@@ -424,10 +452,14 @@ export function mountPhotobooth(root, context) {
   }
   async function downloadBlob(blob, filename) {
     if (!blob) throw new Error('Hasil export tidak dapat dibuat.');
-    const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    if (!(blob instanceof Blob) || blob.size === 0) throw new Error('File hasil unduhan kosong. Periksa foto lalu coba unduh kembali.');
+    const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.style.display='none';document.body.append(anchor);anchor.click();
+    setTimeout(()=>{anchor.remove();URL.revokeObjectURL(url);},10000);
   }
   async function renderStripBlob(photos, frameId, filter, values, elements, couple=false, mime='image/png') {
+    if (!Array.isArray(photos) || (couple ? !(photos[0]?.length === 4 && photos[1]?.length === 4 && [...photos[0], ...photos[1]].every(Boolean)) : !hasCompletePhotoSet(photos, 4))) {
+      throw new Error('Empat foto belum lengkap. Ambil atau pulihkan semua foto sebelum mengunduh.');
+    }
     const selected = frameById(frameId);
     const canvas = document.createElement('canvas');
     canvas.width = couple ? 1400 : 1000;
@@ -448,6 +480,7 @@ export function mountPhotobooth(root, context) {
       const sourceX = (image.width - cropW) / 2, sourceY = (image.height - cropH) / 2;
       ctx.drawImage(image, sourceX, sourceY, cropW, cropH, x, y, width, height);
     };
+    let drawnPhotoCount = 0;
     const drawPhotoSlot = (image, x, y, width, height, index) => {
       if (selected[4] === 'social') {
         // Tilt each white instant-photo card just like the browser preview.
@@ -461,18 +494,19 @@ export function mountPhotobooth(root, context) {
         ctx.filter = css; drawCover(image, -width / 2, -height / 2, width, height); ctx.restore();
         drawPhotoSlotBorder(ctx, selected, -width / 2, -height / 2, width, height, index);
         ctx.restore();
+        drawnPhotoCount += 1;
         return;
       }
       ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, y - 10, width + 20, height + 20);
       ctx.beginPath(); ctx.rect(x, y, width, height); ctx.clip(); ctx.filter = css; drawCover(image, x, y, width, height); ctx.restore();
       drawPhotoSlotBorder(ctx, selected, x, y, width, height, index);
+      drawnPhotoCount += 1;
     };
     if (couple) {
       for (let row = 0; row < 4; row++) {
         for (let column = 0; column < 2; column++) {
           const photo = photos[column]?.[row];
-          if (!photo?.url) continue;
-          const image = await loadImage(photo.url);
+          const image = await loadPhotoForExport(photo, `Foto ${row + 1} ${column === 0 ? 'Pembuat ruang' : 'Tamu'}`);
           const x = marginX + column * (slotW + gapX);
           const y = header + row * (slotH + gapY);
           drawPhotoSlot(image, x, y, slotW, slotH, row + column * 4);
@@ -481,11 +515,14 @@ export function mountPhotobooth(root, context) {
     } else {
       for (let index = 0; index < 4; index++) {
         const source = photos[index];
-        if (!source) continue;
-        const image = await loadImage(source);
+        const image = await loadPhotoForExport(source, `Foto ${index + 1}`);
         const x = marginX, y = header + index * (slotH + gapY);
         drawPhotoSlot(image, x, y, slotW, slotH, index);
       }
+    }
+    const expectedPhotoCount = couple ? 8 : 4;
+    if (drawnPhotoCount !== expectedPhotoCount) {
+      throw new Error(`Ekspor dibatalkan: hanya ${drawnPhotoCount} dari ${expectedPhotoCount} foto berhasil digambar. Jangan unduh frame kosong; ambil ulang foto yang bermasalah.`);
     }
     // The same floating theme ornaments shown in the browser preview are painted
     // over the photos in the exported image, keeping preview and print consistent.
@@ -507,7 +544,9 @@ export function mountPhotobooth(root, context) {
       ctx.fillStyle = element.color || selected[3]; ctx.fillText(text, x, y, canvas.width * .78); ctx.restore();
     });
     const type = mime === 'image/jpeg' ? 'image/jpeg' : 'image/png';
-    return await new Promise(resolve => canvas.toBlob(resolve, type, 0.92));
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, type, 0.92));
+    if (!blob || blob.size === 0) throw new Error('Gambar hasil tidak berhasil dibuat. Coba ulangi proses unduh.');
+    return blob;
   }
   async function saveSoloGaleri() {
     const blob=await renderStripBlob(soloPhotos,soloFrame,soloFilter,soloAdjust,soloElements,false,'image/jpeg');
@@ -528,7 +567,7 @@ export function mountPhotobooth(root, context) {
   function renderCapture() {
     const done=pState?.photosDone||{};const ready=hasCompletePhotoSet(localPhotos,4);
     const selectedFrame=frameById(pState?.frameId||'korean');
-    return `${gameTop('Ambil empat foto','Foto yang kamu ambil akan dipratinjau sebelum digabung dengan foto pasangan.','JEPRETAN MASING-MASING · HASIL BERSAMA')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Empat momen untuk strip bersama</b><small>Gunakan kamera atau pilih empat foto dari galeri.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture-couple" ${!done[role] && stream && nextPhotoSlot(localPhotos)>=0?'':'disabled'}>Ambil foto berikutnya</button><label class="button button-quiet ${done[role]?'disabled':''}" for="pb-couple-files">Pilih empat foto</label><input id="pb-couple-files" type="file" accept="image/*" multiple hidden ${done[role]?'disabled':''}></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${localPhotos[index]?`<img src="${localPhotos[index].url}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="couple-retake-slot" data-index="${index}" ${done[role]?'disabled':''}>Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${localPhotos.filter(Boolean).length}/4 foto siap di perangkat ini. Bingkai bersama: ${esc(selectedFrame[1])}.</p><div class="pb-own-preview"><strong>Pratinjau empat foto milikmu</strong><div class="pb-mini-strip">${[0,1,2,3].map(index=>localPhotos[index]?`<img src="${localPhotos[index].url}" alt="Pratinjau foto ${index+1}" style="filter:${imageFilter(sharedFilter(),sharedAdjustments())}">`:'<span>Foto belum ada</span>').join('')}</div></div><button class="button button-primary" data-pb="couple-photos-ready" ${ready?'':'disabled'}>${done[role]?'Batalkan konfirmasi foto':'Konfirmasi empat foto'}</button><p class="small-note">Status pasangan — Pembuat ruang: ${done.host?'4 foto siap':'sedang menyiapkan'} · Tamu: ${done.guest?'4 foto siap':'sedang menyiapkan'}.</p>${pState?.retakeSlot?.role===role?`<p class="room-alert">Ambil ulang foto nomor ${Number(pState.retakeSlot.index)+1}. Tiga foto lainnya tetap digunakan.</p>`:''}</section></div>`;
+    return `${gameTop('Ambil empat foto','Foto yang kamu ambil akan dipratinjau sebelum digabung dengan foto pasangan.','JEPRETAN MASING-MASING · HASIL BERSAMA')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Empat momen untuk strip bersama</b><small>Buka kamera dan ambil empat foto satu per satu, seperti mode sendiri.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture-couple" ${!done[role] && stream && nextPhotoSlot(localPhotos)>=0?'':'disabled'}>Ambil foto berikutnya</button></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${localPhotos[index]?`<img src="${localPhotos[index].url}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="couple-retake-slot" data-index="${index}" ${done[role]?'disabled':''}>Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${localPhotos.filter(Boolean).length}/4 foto siap di perangkat ini. Bingkai bersama: ${esc(selectedFrame[1])}.</p><div class="pb-own-preview"><strong>Pratinjau empat foto milikmu</strong><div class="pb-mini-strip">${[0,1,2,3].map(index=>localPhotos[index]?`<img src="${localPhotos[index].url}" alt="Pratinjau foto ${index+1}" style="filter:${imageFilter(sharedFilter(),sharedAdjustments())}">`:'<span>Foto belum ada</span>').join('')}</div></div><button class="button button-primary" data-pb="couple-photos-ready" ${ready?'':'disabled'}>${done[role]?'Batalkan konfirmasi foto':'Konfirmasi empat foto'}</button><p class="small-note">Status pasangan — Pembuat ruang: ${done.host?'4 foto siap':'sedang menyiapkan'} · Tamu: ${done.guest?'4 foto siap':'sedang menyiapkan'}.</p>${pState?.retakeSlot?.role===role?`<p class="room-alert">Ambil ulang foto nomor ${Number(pState.retakeSlot.index)+1}. Tiga foto lainnya tetap digunakan.</p>`:''}</section></div>`;
   }
   function renderManualTransfer() {
     const hashes=pState?.manualHashes||{};
@@ -1124,6 +1163,8 @@ export function mountPhotobooth(root, context) {
       if(action==='camera'){await openKamera();return;}
       if(action==='capture'){await captureFromKamera('solo',nextPhotoSlot(soloPhotos));return;}
       if(action==='capture-couple'){await captureFromKamera('couple',nextPhotoSlot(localPhotos));return;}
+      if(action==='solo-start-capture'){soloPhase=hasCompletePhotoSet(soloPhotos,4)?'editor':'capture';renderSolo();return;}
+      if(action==='solo-change-frame'){stopCamera();soloPhase='frame';renderSolo();return;}
       if(action==='solo-reset'){stopCamera();soloPhotos=[];soloElements=[];selectedSoloElementId=null;soloPhase='capture';renderSolo();return;}
       if(action==='solo-retake-slot'){const index=Number(button.dataset.index);if(index>=0&&index<4){soloPhotos[index]=null;soloPhase='capture';renderSolo();}return;}
       if(action==='solo-retake-all'){soloPhase='capture';renderSolo();return;}
@@ -1163,11 +1204,6 @@ export function mountPhotobooth(root, context) {
   async function onChange(event) {
     const element=event.target;
     try {
-      if(element.matches('#pb-couple-files')) {
-        const photos=await processImages(element.files,4);if(photos.length!==4)throw new Error('Pilih tepat empat foto.');
-        localPhotos=[];for(let index=0;index<4;index++)await addCouplePhoto(photos[index].blob,index,photos[index].name);
-        await mutate(state=>{state.photosDone=state.photosDone||{host:false,guest:false};state.photosDone[role]=false;});renderCouple();
-      }
       if(element.matches('[data-pb-manual]')) {
         const files=[...element.files].filter(file=>file.type.startsWith('image/')).slice(0,8);if(files.length!==8)throw new Error('Pemindahan Manual membutuhkan tepat delapan foto.');
         manualPhotos=await processImages(files,8);if(manualPhotos.length!==8)throw new Error('Pastikan kedelapan file merupakan gambar yang valid.');

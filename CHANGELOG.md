@@ -72,3 +72,22 @@
 - Menambahkan **Polaroid Sosial** dengan latar kuning, kartu foto putih bergaya instan yang miring bergantian, caption, serta ikon hati/simpan.
 - Pratinjau pribadi, berdua, katalog, dan hasil Canvas memakai identitas desain yang konsisten.
 - Tidak menggunakan karakter Toy Story, logo Instagram, atau aset pihak ketiga.
+
+
+## v0.7.0 — Perbaikan hasil unduhan dan alur Photobooth
+- Memperbaiki bug ekspor: beberapa fungsi bingkai (terutama Dunia Mainan dan Polaroid Sosial, juga Koran/Buronan/Komik/Film/Botani/Kawaii) sebelumnya menggambar bidang putih setelah foto, sehingga foto tertutup dan file hasil unduhan tampak kosong. Bingkai kini hanya menggambar tepi/ornamen di atas foto, bukan menutup area foto.
+- Menambahkan validasi empat foto sebelum ekspor; hasil Blob kosong sekarang ditolak dengan pesan yang jelas, bukan disimpan sebagai file kosong.
+- Memperkuat unduhan di browser mobile dengan menambahkan tautan unduh ke dokumen dan memberi waktu lebih lama sebelum URL sementara dilepas.
+- Menyamakan alur Foto Sendiri menjadi: pilih bingkai → ambil empat foto → editor emoji/teks → unduh atau simpan.
+- Fotobooth Berdua tetap mengikuti alur: pilih bingkai/pengaturan bersama → masing-masing mengambil empat foto → pratinjau gabungan → editor emoji/teks bersama → persetujuan → unduh/cetak.
+- Emoji/stiker tetap tanpa kotak latar; dapat dipindah dan diubah ukurannya langsung pada pratinjau.
+- Menambahkan tes regresi untuk mencegah bingkai menutupi foto dan memastikan urutan alur pada mode pribadi maupun berdua.
+
+## v0.7 — Perbaikan foto ekspor dan penyamaan alur
+
+- Memperbaiki akar masalah file unduhan kosong: bingkai foto bertema sebelumnya menggambar bidang putih/krem setelah foto sehingga foto tertutup. Seluruh dekorasi post-photo kini hanya menggambar garis, bayangan, dan ornamen tanpa menimpa bidang gambar.
+- Ekspor sekarang memuat foto dari data URL, object URL, atau Blob pada mode pribadi dan berpasangan.
+- Ekspor memvalidasi bahwa 4 foto pribadi atau 8 foto pasangan benar-benar berhasil digambar; jika tidak, proses unduh dibatalkan dengan pesan yang jelas, bukan menghasilkan frame kosong.
+- Alur mode pribadi: pilih bingkai → ambil empat foto → editor/hiasan → unduh.
+- Alur berpasangan: pilih bingkai bersama → masing-masing ambil empat foto → transfer dan pratinjau gabungan → editor bersama → persetujuan → unduh/cetak.
+- Pengambilan foto standar mode berpasangan menggunakan kamera, bukan unggah empat foto dari galeri. Pemindahan manual tetap tersedia hanya sebagai fallback transfer ketika koneksi langsung gagal.

@@ -370,7 +370,6 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
   ctx.save();
   switch (theme) {
     case 'newspaper': {
-      ctx.fillStyle = '#f8f3e6'; ctx.fillRect(x - 8, y - 8, width + 16, height + 16);
       ctx.strokeStyle = ink; ctx.lineWidth = 7; ctx.strokeRect(x - 6, y - 6, width + 12, height + 12);
       ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.strokeRect(x + 5, y + 5, width - 10, height - 10);
       line(ctx, x + 12, y + height - 19, x + width - 12, y + height - 19, ink, 1);
@@ -378,7 +377,6 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
       break;
     }
     case 'wanted': {
-      ctx.fillStyle = '#f0dfb8'; ctx.fillRect(x - 12, y - 12, width + 24, height + 24);
       drawJaggedFrame(ctx, x - 7, y - 7, width + 14, height + 14, '#68452d', 16, index);
       ctx.strokeStyle = '#c59a63'; ctx.lineWidth = 4; ctx.strokeRect(x + 7, y + 7, width - 14, height - 14);
       ctx.save(); ctx.translate(x + width - 26, y + 26); ctx.rotate(.17); ctx.fillStyle = '#a43f32';
@@ -388,8 +386,8 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
       break;
     }
     case 'comic': {
-      ctx.save(); ctx.fillStyle = '#20202a'; ctx.fillRect(x - 15, y - 10, width + 23, height + 23); ctx.restore();
-      ctx.fillStyle = accent; ctx.fillRect(x - 9, y - 9, width + 18, height + 18);
+      ctx.save(); ctx.shadowColor = '#20202a'; ctx.shadowBlur = 8; ctx.shadowOffsetX = 7; ctx.shadowOffsetY = 7;
+      ctx.strokeStyle = accent; ctx.lineWidth = 8; ctx.strokeRect(x - 9, y - 9, width + 18, height + 18); ctx.restore();
       ctx.strokeStyle = '#141414'; ctx.lineWidth = 13; ctx.strokeRect(x - 7, y - 7, width + 14, height + 14);
       burst(ctx, x + 22, y + 22, Math.min(29, width * .08), Math.min(16, width * .045), '#fff', '#141414', 8);
       burst(ctx, x + width - 22, y + height - 22, Math.min(29, width * .08), Math.min(16, width * .045), '#fff', '#141414', 8);
@@ -400,17 +398,15 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
       ctx.strokeStyle = '#d7b46e'; ctx.lineWidth = 13; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16);
       ctx.strokeStyle = '#fff0ce'; ctx.lineWidth = 3; ctx.strokeRect(x + 5, y + 5, width - 10, height - 10); break;
     case 'film':
-      ctx.fillStyle = '#171513'; ctx.fillRect(x - 12, y - 12, width + 24, height + 24);
       ctx.strokeStyle = '#e8d7b4'; ctx.lineWidth = 4; ctx.strokeRect(x - 5, y - 5, width + 10, height + 10);
       for (let n = 0; n < Math.max(2, Math.floor(width / 85)); n++) { const px = x + n * width / Math.max(1, Math.floor(width / 85)); rounded(ctx, px, y - 11, 20, 10, 3, '#e8d7b4'); rounded(ctx, px, y + height + 1, 20, 10, 3, '#e8d7b4'); }
       break;
     case 'postcard':
       ctx.strokeStyle = accent; ctx.lineWidth = 12; ctx.setLineDash([18, 10]); ctx.strokeRect(x - 8, y - 8, width + 16, height + 16); ctx.setLineDash([]); break;
     case 'botanical':
-      ctx.fillStyle = '#fffdf7'; ctx.fillRect(x - 9, y - 9, width + 18, height + 18);
       ctx.strokeStyle = '#9aae8b'; ctx.lineWidth = 6; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16); break;
     case 'kawaii':
-      ctx.save(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.roundRect(x - 13, y - 13, width + 26, height + 26, 25); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.roundRect(x - 13, y - 13, width + 26, height + 26, 25);
       ctx.strokeStyle = accent; ctx.lineWidth = 7; ctx.stroke(); ctx.restore();
       drawBear(ctx, x + 25, y + 22, Math.min(38, width * .11), '#d9b99f');
       heart(ctx, x + width - 22, y + height - 18, Math.min(24, width * .07), '#ed9fbd');
@@ -431,8 +427,8 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
     case 'doodle':
       ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.setLineDash([8, 8]); ctx.strokeRect(x - 7, y - 7, width + 14, height + 14); ctx.setLineDash([]); break;
     case 'toybox': {
-      ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(20,45,90,.28)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 7;
-      rounded(ctx, x - 15, y - 15, width + 30, height + 30, 34, '#fff', '#e84b39', 9); ctx.restore();
+      ctx.save(); ctx.shadowColor = 'rgba(20,45,90,.28)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 7;
+      ctx.beginPath(); ctx.roundRect(x - 15, y - 15, width + 30, height + 30, 34); ctx.strokeStyle = '#e84b39'; ctx.lineWidth = 9; ctx.stroke(); ctx.restore();
       ctx.strokeStyle = '#f8c832'; ctx.lineWidth = 9; ctx.strokeRect(x - 5, y - 5, width + 10, height + 10);
       drawCloud(ctx, x + width * .10, y + height * .03, Math.min(.42, width * .00055), '#fff', '#e84b39');
       star(ctx, x + width - 20, y + 20, Math.min(24, width * .06), '#f4c52e');
@@ -441,7 +437,7 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
     }
     case 'social': {
       ctx.save(); ctx.shadowColor = 'rgba(70,45,20,.22)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 8;
-      ctx.fillStyle = '#fff'; ctx.fillRect(x - 13, y - 13, width + 26, height + 48); ctx.restore();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 12; ctx.strokeRect(x - 7, y - 7, width + 14, height + 14); ctx.restore();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 12; ctx.strokeRect(x - 7, y - 7, width + 14, height + 14);
       heart(ctx, x + 20, y + height + 25, Math.min(22, width * .06), '#f05b48');
       label(ctx, '♡', x + width - 18, y + height + 24, Math.max(16, width * .05), '#292323', 'Arial', 'center', 'bold');

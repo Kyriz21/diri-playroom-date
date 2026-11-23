@@ -133,3 +133,84 @@ test('kamera mencoba ulang elemen video terbaru saat play terinterupsi oleh pemb
   assert.match(source, /attachCameraToCurrentVideo\(requestToken\)/);
   assert.doesNotMatch(source, /const video = root\.querySelector\('#pb-video'\);\s*if \(!video\) return;\s*video\.srcObject = stream;\s*await video\.play\(\);/);
 });
+
+test('bingkai foto tidak boleh mengecat bidang foto setelah gambar ditempatkan', () => {
+  // Photo-slot borders are painted after the photo. Opaque fills here used to
+  // cover the photo completely in Toybox, Social, Newspaper, Wanted, Film, etc.
+  const frameArt = requireFrameArtForTest();
+  for (const frame of FRAMES) {
+    let opaqueRectCount = 0;
+    const ctx = mockContext();
+    ctx.fillRect = () => { opaqueRectCount++; };
+    frameArt.drawPhotoSlotBorder(ctx, frame, 80, 220, 600, 520, 0);
+    assert.equal(opaqueRectCount, 0, `${frame[0]} border must not paint over the photo`);
+  }
+});
+
+function requireFrameArtForTest() {
+  return { drawPhotoSlotBorder };
+}
+
+test('mode pribadi mengikuti urutan pilih bingkai, ambil foto, lalu editor', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.ok(source.indexOf("if (soloPhase === 'frame')") < source.indexOf("if (soloPhase === 'capture')"));
+  assert.match(source, /data-pb="solo-start-capture"/);
+  assert.match(source, /data-pb="solo-continue"/);
+  assert.match(source, /Hiasan emoji tanpa latar/);
+  assert.match(source, /data-pb="solo-png"/);
+});
+
+test('mode berdua menyediakan bingkai sebelum pengambilan foto dan editor emoji setelahnya', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.ok(source.indexOf('function renderCoupleSetup()') < source.indexOf('function renderCapture()'));
+  assert.match(source, /function renderSharedEditor\(\)/);
+  assert.match(source, /renderStickerPicker\('add-sticker'\)/);
+  assert.match(source, /data-pb="couple-png"/);
+});
+
+test('ekspor harus memuat sumber foto pribadi dan pasangan sebelum menggambar ke kanvas', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source, /async function loadPhotoForExport\(photo, label\)/);
+  assert.match(source, /typeof photo === 'string' \? photo/);
+  assert.match(source, /photo\?\.url \|\| photo\?\.dataUrl \|\| photo\?\.src/);
+  assert.match(source, /photo instanceof Blob/);
+  assert.match(source, /photo\?\.blob instanceof Blob/);
+  assert.match(source, /image\.naturalWidth > 0 && image\.naturalHeight > 0/);
+  assert.match(source, /loadPhotoForExport\(source, `Foto \$\{index \+ 1\}`\)/);
+  assert.match(source, /loadPhotoForExport\(photo, `Foto \$\{row \+ 1\}/);
+});
+
+test('ekspor menolak file frame kosong jika jumlah foto yang benar-benar digambar tidak lengkap', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source, /let drawnPhotoCount = 0/);
+  assert.match(source, /drawnPhotoCount \+= 1/g);
+  assert.match(source, /const expectedPhotoCount = couple \? 8 : 4/);
+  assert.match(source, /drawnPhotoCount !== expectedPhotoCount/);
+  assert.match(source, /Jangan unduh frame kosong/);
+});
+
+test('mode berdua menggunakan kamera untuk pengambilan foto standar, bukan unggah empat foto', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  const captureStart = source.indexOf('function renderCapture()');
+  const captureEnd = source.indexOf('function renderManualTransfer()', captureStart);
+  const captureMarkup = source.slice(captureStart, captureEnd);
+  assert.match(captureMarkup, /data-pb="camera"/);
+  assert.match(captureMarkup, /data-pb="capture-couple"/);
+  assert.doesNotMatch(captureMarkup, /pb-couple-files|Pilih empat foto/);
+});
+
+test('canvas regression test memeriksa foto sintetis sebelum dan sesudah bingkai', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const fixture = await readFile(new URL('../canvas-regression.html', import.meta.url), 'utf8');
+  assert.match(fixture, /photo\.getContext\('2d'\)/);
+  assert.match(fixture, /x\.drawImage\(photo/);
+  assert.match(fixture, /drawPhotoSlotBorder\(x,frame/);
+  assert.match(fixture, /getImageData\(slot\.x\+slot\.w\*\.25/);
+  assert.match(fixture, /getImageData\(slot\.x\+slot\.w\*\.75/);
+  assert.match(fixture, /document\.body\.dataset\.done/);
+});

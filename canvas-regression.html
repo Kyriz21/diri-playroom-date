@@ -1,0 +1,20 @@
+<!doctype html><html lang="id"><meta charset="utf-8"><title>Photobooth photo export regression</title><body><pre id="out">Menjalankan pengujian…</pre><script type="module">
+import {FRAMES,drawFrameBackground,drawPhotoSlotBorder,drawFrameOverlay} from './js/photobooth/frame-art.js';
+const out=[];
+for(const frame of FRAMES){
+  const c=document.createElement('canvas');c.width=1000;c.height=2800;const x=c.getContext('2d');
+  drawFrameBackground(x,frame,c.width,c.height,false);
+  const slot={x:76,y:245,w:848,h:571};
+  const photo=document.createElement('canvas');photo.width=200;photo.height=140;
+  const px=photo.getContext('2d');px.fillStyle='#e51b8a';px.fillRect(0,0,200,140);px.fillStyle='#19b5d9';px.fillRect(100,0,100,140);
+  x.save();x.beginPath();x.rect(slot.x,slot.y,slot.w,slot.h);x.clip();x.drawImage(photo,slot.x,slot.y,slot.w,slot.h);x.restore();
+  drawPhotoSlotBorder(x,frame,slot.x,slot.y,slot.w,slot.h,0);
+  drawFrameOverlay(x,frame,c.width,c.height,false);
+  const left=x.getImageData(slot.x+slot.w*.25,slot.y+slot.h*.5,1,1).data;
+  const right=x.getImageData(slot.x+slot.w*.75,slot.y+slot.h*.5,1,1).data;
+  const pass=left[0]>180&&left[2]>60&&right[1]>100&&right[2]>130;
+  out.push(`${frame[0]}: ${pass?'PASS':'FAIL'} left=[${[...left].join(',')}] right=[${[...right].join(',')}]`);
+}
+document.querySelector('#out').textContent=out.join('\n');
+document.body.dataset.done=out.every(v=>v.includes(': PASS'))?'pass':'fail';
+</script></body></html>

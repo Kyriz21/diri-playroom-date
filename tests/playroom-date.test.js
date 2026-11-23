@@ -57,11 +57,14 @@ test('Firebase Web App config is connected to the new Diri Playroom Date project
 
 test('Foto Sendiri requires four camera captures before opening the editor', async () => {
   const photobooth = await readFile(new URL('js/photobooth/photobooth.js', root), 'utf8');
-  assert.match(photobooth, /let soloPhase = 'capture'/);
-  assert.match(photobooth, /Ambil empat foto terlebih dahulu/);
+  assert.match(photobooth, /let soloPhase = 'frame'/);
+  assert.match(photobooth, /Pilih bingkai fotomu/);
+  assert.match(photobooth, /Ambil empat foto terlebih dahulu|Ambil foto satu per satu/);
   assert.match(photobooth, /data-pb="capture"/);
   assert.match(photobooth, /data-pb="solo-continue"/);
+  assert.match(photobooth, /if \(soloPhase === 'frame'\)/);
   assert.match(photobooth, /if \(soloPhase === 'capture'\)/);
+  assert.match(photobooth, /data-pb=\"solo-start-capture\"/);
   assert.doesNotMatch(photobooth, /id="pb-solo-files"/);
   const soloCaptureView = photobooth.slice(photobooth.indexOf('function renderSolo()'), photobooth.indexOf('async function openKamera()'));
   assert.doesNotMatch(soloCaptureView, /Pilih empat foto|pb-solo-files/);
