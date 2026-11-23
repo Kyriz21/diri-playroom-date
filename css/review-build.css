@@ -552,3 +552,15 @@
 
 /* Automatic reliable photo relay progress */
 .pb-relay-progress{display:grid;gap:10px;margin:20px 0}.pb-relay-progress strong{font-size:.94rem;color:var(--ink,#302832)}.pb-progress-track{height:12px;border-radius:99px;background:#f0e8ef;overflow:hidden;border:1px solid rgba(120,80,110,.12)}.pb-progress-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#d58caf,#a98be8);transition:width .25s ease}
+
+/* v0.10 editor controls: rotation and explicit delete stay outside the photo surface. */
+.pb-element-tools{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:14px 0 22px;padding:14px;border:1px solid rgba(190,143,170,.28);border-radius:16px;background:rgba(255,250,253,.88)}
+.pb-element-tools.muted{align-items:center;color:#8d7c89;font-size:13px}
+.pb-rotation-control{display:grid;gap:8px;flex:1 1 220px;min-width:180px;color:#806b7b;font-size:13px;font-weight:650}
+.pb-rotation-control span{display:flex;justify-content:space-between;gap:10px}
+.pb-rotation-control input{width:100%;accent-color:#c77fa6;touch-action:pan-x}
+.pb-delete-selected{flex:0 0 auto;min-height:42px}
+.pb-deco,.pb-shared-element{transform-origin:center center;}
+.pb-deco .pb-element-remove,.pb-shared-element .pb-element-remove{display:none!important}
+.pb-deco.selected,.pb-shared-element.selected{outline:1.5px dashed rgba(199,125,165,.8)!important;outline-offset:7px}
+@media(max-width:600px){.pb-element-tools{align-items:stretch;flex-direction:column}.pb-delete-selected{width:100%}}

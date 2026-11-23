@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.10 — editor dan kamera
+- Menghilangkan toast kamera berulang setelah fase pengambilan foto selesai; stream kamera dihentikan saat masuk ke transfer/editor.
+- Menambahkan filter, kecerahan, kontras, saturasi, dan temperatur pada editor gabungan.
+- Menambahkan rotasi 0–360 derajat untuk teks dan stiker pada mode sendiri maupun berdua; rotasi ikut tersimpan di hasil PNG/JPEG.
+- Menghapus tombol × yang menempel pada stiker; penghapusan dilakukan melalui tombol terpisah untuk elemen yang dipilih.
+
+# Changelog
+
 ## v0.5.0 — Firebase config + camera-first Solo
 
 - Connected `js/firebase.js` to the user's `diri-playroom-date` Firebase Web App configuration.

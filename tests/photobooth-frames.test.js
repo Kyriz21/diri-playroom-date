@@ -74,7 +74,7 @@ test('Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh'
   assert.match(source, /stage\.clientHeight/);
   assert.match(source, /Math\.abs\(x-gesture\.startX\)/);
   assert.match(source, /element\.kind === 'sticker' \? 0\.1 : 0\.07/);
-  assert.match(source, /ctx\.strokeText\(text, x, y/);
+  assert.match(source, /ctx\.translate\(x, y\); ctx\.rotate/);
   assert.doesNotMatch(source, /ctx\.fillStyle = 'rgba\(255,255,255,\.72\)'/);
   const css = await readFile(new URL('../css/review-build.css', import.meta.url), 'utf8');
   assert.match(css, /\.pb-deco,\.pb-shared-element\{[^}]*background:transparent!important/s);
@@ -103,9 +103,9 @@ test('editor tidak lagi merender toolbar panah atau A+/A− untuk manipulasi ele
   const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /class="element-tools"/);
   assert.doesNotMatch(source, />A\+<|>A−</);
-  assert.match(source, /cubit dengan dua jari/);
+  assert.match(source, /activeGesture\.mode = 'pinch'/);
   assert.match(source, /onElementWheel/);
-  assert.match(source, /pb-element-remove/);
+  assert.match(source, /delete-selected-element/);
   assert.match(source, /pb-element-resize/);
 });
 

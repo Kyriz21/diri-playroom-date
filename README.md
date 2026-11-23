@@ -1,4 +1,4 @@
-# Diri. Playroom Date — Reliable Photo Transfer v0.9
+# Diri. Playroom Date — Reliable Photo Transfer v0.10
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; mini-games dan aktivitas lain akan ditambahkan setelah Photobooth stabil.
 
@@ -70,7 +70,7 @@ Lalu buka `http://localhost:8000`. Foto Sendiri dapat dicoba secara lokal. Kamer
 
 **Jangan hapus repository atau Firebase lama sampai project baru berhasil diuji.** Simpan backup ZIP build lama untuk rollback. Setelah project baru stabil dan tidak ada data yang masih dibutuhkan, barulah project lama boleh dihapus.
 
-## Transfer foto berdua v0.9
+## Transfer foto berdua v0.10
 
 1. Kedua perangkat mengambil empat foto dan menyimpannya di IndexedDB lokal.
 2. WebRTC dicoba sebagai jalur langsung. Setiap foto harus mendapat ACK dan checksum SHA-256 yang cocok sebelum pengiriman dianggap berhasil.
@@ -80,7 +80,7 @@ Lalu buka `http://localhost:8000`. Foto Sendiri dapat dicoba secara lokal. Kamer
 6. Kedua perangkat mengirim ACK setelah semua foto pasangan tersimpan secara lokal. Editor dibuka setelah kedua ACK diterima.
 7. Data relay dihapus setelah kedua perangkat menyelesaikan penyimpanan. Jika salah satu perangkat terputus, klien menunggu Firebase tersambung lagi dan mencoba ulang.
 
-**Wajib:** setelah mengganti source ke v0.9, publikasikan ulang `firebase-database.rules.json` dari ZIP di Firebase Console → Realtime Database → Rules. Rules baru memvalidasi ukuran, tipe, peran, dan nomor slot foto relay. Tanpa Rules ini transfer dapat ditolak.
+**Wajib:** setelah mengganti source ke v0.10, publikasikan ulang `firebase-database.rules.json` dari ZIP di Firebase Console → Realtime Database → Rules. Rules baru memvalidasi ukuran, tipe, peran, dan nomor slot foto relay. Tanpa Rules ini transfer dapat ditolak.
 
 ## Pemeriksaan dan batasan yang belum diuji
 
@@ -109,7 +109,7 @@ Lihat `REVIEW-BUILD-QA.md`, `KNOWN-LIMITATIONS.md`, dan `SECURITY-NOTES.md` sebe
 Memperbaiki interupsi `video.play()` ketika tampilan sesi berdua dirender ulang oleh pembaruan Firebase. Kamera sekarang mencoba kembali pada elemen video terbaru dan menunggu preview aktif sebelum mengaktifkan tombol ambil foto.
 ## Firebase configuration
 
-The Web App configuration in `js/firebase.js` is already connected to the `diri-playroom-date` Firebase project supplied by the project owner. Do not replace the project configuration. Confirm that Anonymous Authentication, the Realtime Database, the GitHub Pages authorized domain, and the v0.9 Rules are enabled/published. Firebase Web configuration values are client-side identifiers; protect database access with Authentication and Realtime Database Rules.
+The Web App configuration in `js/firebase.js` is already connected to the `diri-playroom-date` Firebase project supplied by the project owner. Do not replace the project configuration. Confirm that Anonymous Authentication, the Realtime Database, the GitHub Pages authorized domain, and the v0.10 Rules are enabled/published. Firebase Web configuration values are client-side identifiers; protect database access with Authentication and Realtime Database Rules.
 
 ## Foto Sendiri flow
 

@@ -188,7 +188,7 @@ Enam permainan memiliki tahap pengaturan: **Kuis Cinta, Pilih Salah Satu, Jujur 
 - [ ] Setiap transfer menunggu tanda terima dari kedua perangkat sebelum editor dibuka.
 - [ ] Putuskan internet sementara di salah satu perangkat, pulihkan koneksi, lalu pastikan transfer melanjutkan tanpa memilih file lagi.
 - [ ] Muat ulang satu perangkat saat fase relay dan pastikan foto lokal dipulihkan dari IndexedDB serta transfer dapat dilanjutkan.
-- [ ] Uji Firebase Rules v0.9 yang sudah dipublikasikan; permission denied harus menampilkan instruksi Rules, bukan menggantung tanpa penjelasan.
+- [ ] Uji Firebase Rules v0.10 yang sudah dipublikasikan; permission denied harus menampilkan instruksi Rules, bukan menggantung tanpa penjelasan.
 - [ ] Setelah kedua ACK diterima, node transfer foto sementara di RTDB terhapus.
 - [ ] Pratinjau gabungan delapan foto tampil pada kedua perangkat sebelum persetujuan akhir.
 - [ ] Foto tertentu dapat diminta untuk diulang dan perlu persetujuan pasangan.
