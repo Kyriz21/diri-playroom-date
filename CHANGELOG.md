@@ -1,3 +1,14 @@
+# Changelog
+
+## v0.5.0 — Firebase config + camera-first Solo
+
+- Connected `js/firebase.js` to the user's `diri-playroom-date` Firebase Web App configuration.
+- Foto Sendiri now follows a camera-first, four-shot workflow: open camera, capture four photos one by one, review the four slots, retake individual shots, then continue to the editor.
+- Removed the Solo multi-file gallery upload shortcut so Solo uses the same take-photo-first flow requested by the user.
+- The Solo editor opens only after all four camera photos are present; exports and personal gallery actions remain in the editor.
+- Updated the unsupported-camera message to explain HTTPS and camera permission requirements.
+- Added regression tests for Firebase project configuration and the Solo capture-first flow.
+
 # Changelog — Diri. Playroom Date
 
 ## Visual update v0.2.0
@@ -41,3 +52,23 @@
 - Tanda × muncul pada elemen terpilih untuk menghapusnya tanpa toolbar.
 - Skala ekspor PNG/JPEG diselaraskan dengan ukuran teks dan stiker pada pratinjau.
 - Menambahkan tes regresi untuk memastikan toolbar lama tidak muncul dan gesture resize tetap tersedia.
+
+## v0.4.0 — Stabilitas kamera HP dan sesi bersama
+- Memperbaiki race condition saat Firebase memperbarui sesi dan mengganti elemen video ketika permintaan `play()` kamera masih berjalan.
+- Menambahkan mekanisme retry untuk `AbortError` / pesan `play() request was interrupted by a new load request`, dengan mencoba kembali pada elemen video terbaru di DOM.
+- Menggunakan token permintaan kamera agar stream yang terlambat datang setelah pengguna keluar tidak dipasang ke sesi yang sudah ditutup.
+- Menyatukan proses pemasangan stream kamera dan menghindari pemanggilan `play()` ganda yang saling mengganggu.
+- Mengaktifkan tombol ambil foto hanya setelah video terbaru benar-benar memiliki dimensi gambar.
+- Menambahkan tes regresi untuk jalur interupsi `play()` akibat pembaruan DOM.
+
+## v0.6 — Frame lebih unik
+- Menambahkan Dunia Mainan: latar langit, ubin warna-warni, maskot alien orisinal, awan, bintang, dan bingkai foto berlapis bentuk organik.
+- Menambahkan Polaroid Sosial: latar kuning hangat, kartu foto putih miring, ruang caption, dan aksen ikon hati/simpan.
+- Pratinjau katalog, strip pribadi, strip berdua, dan ekspor Canvas memakai identitas tema yang sama.
+- Semua ilustrasi karakter dibuat orisinal; tidak menggunakan karakter, logo, atau aset Toy Story/Instagram.
+
+## v0.6 — Frame lebih unik dan ekspresif
+- Menambahkan **Dunia Mainan** dengan langit, papan ubin, pita warna, awan, bintang, dan maskot alien orisinal.
+- Menambahkan **Polaroid Sosial** dengan latar kuning, kartu foto putih bergaya instan yang miring bergantian, caption, serta ikon hati/simpan.
+- Pratinjau pribadi, berdua, katalog, dan hasil Canvas memakai identitas desain yang konsisten.
+- Tidak menggunakan karakter Toy Story, logo Instagram, atau aset pihak ketiga.

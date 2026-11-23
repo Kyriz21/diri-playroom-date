@@ -57,6 +57,8 @@ export function mountPhotobooth(root, context) {
   let pState = null;
   let unsubscribers = [];
   let stream = null;
+  let cameraRequestToken = 0;
+  let cameraAttachPromise = null;
   let rtc = null;
   let channel = null;
   let destroyed = false;
@@ -80,6 +82,7 @@ export function mountPhotobooth(root, context) {
   let wheelSaveTimer = null;
   let pendingWheelScale = null;
   let soloPhotos = [];
+  let soloPhase = 'capture'; // Capture four photos first, then open the editor.
   let soloElements = [];
   let soloFrame = 'korean';
   let soloFilter = 'Asli';
@@ -91,10 +94,14 @@ export function mountPhotobooth(root, context) {
 
   function showToast(message, type = 'default') { toast(message, type); }
   function stopCamera() {
+    cameraRequestToken += 1;
     if (stream) stream.getTracks().forEach(track => track.stop());
     stream = null;
     const video = root.querySelector('#pb-video');
-    if (video) video.srcObject = null;
+    if (video) {
+      try { video.pause(); } catch {}
+      video.srcObject = null;
+    }
   }
   function disposePeer() {
     if (p2pTimer) clearTimeout(p2pTimer);
@@ -228,11 +235,12 @@ export function mountPhotobooth(root, context) {
       film:['ANALOG 1990','36 EXP · ISO 400','MEMORY FILM'], polaroid:['little moments','photo diary','♡'], postcard:['SALAM DARI KITA','POST CARD','WISH YOU HERE'],
       botanical:['BLOOMING','GROW TOGETHER','little garden'], kawaii:['CUTE LITTLE US','kawaii day','ʕ•ᴥ•ʔ'], magazine:['TOGETHER','THE COUPLE ISSUE','COVER STORY'],
       y2k:['★ US 4EVER ★','DIGITAL LOVE','2000s ENERGY'], arcade:['PLAYER 1 + 2','LOVE LEVEL','MAX SCORE'], loveletter:['UNTUKMU,','a little letter','dengan sayang'],
-      birthday:['HARI SPESIAL','MAKE A WISH','PARTY TIME'], doodle:['OUR DOODLES','HAPPY SCRIBBLES','tiny memories']
+      birthday:['HARI SPESIAL','MAKE A WISH','PARTY TIME'], doodle:['OUR DOODLES','HAPPY SCRIBBLES','tiny memories'],
+      toybox:['PETUALANGAN','PLAY · SMILE','DUNIA MAINAN'], social:['YOUR MOMENTS','LIKE · SAVE','LITTLE MEMORIES']
     };
     return `<div class="pb-frame-catalog">${FRAMES.map(([id, name]) => {
       const [top, sub, foot] = miniCopy[id] || ['Diri.', 'Momen kita', '♡'];
-      return `<button type="button" class="pb-frame-card ${active===id?'active':''}" data-pb="${attribute}" data-frame="${id}" aria-pressed="${active===id}"><span class="pb-frame-mini ${id}"><span class="pb-mini-masthead">${esc(top)}</span><span class="pb-mini-sub">${esc(sub)}</span><span class="pb-mini-photos"><i>01</i><i>02</i><i>03</i><i>04</i></span><span class="pb-mini-footer">${esc(foot)}</span><span class="pb-mini-mark" aria-hidden="true">${id==='wanted'?'★':id==='newspaper'?'✦':id==='comic'?'!':id==='cinema'?'▶':id==='kawaii'?'♡':id==='film'?'▣':id==='postcard'?'✉':id==='botanical'?'❀':id==='arcade'?'✧':id==='birthday'?'✷':'✦'}</span></span><strong>${name}</strong>${active===id?'<small>Terpilih</small>':'<small>Lihat contoh</small>'}</button>`;
+      return `<button type="button" class="pb-frame-card ${active===id?'active':''}" data-pb="${attribute}" data-frame="${id}" aria-pressed="${active===id}"><span class="pb-frame-mini ${id}"><span class="pb-mini-masthead">${esc(top)}</span><span class="pb-mini-sub">${esc(sub)}</span><span class="pb-mini-photos"><i>01</i><i>02</i><i>03</i><i>04</i></span><span class="pb-mini-footer">${esc(foot)}</span><span class="pb-mini-mark" aria-hidden="true">${id==='wanted'?'★':id==='newspaper'?'✦':id==='comic'?'!':id==='cinema'?'▶':id==='kawaii'?'♡':id==='film'?'▣':id==='postcard'?'✉':id==='botanical'?'❀':id==='arcade'?'✧':id==='birthday'?'✷':id==='toybox'?'🚀':id==='social'?'♡':'✦'}</span></span><strong>${name}</strong>${active===id?'<small>Terpilih</small>':'<small>Lihat contoh</small>'}</button>`;
     }).join('')}</div>`;
   }
 
@@ -252,7 +260,9 @@ export function mountPhotobooth(root, context) {
     arcade: {kicker:'PLAYER 1 + PLAYER 2',title:'LOVE LEVEL: MAX',sub:'INSERT COIN · START THE MEMORY',foot:'HIGH SCORE: US TWO',mark:'▣'},
     loveletter: {kicker:'UNTUK ORANG FAVORITKU',title:'A LITTLE LOVE NOTE',sub:'SOME MOMENTS FEEL LIKE HOME',foot:'DENGAN SAYANG, AKU ♡',mark:'💌'},
     birthday: {kicker:'TODAY IS A LITTLE MAGIC',title:'HARI SPESIAL KITA!',sub:'MAKE A WISH · MAKE A MEMORY',foot:'MORE LAUGHTER, MORE US!',mark:'✷'},
-    doodle: {kicker:'HAPPY SCRIBBLES · VOL. 01',title:'OUR HAPPY DOODLES',sub:'TINY CHAOS · BIG MEMORIES',foot:'CORETAN KECIL, KENANGAN BESAR',mark:'✿'}
+    doodle: {kicker:'HAPPY SCRIBBLES · VOL. 01',title:'OUR HAPPY DOODLES',sub:'TINY CHAOS · BIG MEMORIES',foot:'CORETAN KECIL, KENANGAN BESAR',mark:'✿'},
+    toybox: {kicker:'PLAYROOM ADVENTURE · NO. 01',title:'DUNIA MAINAN',sub:'EMPAT FOTO · SERIBU CERITA',foot:'PETUALANGAN KECIL, KENANGAN BESAR',mark:'🚀'},
+    social: {kicker:'PHOTO DIARY · YOUR EDITION',title:'YOUR MOMENTS',sub:'LIKE IT · SAVE IT · LOVE IT',foot:'A LITTLE MOMENT WORTH KEEPING',mark:'♡'}
   };
 
   function renderFrameHeader(frame) {
@@ -272,7 +282,8 @@ export function mountPhotobooth(root, context) {
     const captions = {
       newspaper:`FOTO UTAMA · ${number}`, wanted:`TERSANGKA #${number}`, comic:['POW!','WOW!','LOVE!','YAY!'][index % 4],
       kawaii:['CUTIE 01','HAPPY FACE','SWEET MOMENT','BESTIES'][index % 4], film:`FRAME ${number} · 36 EXP`,
-      magazine:`COVER SHOT ${number}`, postcard:`POSTMARK ${number}`, doodle:`DOODLE SHOT ${number}`
+      magazine:`COVER SHOT ${number}`, postcard:`POSTMARK ${number}`, doodle:`DOODLE SHOT ${number}`,
+      toybox:['PLAY TIME','BIG SMILE','FUN DAY','BEST ADVENTURE'][index % 4], social:`MEMORY ${number}`
     };
     return `${roleLabel ? `${roleLabel} · ` : ''}${captions[id] || `SHOT ${number}`}`;
   }
@@ -299,37 +310,72 @@ export function mountPhotobooth(root, context) {
       holder.innerHTML = items.length ? `<div class="gallery-grid">${items.map((item,index)=>`<article class="gallery-item"><img src="${item.data}" alt="Strip foto pribadi ${index+1}"><small>${new Date(item.date).toLocaleString()}</small><button class="button button-small button-quiet" data-pb="gallery-delete" data-index="${index}">Hapus</button></article>`).join('')}</div>` : '<p class="small-note">Belum ada foto tersimpan di galeri perangkat ini.</p>';
     } catch (error) { holder.textContent = `Galeri lokal tidak dapat dibuka: ${error.message}`; }
   }
-  function attachCameraToCurrentVideo() {
-    const video = root.querySelector('#pb-video');
-    if (video && stream) {
-      video.srcObject = stream;
-      video.play().catch(() => {});
-      root.querySelector('#pb-camera-placeholder')?.classList.add('hidden');
-    }
+  async function attachCameraToCurrentVideo(requestToken = cameraRequestToken) {
+    if (!stream || destroyed || requestToken !== cameraRequestToken) return;
+    if (cameraAttachPromise) return cameraAttachPromise;
+    cameraAttachPromise = (async () => {
+      const startedAt = Date.now();
+      let lastPlayError = null;
+      while (Date.now() - startedAt < 6000 && stream && !destroyed && requestToken === cameraRequestToken) {
+        const video = root.querySelector('#pb-video');
+        if (!video) { await wait(80); continue; }
+        video.muted = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        if (video.srcObject !== stream) video.srcObject = stream;
+        try {
+          if (video.paused || video.readyState < 2) await video.play();
+        } catch (error) {
+          // A Firebase snapshot can replace the capture markup while play() is pending.
+          // AbortError/new-load interruptions are transient: retry against the current video node.
+          lastPlayError = error;
+          const interrupted = error?.name === 'AbortError' || /interrupted|new load request/i.test(error?.message || '');
+          if (!interrupted) throw error;
+          await wait(100);
+          continue;
+        }
+        await wait(100);
+        if (root.querySelector('#pb-video') !== video) continue;
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          root.querySelector('#pb-camera-placeholder')?.classList.add('hidden');
+          const soloCapture = root.querySelector('[data-pb="capture"]');
+          if (soloCapture) soloCapture.disabled = nextPhotoSlot(soloPhotos) < 0;
+          const coupleCapture = root.querySelector('[data-pb="capture-couple"]');
+          if (coupleCapture) coupleCapture.disabled = !!pState?.photosDone?.[role] || nextPhotoSlot(localPhotos) < 0;
+          return;
+        }
+      }
+      if (stream && requestToken === cameraRequestToken) {
+        if (lastPlayError && lastPlayError.name !== 'AbortError') throw lastPlayError;
+        throw new Error('Kamera belum menampilkan gambar. Coba tekan Buka kamera sekali lagi atau periksa izin kamera browser.');
+      }
+    })().finally(() => { cameraAttachPromise = null; });
+    return cameraAttachPromise;
   }
   function renderSolo() {
     mode = 'solo';
-    root.innerHTML = `<div class="photo-app">${gameTop('Fotobooth Sendiri','Empat jepretan menjadi satu kenangan.','SESI PRIBADI · TERSIMPAN DI PERANGKAT')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Siap mengabadikan momen?</b><small>Buka kamera atau pilih empat foto dari galeri.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture" ${stream && nextPhotoSlot(soloPhotos)>=0?'':'disabled'}>Ambil foto</button><label class="button button-quiet" for="pb-solo-files">Pilih empat foto</label><input id="pb-solo-files" type="file" accept="image/*" multiple hidden></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${soloPhotos[index]?`<img src="${soloPhotos[index]}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="solo-retake-slot" data-index="${index}">Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${soloPhotos.filter(Boolean).length}/4 foto siap. File tersimpan di peramban ini.</p></section><section class="panel photo-editor-card"><h2>Pilih bingkai</h2>${frameCatalog(soloFrame)}<h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Atur langsung pada foto: seret bagian tengah hiasan untuk memindahkan, tarik pegangan ↘ di sudut untuk mengubah ukuran, atau cubit dengan dua jari di HP. Di komputer, roda mouse di atas hiasan juga dapat mengubah ukuran. Ketuk × untuk menghapus hiasan terpilih.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Simpan ke Galeri Pribadi</button><button class="button button-quiet" data-pb="solo-reset">Ulangi semua foto</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
-    attachCameraToCurrentVideo();
+    if (soloPhase === 'capture') {
+      const count = soloPhotos.filter(Boolean).length;
+      root.innerHTML = `<div class="photo-app">${gameTop('Fotobooth Sendiri','Ambil empat foto terlebih dahulu, seperti sesi berdua. Setelah itu kamu bisa menghias dan memilih bingkai.','SESI PRIBADI · TERSIMPAN DI PERANGKAT')}<div class="photo-layout"><section class="panel photo-camera-card"><div class="camera-stage"><video id="pb-video" autoplay muted playsinline></video><div id="pb-camera-placeholder" class="camera-placeholder"><span>♡</span><b>Empat momen untuk strip fotomu</b><small>Buka kamera, lalu ambil foto satu per satu.</small><strong id="pb-countdown"></strong></div></div><div class="photo-controls"><button class="button button-secondary" data-pb="camera">Buka kamera</button><button class="button button-primary" data-pb="capture" ${stream && nextPhotoSlot(soloPhotos)>=0?'':'disabled'}>Ambil foto berikutnya</button></div><div class="photo-slot-grid">${[0,1,2,3].map(index=>`<div class="photo-slot">${soloPhotos[index]?`<img src="${soloPhotos[index]}" alt="Foto ${index+1}"><button type="button" class="pb-slot-retake" data-pb="solo-retake-slot" data-index="${index}">Ulangi</button>`:`<span>${index+1}</span>`}<small>${index+1}</small></div>`).join('')}</div><p class="small-note">${count}/4 foto sudah diambil. Kamu bisa mengulang foto mana pun sebelum lanjut.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-continue" ${hasCompletePhotoSet(soloPhotos,4)?'':'disabled'}>Lanjut ke editor</button><button class="button button-quiet" data-pb="solo-reset">Ulangi semua foto</button></div></section></div></div>`;
+      if (stream) void attachCameraToCurrentVideo().catch(error => { if (error?.name !== 'AbortError') showToast(error.message, 'error'); });
+      return;
+    }
+    const complete = hasCompletePhotoSet(soloPhotos,4);
+    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Pilih bingkai, filter, dan hiasan. Semua perubahan terlihat langsung pada pratinjau.','SESI PRIBADI · EDITOR FOTO')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${soloPhotos.map((photo,index)=>`<figure><img src="${photo}" alt="Foto ${index+1}"><figcaption>${index+1}</figcaption></figure>`).join('')}</div><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><h2>Pilih bingkai</h2>${frameCatalog(soloFrame)}<h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Atur langsung pada foto: seret bagian tengah hiasan untuk memindahkan, tarik pegangan ↘ di sudut untuk mengubah ukuran, atau cubit dengan dua jari di HP. Di komputer, roda mouse di atas hiasan juga dapat mengubah ukuran. Ketuk × untuk menghapus hiasan terpilih.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div></section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
     void renderGallery();
   }
+
   async function openKamera() {
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error('Peramban tidak mendukung akses kamera. Silakan pilih foto dari galeri.');
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('Peramban ini tidak mendukung akses kamera. Buka halaman melalui HTTPS dan izinkan akses kamera.');
     stopCamera();
-    stream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user'}, audio:false });
-    const video = root.querySelector('#pb-video');
-    if (!video) return;
-    video.srcObject = stream;
-    await video.play();
-    const startedAt=Date.now();
-    while(!video.videoWidth && Date.now()-startedAt<4000) await wait(100);
-    if(!video.videoWidth || !video.videoHeight) throw new Error('Kamera aktif, tetapi ukuran video belum tersedia. Periksa izin kamera lalu coba lagi.');
-    const placeholder = root.querySelector('#pb-camera-placeholder');
-    if (placeholder) placeholder.classList.add('hidden');
-    const capture = root.querySelector('[data-pb="capture"]');
-    if (capture) capture.disabled = nextPhotoSlot(soloPhotos) < 0;
-    const coupleCapture = root.querySelector('[data-pb="capture-couple"]');
-    if (coupleCapture) coupleCapture.disabled = nextPhotoSlot(localPhotos) < 0;
+    const requestToken = cameraRequestToken;
+    const newStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user'}, audio:false });
+    if (destroyed || requestToken !== cameraRequestToken) {
+      newStream.getTracks().forEach(track => track.stop());
+      return;
+    }
+    stream = newStream;
+    await attachCameraToCurrentVideo(requestToken);
   }
   async function captureFromKamera(targetMode, index = null) {
     const video = root.querySelector('#pb-video');
@@ -352,6 +398,7 @@ export function mountPhotobooth(root, context) {
     if (nextIndex < 0 || nextIndex >= 4) throw new Error('Keempat slot foto sudah terisi. Pilih foto yang ingin diulangi.');
     if (targetMode === 'solo') {
       soloPhotos[nextIndex] = data;
+      if (hasCompletePhotoSet(soloPhotos,4)) stopCamera();
       renderSolo();
     } else {
       await addCouplePhoto(blob, nextIndex, `camera-${nextIndex+1}.jpg`);
@@ -401,6 +448,25 @@ export function mountPhotobooth(root, context) {
       const sourceX = (image.width - cropW) / 2, sourceY = (image.height - cropH) / 2;
       ctx.drawImage(image, sourceX, sourceY, cropW, cropH, x, y, width, height);
     };
+    const drawPhotoSlot = (image, x, y, width, height, index) => {
+      if (selected[4] === 'social') {
+        // Tilt each white instant-photo card just like the browser preview.
+        ctx.save();
+        ctx.translate(x + width / 2, y + height / 2);
+        ctx.rotate((index % 2 ? 1.8 : -1.7) * Math.PI / 180);
+        ctx.shadowColor = 'rgba(80,53,17,.23)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 12;
+        ctx.fillStyle = '#fff'; ctx.fillRect(-width / 2 - 18, -height / 2 - 18, width + 36, height + 68);
+        ctx.shadowColor = 'transparent';
+        ctx.save(); ctx.beginPath(); ctx.rect(-width / 2, -height / 2, width, height); ctx.clip();
+        ctx.filter = css; drawCover(image, -width / 2, -height / 2, width, height); ctx.restore();
+        drawPhotoSlotBorder(ctx, selected, -width / 2, -height / 2, width, height, index);
+        ctx.restore();
+        return;
+      }
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, y - 10, width + 20, height + 20);
+      ctx.beginPath(); ctx.rect(x, y, width, height); ctx.clip(); ctx.filter = css; drawCover(image, x, y, width, height); ctx.restore();
+      drawPhotoSlotBorder(ctx, selected, x, y, width, height, index);
+    };
     if (couple) {
       for (let row = 0; row < 4; row++) {
         for (let column = 0; column < 2; column++) {
@@ -409,9 +475,7 @@ export function mountPhotobooth(root, context) {
           const image = await loadImage(photo.url);
           const x = marginX + column * (slotW + gapX);
           const y = header + row * (slotH + gapY);
-          ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, y - 10, slotW + 20, slotH + 20);
-          ctx.beginPath(); ctx.rect(x, y, slotW, slotH); ctx.clip(); ctx.filter = css; drawCover(image, x, y, slotW, slotH); ctx.restore();
-          drawPhotoSlotBorder(ctx, selected, x, y, slotW, slotH, row + column * 4);
+          drawPhotoSlot(image, x, y, slotW, slotH, row + column * 4);
         }
       }
     } else {
@@ -420,9 +484,7 @@ export function mountPhotobooth(root, context) {
         if (!source) continue;
         const image = await loadImage(source);
         const x = marginX, y = header + index * (slotH + gapY);
-        ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, y - 10, slotW + 20, slotH + 20);
-        ctx.beginPath(); ctx.rect(x, y, slotW, slotH); ctx.clip(); ctx.filter = css; drawCover(image, x, y, slotW, slotH); ctx.restore();
-        drawPhotoSlotBorder(ctx, selected, x, y, slotW, slotH, index);
+        drawPhotoSlot(image, x, y, slotW, slotH, index);
       }
     }
     // The same floating theme ornaments shown in the browser preview are painted
@@ -552,7 +614,7 @@ export function mountPhotobooth(root, context) {
     else if (pState.phase === 'editor') root.innerHTML = `<div class="photo-app">${renderSharedEditor()}</div>`;
     else if (pState.phase === 'finalized') root.innerHTML = `<div class="photo-app">${renderFinalized()}</div>`;
     else root.innerHTML = `<div class="photo-app"><section class="panel game-panel"><h2>Sesi Fotobooth berakhir</h2><button class="button button-quiet" data-pb="back">Kembali ke lobi</button></section></div>`;
-    attachCameraToCurrentVideo();
+    if (stream) void attachCameraToCurrentVideo().catch(error => { if (error?.name !== 'AbortError') showToast(error.message, 'error'); });
   }
   async function addCouplePhoto(blob, index, name) {
     const data = await readDataUrl(blob);
@@ -1062,8 +1124,10 @@ export function mountPhotobooth(root, context) {
       if(action==='camera'){await openKamera();return;}
       if(action==='capture'){await captureFromKamera('solo',nextPhotoSlot(soloPhotos));return;}
       if(action==='capture-couple'){await captureFromKamera('couple',nextPhotoSlot(localPhotos));return;}
-      if(action==='solo-reset'){soloPhotos=[];soloElements=[];selectedSoloElementId=null;renderSolo();return;}
-      if(action==='solo-retake-slot'){const index=Number(button.dataset.index);if(index>=0&&index<4){soloPhotos[index]=null;renderSolo();}return;}
+      if(action==='solo-reset'){stopCamera();soloPhotos=[];soloElements=[];selectedSoloElementId=null;soloPhase='capture';renderSolo();return;}
+      if(action==='solo-retake-slot'){const index=Number(button.dataset.index);if(index>=0&&index<4){soloPhotos[index]=null;soloPhase='capture';renderSolo();}return;}
+      if(action==='solo-retake-all'){soloPhase='capture';renderSolo();return;}
+      if(action==='solo-continue'){if(!hasCompletePhotoSet(soloPhotos,4))throw new Error('Ambil empat foto terlebih dahulu.');stopCamera();soloPhase='editor';renderSolo();return;}
       if(action==='couple-retake-slot'){const index=Number(button.dataset.index);if(index>=0&&index<4&&pState?.photosDone?.[role]!==true){localPhotos[index]=null;await deleteLocalMedia('photobooth',localKey(session.sessionId,pState.retakeToken||0,role,index));renderCouple();}return;}
       if(action==='solo-sticker'){const id=randomId();soloElements.push({id,kind:'sticker',text:button.dataset.sticker||STICKERS[Math.floor(Math.random()*STICKERS.length)],x:.5,y:.5,scale:1,color:'#a45f82'});selectedSoloElementId=id;renderSolo();return;}
       if(action==='solo-frame'){soloFrame=button.dataset.frame;renderSolo();return;}
@@ -1099,9 +1163,6 @@ export function mountPhotobooth(root, context) {
   async function onChange(event) {
     const element=event.target;
     try {
-      if(element.matches('#pb-solo-files')) {
-        const photos=await processImages(element.files,4);if(photos.length!==4)throw new Error('Pilih tepat empat foto.');soloPhotos=photos.map(photo=>photo.url);renderSolo();
-      }
       if(element.matches('#pb-couple-files')) {
         const photos=await processImages(element.files,4);if(photos.length!==4)throw new Error('Pilih tepat empat foto.');
         localPhotos=[];for(let index=0;index<4;index++)await addCouplePhoto(photos[index].blob,index,photos[index].name);

@@ -44,3 +44,27 @@ test('new landing has three distinct Photobooth entry actions', async () => {
   assert.match(app, /data-action="open-join"/);
   assert.match(app, /data-action="open-solo"/);
 });
+
+test('Firebase Web App config is connected to the new Diri Playroom Date project', async () => {
+  const firebase = await readFile(new URL('js/firebase.js', root), 'utf8');
+  assert.match(firebase, /apiKey: 'AIzaSyBC-hBpMcJCN1BsIe6oo2LZ72QKh2YzIU4'/);
+  assert.match(firebase, /authDomain: 'diri-playroom-date\.firebaseapp\.com'/);
+  assert.match(firebase, /projectId: 'diri-playroom-date'/);
+  assert.match(firebase, /databaseURL: 'https:\/\/diri-playroom-date-default-rtdb\.asia-southeast1\.firebasedatabase\.app'/);
+  assert.match(firebase, /appId: '1:667695982695:web:acd2dae896fc75049eccc2'/);
+  assert.match(firebase, /isFirebaseConfigured/);
+});
+
+test('Foto Sendiri requires four camera captures before opening the editor', async () => {
+  const photobooth = await readFile(new URL('js/photobooth/photobooth.js', root), 'utf8');
+  assert.match(photobooth, /let soloPhase = 'capture'/);
+  assert.match(photobooth, /Ambil empat foto terlebih dahulu/);
+  assert.match(photobooth, /data-pb="capture"/);
+  assert.match(photobooth, /data-pb="solo-continue"/);
+  assert.match(photobooth, /if \(soloPhase === 'capture'\)/);
+  assert.doesNotMatch(photobooth, /id="pb-solo-files"/);
+  const soloCaptureView = photobooth.slice(photobooth.indexOf('function renderSolo()'), photobooth.indexOf('async function openKamera()'));
+  assert.doesNotMatch(soloCaptureView, /Pilih empat foto|pb-solo-files/);
+  assert.match(photobooth, /Ambil foto berikutnya/);
+  assert.match(photobooth, /Kembali ke editor|Edit strip fotomu/);
+});

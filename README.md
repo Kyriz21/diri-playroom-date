@@ -91,3 +91,21 @@ Lihat `REVIEW-BUILD-QA.md`, `KNOWN-LIMITATIONS.md`, dan `SECURITY-NOTES.md` sebe
 - Pada desktop, arahkan kursor ke elemen dan putar roda mouse untuk mengubah ukurannya.
 - Pilih elemen lalu tekan tanda × kecil untuk menghapusnya.
 - Tidak ada lagi toolbar panah atau tombol A+/A−.
+
+
+### Pembaruan v0.4.0
+Memperbaiki interupsi `video.play()` ketika tampilan sesi berdua dirender ulang oleh pembaruan Firebase. Kamera sekarang mencoba kembali pada elemen video terbaru dan menunggu preview aktif sebelum mengaktifkan tombol ambil foto.
+## Firebase configuration
+
+The Web App configuration in `js/firebase.js` is connected to the `diri-playroom-date` Firebase project supplied by the project owner. Firebase Web configuration values are client-side identifiers; protect database access with Authentication and Realtime Database Rules.
+
+## Foto Sendiri flow
+
+Foto Sendiri is camera-first: capture four photos one by one, review the four slots, retake any slot if needed, then continue to the editor. It does not offer the four-file gallery shortcut.
+
+
+### v0.6 — Frame baru
+Katalog kini memiliki 18 tema, termasuk Dunia Mainan dan Polaroid Sosial. Dua desain ini memiliki komposisi, ornamen, dan bentuk bingkai berbeda—bukan sekadar variasi warna.
+
+## Frame v0.6
+Katalog berisi 18 tema. Dua tambahan baru: **Dunia Mainan** (tema kartun ceria dengan maskot orisinal) dan **Polaroid Sosial** (kartu foto instan miring di atas latar kuning).

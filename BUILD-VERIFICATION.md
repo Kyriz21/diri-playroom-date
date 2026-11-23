@@ -1,22 +1,8 @@
-# Build Verification — Diri. Playroom Date v0.3.0
+# Build verification — v0.6
 
-## Automated checks
-- `node --check js/photobooth/photobooth.js` — pass
-- `npm test` — 29 tests pass
-- ZIP integrity (`unzip -t`) — pass after packaging
-
-## Editor interaction changes
-- Toolbar panah dan A+/A− dihapus dari editor.
-- Seret bagian utama stiker/teks untuk memindahkan.
-- Pegangan ↘ pada elemen terpilih dapat diseret untuk mengubah ukuran.
-- Pinch dua jari pada area pratinjau dapat mengubah ukuran elemen yang sedang digerakkan.
-- Roda mouse di atas elemen mengubah ukuran pada desktop.
-- Tanda × pada elemen terpilih menghapus elemen tersebut.
-- Skala ekspor PNG/JPEG memakai rentang yang sama dengan editor (0.35–3.0) serta ukuran dasar sesuai jenis elemen.
-
-## Still requires physical device testing
-- Pinch gesture pada Safari iOS dan Chrome Android.
-- Drag dan pegangan resize pada layar sentuh/mouse dengan browser dan zoom berbeda.
-- Roda mouse dan trackpad pada desktop.
-- Sinkronisasi skala ke pasangan pada sesi Firebase nyata.
-- Perbandingan ukuran elemen pratinjau dengan PNG/JPEG hasil unduhan.
+- Node test suite: 34/34 passed.
+- JavaScript syntax checks: passed for all JS modules.
+- Frame catalog: 18 unique frame IDs.
+- Added original `toybox` and `social` artwork to CSS preview and Canvas export.
+- Polaroid Sosial export applies the same alternating card tilt as the browser preview.
+- Physical camera, mobile browser rendering, Firebase live sync, and print output still require deployment testing.

@@ -15,7 +15,9 @@ export const FRAMES = [
   ['arcade','Arked 8-Bit','#17152b','#f7f3ff','arcade','#39e6d2'],
   ['loveletter','Surat Cinta','#f9e8e9','#7e4856','loveletter','#bf7187'],
   ['birthday','Pesta Ulang Tahun','#fff0dc','#7c4b73','birthday','#ef8c45'],
-  ['doodle','Buku Doodle','#fff9e9','#4c5261','doodle','#78a9a0']
+  ['doodle','Buku Doodle','#fff9e9','#4c5261','doodle','#78a9a0'],
+  ['toybox','Dunia Mainan','#ffd83d','#183b86','toybox','#e43d35'],
+  ['social','Polaroid Sosial','#ffc928','#292323','social','#f05b48']
 ];
 
 export function clampPosition(value, min = 0.04, max = 0.96) {
@@ -113,6 +115,33 @@ function drawLeaf(ctx, x, y, size, angle, color) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color;
   ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(size * .55, -size * .65, size * 1.1, -size * .5, size, 0); ctx.bezierCurveTo(size * .65, size * .55, size * .2, size * .42, 0, 0); ctx.fill();
   ctx.strokeStyle = '#647b60'; ctx.lineWidth = Math.max(1, size * .045); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(size * .88, 0); ctx.stroke(); ctx.restore();
+}
+
+function drawCloud(ctx, x, y, scale, fill = '#fff', stroke = '#e7a84b') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+  ctx.beginPath(); ctx.moveTo(-58, 18); ctx.bezierCurveTo(-82, 15, -82, -18, -55, -24);
+  ctx.bezierCurveTo(-48, -58, -4, -62, 10, -35); ctx.bezierCurveTo(38, -55, 72, -35, 66, -7);
+  ctx.bezierCurveTo(91, 4, 76, 31, 50, 31); ctx.lineTo(-48, 31); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
+}
+function drawFriendlyAlien(ctx, x, y, scale, color = '#73c96c') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+  // Original toy-like alien mascot; deliberately not based on any existing character.
+  rounded(ctx, -27, -8, 54, 55, 18, color, '#214f73', 4);
+  circle(ctx, -12, 12, 8, '#fff'); circle(ctx, 12, 12, 8, '#fff');
+  circle(ctx, -11, 13, 3.5, '#24354c'); circle(ctx, 13, 13, 3.5, '#24354c');
+  ctx.strokeStyle = '#214f73'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 24, 9, .15, Math.PI - .15); ctx.stroke();
+  line(ctx, -14, -8, -24, -27, '#214f73', 3); line(ctx, 14, -8, 24, -27, '#214f73', 3);
+  circle(ctx, -25, -29, 5, '#f15b66'); circle(ctx, 25, -29, 5, '#f15b66');
+  ctx.restore();
+}
+function drawPolaroidGlyphs(ctx, width, height) {
+  heart(ctx, width * .14, height * .52, width * .075, '#f05b48');
+  line(ctx, width * .25, height * .54, width * .33, height * .58, '#292323', 7);
+  line(ctx, width * .33, height * .58, width * .29, height * .48, '#292323', 7);
+  line(ctx, width * .29, height * .48, width * .25, height * .54, '#292323', 7);
+  ctx.save(); ctx.strokeStyle = '#292323'; ctx.lineWidth = 7; ctx.beginPath();
+  ctx.moveTo(width * .84, height * .48); ctx.lineTo(width * .84, height * .59); ctx.lineTo(width * .91, height * .55); ctx.lineTo(width * .98, height * .59); ctx.lineTo(width * .98, height * .48); ctx.stroke(); ctx.restore();
 }
 
 function drawJaggedFrame(ctx, x, y, width, height, color, lineWidth = 12, seed = 0) {
@@ -297,6 +326,41 @@ export function drawFrameBackground(ctx, frame, width, height, couple = false) {
       label(ctx, 'coretan kecil, kenangan besar', width / 2, height - 70, width * .026, ink, 'Comic Sans MS, cursive');
       break;
     }
+    case 'toybox': {
+      // Bright original toy-room scene: sky, checkerboard, colour bands and friendly mascot.
+      const sky = ctx.createLinearGradient(0, 0, 0, height * .48);
+      sky.addColorStop(0, '#77d8f5'); sky.addColorStop(1, '#e4f8ff');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#f7cb35'; ctx.fillRect(0, height * .30, width, height * .25);
+      const tile = Math.max(38, width * .075);
+      for (let y = height * .30, row = 0; y < height * .56; y += tile, row++) {
+        for (let x = (row % 2) * tile / 2, col = 0; x < width; x += tile, col++) {
+          ctx.fillStyle = (row + col) % 2 ? '#fff0a0' : '#f4b91f';
+          ctx.fillRect(x, y, tile, tile);
+        }
+      }
+      ctx.fillStyle = '#173b91'; ctx.fillRect(0, height * .56, width, height * .25);
+      ctx.fillStyle = '#e94436'; ctx.fillRect(0, height * .81, width, height * .19);
+      drawCloud(ctx, width * .18, height * .18, width * .00105, '#fff', '#64b9df');
+      drawCloud(ctx, width * .81, height * .22, width * .00075, '#fff', '#64b9df');
+      star(ctx, width * .87, height * .10, width * .055, '#ffdf45', 5, width * .025);
+      label(ctx, 'PETUALANGAN KECIL KITA', width / 2, height * .075, width * .043, '#173b91', 'Arial', 'center', '900');
+      drawFriendlyAlien(ctx, width * .84, height * .91, width * .00145, '#78d46c');
+      circle(ctx, width * .13, height * .90, width * .045, '#f4a34b', '#fff1c7', 5);
+      label(ctx, 'PLAY · SMILE · REPEAT', width / 2, height * .965, width * .027, '#fff8d8', 'Arial', 'center', '900');
+      break;
+    }
+    case 'social': {
+      const yellow = ctx.createLinearGradient(0, 0, width, height);
+      yellow.addColorStop(0, '#ffdf55'); yellow.addColorStop(.55, '#ffc629'); yellow.addColorStop(1, '#f5a91c');
+      ctx.fillStyle = yellow; ctx.fillRect(0, 0, width, height);
+      circle(ctx, width * .12, height * .16, width * .10, 'rgba(255,255,255,.18)');
+      circle(ctx, width * .88, height * .78, width * .15, 'rgba(255,255,255,.14)');
+      label(ctx, 'YOUR LITTLE MOMENTS', width / 2, height * .075, width * .044, '#3b2b28', 'Arial', 'center', '900');
+      label(ctx, '♡  LIKE · SAVE · REMEMBER  ♡', width / 2, height * .96, width * .026, '#3b2b28', 'Arial', 'center', 'bold');
+      drawPolaroidGlyphs(ctx, width, height);
+      break;
+    }
   }
   ctx.restore();
 }
@@ -366,6 +430,24 @@ export function drawPhotoSlotBorder(ctx, frame, x, y, width, height, index) {
       ctx.strokeStyle = accent; ctx.lineWidth = 12; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16); break;
     case 'doodle':
       ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.setLineDash([8, 8]); ctx.strokeRect(x - 7, y - 7, width + 14, height + 14); ctx.setLineDash([]); break;
+    case 'toybox': {
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(20,45,90,.28)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 7;
+      rounded(ctx, x - 15, y - 15, width + 30, height + 30, 34, '#fff', '#e84b39', 9); ctx.restore();
+      ctx.strokeStyle = '#f8c832'; ctx.lineWidth = 9; ctx.strokeRect(x - 5, y - 5, width + 10, height + 10);
+      drawCloud(ctx, x + width * .10, y + height * .03, Math.min(.42, width * .00055), '#fff', '#e84b39');
+      star(ctx, x + width - 20, y + 20, Math.min(24, width * .06), '#f4c52e');
+      label(ctx, ['PLAY!', 'SMILE!', 'WOW!', 'YAY!'][index % 4], x + width / 2, y + height + 27, Math.max(16, width * .035), '#173b91', 'Arial', 'center', '900');
+      break;
+    }
+    case 'social': {
+      ctx.save(); ctx.shadowColor = 'rgba(70,45,20,.22)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 8;
+      ctx.fillStyle = '#fff'; ctx.fillRect(x - 13, y - 13, width + 26, height + 48); ctx.restore();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 12; ctx.strokeRect(x - 7, y - 7, width + 14, height + 14);
+      heart(ctx, x + 20, y + height + 25, Math.min(22, width * .06), '#f05b48');
+      label(ctx, '♡', x + width - 18, y + height + 24, Math.max(16, width * .05), '#292323', 'Arial', 'center', 'bold');
+      label(ctx, `MOMENT ${String(index + 1).padStart(2,'0')}`, x + width / 2, y + height + 28, Math.max(12, width * .023), '#4b403b', 'Arial', 'center', 'bold');
+      break;
+    }
     default:
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 15; ctx.strokeRect(x - 8, y - 8, width + 16, height + 16);
       ctx.strokeStyle = accent; ctx.lineWidth = 4; ctx.strokeRect(x - 3, y - 3, width + 6, height + 6);
@@ -411,6 +493,12 @@ export function drawFrameOverlay(ctx, frame, width, height, couple = false) {
   } else if (theme === 'kawaii') {
     heart(ctx, leftX, upperY, width * .05, '#eea8c5');
     star(ctx, rightX, lowerY, width * .035, '#d5a4df');
+  } else if (theme === 'toybox') {
+    star(ctx, leftX, upperY, width * .05, '#f4c52e', 5);
+    drawFriendlyAlien(ctx, rightX, lowerY, width * .00075, '#78d46c');
+  } else if (theme === 'social') {
+    heart(ctx, leftX, upperY, width * .06, '#f05b48');
+    star(ctx, rightX, lowerY, width * .035, '#fff7d1');
   } else if (theme === 'newspaper') {
     label(ctx, '✦', leftX, upperY, width * .04, accent, 'Georgia', 'center', 'bold');
     label(ctx, '♡', rightX, lowerY, width * .04, accent, 'Georgia', 'center', 'bold');

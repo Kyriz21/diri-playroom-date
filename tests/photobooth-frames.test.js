@@ -10,13 +10,24 @@ function mockContext() {
   return ctx;
 }
 
-test('katalog Photobooth memuat 16 desain tematik dengan ID unik', () => {
-  assert.equal(FRAMES.length, 16);
+test('katalog Photobooth memuat 18 desain tematik dengan ID unik', () => {
+  assert.equal(FRAMES.length, 18);
   const ids = FRAMES.map(frame => frame[0]);
   assert.equal(new Set(ids).size, ids.length);
   for (const frame of FRAMES) {
     assert.ok(frame[0] && frame[1] && frame[2] && frame[3] && frame[4] && frame[5]);
     assert.equal(frameById(frame[0])[0], frame[0]);
+  }
+});
+
+test('katalog menyertakan Dunia Mainan dan Polaroid Sosial sebagai konsep desain baru', async () => {
+  assert.equal(frameById('toybox')[0], 'toybox');
+  assert.equal(frameById('social')[0], 'social');
+  const css = await import('node:fs/promises').then(({readFile}) => readFile(new URL('../css/review-build.css', import.meta.url), 'utf8'));
+  for (const id of ['toybox','social']) {
+    assert.ok(css.includes(`.pb-frame-mini.${id}`));
+    assert.ok(css.includes(`.pb-strip.${id}`));
+    assert.ok(css.includes(`.pb-couple-strip.${id}`));
   }
 });
 
@@ -72,6 +83,13 @@ test('Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh'
 });
 
 
+test('tema Polaroid Sosial mengekspor kartu foto miring seperti pratinjau', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source, /selected\[4\] === 'social'/);
+  assert.match(source, /ctx\.rotate\(\(index % 2 \? 1\.8 : -1\.7\)/);
+});
+
 test('hasil ekspor memakai ornamen tema yang sama dengan pratinjau', async () => {
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
@@ -101,4 +119,17 @@ test('editor mendukung pinch-to-resize dan roda mouse pada hiasan', async () => 
   assert.match(source, /root\.addEventListener\('wheel',onElementWheel,\{passive:false\}\)/);
   assert.match(source, /function clampElementScale\(value\)/);
   assert.match(source, /target\.scale = clampElementScale\(pending\.scale\)/);
+});
+
+
+test('kamera mencoba ulang elemen video terbaru saat play terinterupsi oleh pembaruan DOM', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source, /cameraRequestToken/);
+  assert.match(source, /cameraAttachPromise/);
+  assert.match(source, /error\?\.name === 'AbortError'/);
+  assert.match(source, /new load request/);
+  assert.match(source, /root\.querySelector\('#pb-video'\) !== video/);
+  assert.match(source, /attachCameraToCurrentVideo\(requestToken\)/);
+  assert.doesNotMatch(source, /const video = root\.querySelector\('#pb-video'\);\s*if \(!video\) return;\s*video\.srcObject = stream;\s*await video\.play\(\);/);
 });
