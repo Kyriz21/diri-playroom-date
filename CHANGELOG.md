@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.11.0 — Gesture-only decoration controls
+- Removed the visible resize arrow/white circular handle from sticker and text overlays in solo and couple editors.
+- Two-finger gesture now changes scale and rotation together; one-finger drag still moves the selected item.
+- Kept the separate delete button in the editor panel and the precise rotation slider.
+- Updated editor instructions to describe direct manipulation without a corner handle.
+- Preserved Firebase configuration, solo/couple camera flow, filters, photo transfer, frames, and export.
+
+# Changelog
+
 ## v0.10 — editor dan kamera
 - Menghilangkan toast kamera berulang setelah fase pengambilan foto selesai; stream kamera dihentikan saat masuk ke transfer/editor.
 - Menambahkan filter, kecerahan, kontras, saturasi, dan temperatur pada editor gabungan.

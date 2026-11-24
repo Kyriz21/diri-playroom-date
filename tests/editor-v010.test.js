@@ -14,7 +14,7 @@ test('solo and shared decorations preserve rotation in preview and export', () =
 test('delete control is separate from the sticker surface', () => {
   assert.match(source, /data-pb=\\?"delete-selected-element/);
   assert.doesNotMatch(source, /class=\\?"pb-element-remove\\?" data-pb=\\?"delete-element/);
-  assert.match(css, /\.pb-deco \.pb-element-remove,\.pb-shared-element \.pb-element-remove\{display:none!important\}/);
+  assert.doesNotMatch(css, /pb-element-remove|pb-element-resize/);
 });
 test('camera stream is only reattached while capture screen is active', () => {
   assert.match(source, /if \(stream && pState\.phase === 'capture'\)/);

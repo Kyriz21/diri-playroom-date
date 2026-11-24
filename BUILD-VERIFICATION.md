@@ -1,18 +1,12 @@
-# Build verification — v0.10
+# Build verification — v0.11
 
-Automated local checks:
-- `npm test`: 62 tests passed.
-- JavaScript syntax checks: all JS files passed `node --check`.
-- `firebase-database.rules.json`: valid JSON.
-- `package.json`: valid JSON.
-
-Scope of this build:
-- Camera stream is only reattached while the Photobooth is in capture phase; it is stopped when the shared session leaves capture, preventing stale camera retries/toasts in the editor.
-- Shared editor now exposes the same filter presets and image adjustments as the solo editor (brightness, contrast, saturation, temperature).
-- Text and sticker elements support 0–360° rotation in preview and Canvas export.
-- Delete action is a separate button for the selected element; no × badge is attached to the sticker itself.
-
-Not verified in this local environment:
-- Physical camera behavior on Android Chrome.
-- Live Firebase synchronization between two real devices.
-- Actual browser PNG/JPEG downloads and print output after deployment.
+- Base: Diri. Playroom Date v0.10.
+- Removed the visible resize arrow/circular handle from all sticker/text overlays.
+- One-finger drag moves the selected decoration.
+- Two-finger pinch changes scale; two-finger rotation updates rotation in the 0–360 degree range.
+- The editor-panel delete button remains separate from the photo surface.
+- The angle slider remains available for precise rotation.
+- Firebase client configuration and database rules are preserved from v0.10.
+- Node test suite: 64/64 passed.
+- JavaScript syntax checks: all files passed.
+- Browser/touch-device gesture behavior still requires real-device validation.

@@ -103,19 +103,20 @@ test('editor tidak lagi merender toolbar panah atau A+/A− untuk manipulasi ele
   const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /class="element-tools"/);
   assert.doesNotMatch(source, />A\+<|>A−</);
-  assert.match(source, /activeGesture\.mode = 'pinch'/);
+  assert.match(source, /activeGesture\.mode = 'pinch-rotate'/);
   assert.match(source, /onElementWheel/);
   assert.match(source, /delete-selected-element/);
-  assert.match(source, /pb-element-resize/);
+  assert.doesNotMatch(source, /pb-element-resize|data-element-resize|↘/);
 });
 
-test('editor mendukung pinch-to-resize dan roda mouse pada hiasan', async () => {
+test('editor mendukung pinch-resize, rotasi dua jari, dan roda mouse tanpa pegangan visual', async () => {
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
-  assert.match(source, /activeGesture\.mode = 'pinch'/);
-  assert.match(source, /resizeHandle \? 'resize' : 'drag'/);
-  assert.match(source, /gesture\.mode === 'resize'/);
+  assert.match(source, /activeGesture\.mode = 'pinch-rotate'/);
   assert.match(source, /gesture\.startScale \* distance \/ gesture\.startDistance/);
+  assert.match(source, /signedAngleDelta\(angle, gesture\.startAngle\)/);
+  assert.match(source, /gesture\.rotate = normalizeElementRotation\(gesture\.startRotate \+ angleDelta\)/);
+  assert.doesNotMatch(source, /resizeHandle|gesture\.mode === 'resize'/);
   assert.match(source, /root\.addEventListener\('wheel',onElementWheel,\{passive:false\}\)/);
   assert.match(source, /function clampElementScale\(value\)/);
   assert.match(source, /target\.scale = clampElementScale\(pending\.scale\)/);

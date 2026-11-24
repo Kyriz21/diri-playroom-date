@@ -463,14 +463,9 @@
 /* Diri. Playroom Date v0.3 — direct manipulation on the photo preview. */
 .pb-strip,.pb-couple-strip{touch-action:none;overscroll-behavior:contain}
 .pb-deco,.pb-shared-element{touch-action:none;cursor:grab;-webkit-tap-highlight-color:transparent}
-.pb-element-remove{position:absolute;top:-.72em;right:-.78em;z-index:20;display:none;place-items:center;width:25px;height:25px;padding:0;border:1px solid rgba(151,76,112,.28);border-radius:50%;background:rgba(255,255,255,.96);box-shadow:0 2px 7px rgba(42,25,37,.18);color:#994d70;font:700 16px/1 Arial,sans-serif;text-shadow:none;cursor:pointer;touch-action:manipulation;pointer-events:auto}
-.pb-deco.selected .pb-element-remove,.pb-shared-element.selected .pb-element-remove{display:grid}
 .pb-deco.selected,.pb-shared-element.selected{outline:1.5px dashed rgba(199,125,165,.8)!important;outline-offset:8px}
 .pb-deco.dragging,.pb-shared-element.dragging{cursor:grabbing}
-@media(hover:hover){.pb-element-remove{opacity:.78}.pb-element-remove:hover{opacity:1;transform:scale(1.08)}}
 
-.pb-element-resize{position:absolute;right:-.78em;bottom:-.78em;z-index:20;display:none;place-items:center;width:32px;height:32px;padding:0;border:1px solid rgba(151,76,112,.28);border-radius:50%;background:rgba(255,255,255,.96);box-shadow:0 2px 7px rgba(42,25,37,.18);color:#994d70;font:700 20px/1 Arial,sans-serif;text-shadow:none;cursor:nwse-resize;touch-action:none;pointer-events:auto}
-.pb-deco.selected .pb-element-resize,.pb-shared-element.selected .pb-element-resize{display:grid}
 
 
 /* v0.6 — two distinct editorial frame concepts inspired by the user's references.
@@ -561,6 +556,5 @@
 .pb-rotation-control input{width:100%;accent-color:#c77fa6;touch-action:pan-x}
 .pb-delete-selected{flex:0 0 auto;min-height:42px}
 .pb-deco,.pb-shared-element{transform-origin:center center;}
-.pb-deco .pb-element-remove,.pb-shared-element .pb-element-remove{display:none!important}
 .pb-deco.selected,.pb-shared-element.selected{outline:1.5px dashed rgba(199,125,165,.8)!important;outline-offset:7px}
 @media(max-width:600px){.pb-element-tools{align-items:stretch;flex-direction:column}.pb-delete-selected{width:100%}}

@@ -2,6 +2,7 @@ import { putLocalMedia, getLocalMedia, deleteLocalMedia, setLocalValue, getLocal
 import { nextPhotoSlot, hasCompletePhotoSet } from '../games/logic.js';
 import { FRAMES, frameById, clampPosition, drawFrameBackground, drawPhotoSlotBorder, drawFrameOverlay } from './frame-art.js';
 import { RELAY_MAX_PHOTO_BYTES, dataUrlToBlob, validateRelayPayload, buildRelayPhotoPayload } from './relay-transfer.js';
+import { normalizeElementRotation, signedAngleDelta } from './gesture-utils.js';
 
 // Firebase is loaded only for a shared session. Standalone Photobooth stays local and
 // can be used even before a Firebase project is configured.
@@ -384,7 +385,7 @@ export function mountPhotobooth(root, context) {
   function renderSoloPreview() {
     const selected = frameById(soloFrame);
     const cssFilter = imageFilter(soloFilter, soloAdjust);
-    const elements = soloElements.map(element => `<button type="button" class="pb-deco ${element.kind==='sticker'?'sticker':''} ${selectedSoloElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)})" data-pb="select-solo-element" data-element-id="${esc(element.id)}" data-drag-element="solo" aria-label="Pindahkan ${esc(element.text)}">${esc(element.text)}<span class="pb-element-resize" data-element-resize aria-label="Tarik untuk mengubah ukuran" title="Tarik untuk mengubah ukuran">↘</span></button>`).join('');
+    const elements = soloElements.map(element => `<button type="button" class="pb-deco ${element.kind==='sticker'?'sticker':''} ${selectedSoloElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)})" data-pb="select-solo-element" data-element-id="${esc(element.id)}" data-drag-element="solo" aria-label="Pilih dan geser ${esc(element.text)}">${esc(element.text)}</button>`).join('');
     const photoCards = [0,1,2,3].map(index => {
       const source = photoPreviewSource(soloPhotos[index]);
       return source
@@ -458,7 +459,7 @@ export function mountPhotobooth(root, context) {
       return;
     }
     const complete = hasCompletePhotoSet(soloPhotos,4);
-    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${[0,1,2,3].map(index=>{const source=photoPreviewSource(soloPhotos[index]);return `<figure class="pb-mini-photo">${source?`<img src="${esc(source)}" alt="Foto ${index+1}" loading="eager" decoding="sync">`:`<span class="pb-mini-missing">Foto ${index+1} belum tersedia</span>`}<figcaption>Foto ${index+1}</figcaption></figure>`;}).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Ketuk hiasan untuk memilih, lalu seret untuk memindahkan. Putar bebas dengan pengatur sudut di bawah pratinjau; ubah ukuran dengan cubit atau pegangan sudut. Tombol hapus terpisah agar tidak mengganggu penempatan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div>${renderElementTools('solo',soloElements.find(item=>item.id===selectedSoloElementId))}</section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
+    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${[0,1,2,3].map(index=>{const source=photoPreviewSource(soloPhotos[index]);return `<figure class="pb-mini-photo">${source?`<img src="${esc(source)}" alt="Foto ${index+1}" loading="eager" decoding="sync">`:`<span class="pb-mini-missing">Foto ${index+1} belum tersedia</span>`}<figcaption>Foto ${index+1}</figcaption></figure>`;}).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Ketuk hiasan untuk memilih, lalu seret dengan satu jari untuk memindahkan. Gunakan dua jari untuk mencubit agar ukuran berubah atau putar kedua jari untuk memutar hiasan. Pengatur sudut tetap tersedia untuk penyesuaian presisi. Tombol hapus berada di panel bawah, tidak menempel pada hiasan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div>${renderElementTools('solo',soloElements.find(item=>item.id===selectedSoloElementId))}</section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
     void renderGallery();
   }
 
@@ -689,7 +690,7 @@ export function mountPhotobooth(root, context) {
     const selected = frameById(pState.frameId || 'korean');
     const css = imageFilter(sharedFilter(), sharedAdjustments());
     const rows = [0,1,2,3].map(index => `<div class="pb-couple-row"><figure class="pb-couple-photo pb-photo-card ${selected[0]}"><img src="${editorData.host[index]?.url || ''}" alt="Foto Pembuat ruang ${index+1}" style="filter:${css}"><figcaption>${photoCaption(selected,index,'PEMBUAT')}</figcaption></figure><figure class="pb-couple-photo pb-photo-card ${selected[0]}"><img src="${editorData.guest[index]?.url || ''}" alt="Foto Tamu ${index+1}" style="filter:${css}"><figcaption>${photoCaption(selected,index,'TAMU')}</figcaption></figure></div>`).join('');
-    const elements = (pState.elements || []).map(element => `<button type="button" class="pb-shared-element ${element.kind==='sticker'?'sticker':''} ${selectedElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)});color:${esc(element.color||selected[3])}" data-pb="select-element" data-element-id="${esc(element.id)}" data-drag-element="couple" aria-label="Pindahkan ${esc(element.text)}">${esc(element.text)}<span class="pb-element-resize" data-element-resize aria-label="Tarik untuk mengubah ukuran" title="Tarik untuk mengubah ukuran">↘</span></button>`).join('');
+    const elements = (pState.elements || []).map(element => `<button type="button" class="pb-shared-element ${element.kind==='sticker'?'sticker':''} ${selectedElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)});color:${esc(element.color||selected[3])}" data-pb="select-element" data-element-id="${esc(element.id)}" data-drag-element="couple" aria-label="Pilih dan geser ${esc(element.text)}">${esc(element.text)}</button>`).join('');
     return `<div class="pb-couple-strip ${selected[0]}">${renderFrameHeader(selected)}<div class="pb-frame-ornaments ${selected[0]}" aria-hidden="true"><span class="ornament-a">${selected[0]==='comic'?'POW!':selected[0]==='kawaii'?'♡':selected[0]==='wanted'?'★':'✦'}</span><span class="ornament-b">${selected[0]==='comic'?'WOW!':selected[0]==='kawaii'?'✿':selected[0]==='wanted'?'REWARD':'♡'}</span></div><div class="pb-couple-rows">${rows}</div>${renderFrameFooter(selected)}${elements}</div>`;
   }
   function renderElementTools(type, selected) {
@@ -705,7 +706,7 @@ export function mountPhotobooth(root, context) {
     const ownFotos=editorData?.[role]||[];
     const slotGrid=ownFotos.length===4?`<div class="pb-retake-grid">${ownFotos.map((photo,index)=>`<figure><img src="${photo?.url||''}" alt="Foto ${index+1} milikmu"><figcaption>Foto ${index+1}</figcaption><button class="button button-small button-quiet" data-pb="request-slot-retake" data-index="${index}" ${slotRequest?'disabled':''}>Ulangi foto ini</button></figure>`).join('')}</div>`:'<p class="small-note">Memuat foto untuk opsi pengambilan ulang…</p>';
     const retakeNotice=slotRequest?`<div class="room-alert"><strong>Permintaan ulang foto</strong><p>${slotRequest.role==='host'?'Pembuat ruang':'Tamu'} meminta mengulang foto nomor ${Number(slotRequest.index)+1}.</p><p>Pembuat ruang: ${slotRequest.approvals?.host?'setuju':'menunggu'} · Tamu: ${slotRequest.approvals?.guest?'setuju':'menunggu'}</p>${slotRequest.role===role?`<button class="button button-quiet" data-pb="cancel-slot-retake">Batalkan permintaan</button>`:`<button class="button button-primary" data-pb="approve-slot-retake">Setuju, ulangi foto</button>`}</div>`:'';
-    return `${gameTop('Pratinjau gabungan berdua','Periksa hasil delapan foto pada satu strip. Kalian dapat meminta pengambilan ulang sebelum menyetujui hasil akhir.','PRATINJAU SEBELUM CETAK')}<div class="photo-layout"><section class="panel shared-editor-panel"><h2>Pratinjau hasil gabungan</h2><div class="pb-shared-preview">${renderSharedStrip()}</div>${renderElementTools('couple',selected)}<h2>Tampilan foto</h2>${renderFilterControls(sharedFilter(),sharedAdjustments(),'couple')}<p class="small-note">Filter, kecerahan, kontras, saturasi, dan temperatur diterapkan pada hasil unduhan dan tersinkron ke pasangan. Kolom kiri adalah Pembuat ruang, kolom kanan adalah Tamu. Inilah susunan yang akan diunduh atau dicetak.</p>${retakeNotice}<h2>Ulangi foto tertentu</h2><p class="small-note">Pilih salah satu foto milikmu. Pasangan perlu menyetujui sebelum kamera dibuka kembali untuk satu foto tersebut.</p>${slotGrid}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('add-sticker')}<form data-pb-form="couple-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Ketuk hiasan untuk memilih, lalu seret untuk memindahkan. Gunakan pengatur sudut di bawah pratinjau untuk memutar bebas dan cubit/pegangan sudut untuk mengubah ukuran. Tombol hapus terpisah agar tidak mengganggu penempatan. Perubahan tersinkron ke pasangan.</p><div class="approval-grid"><span class="ready-chip ${approvals.host?'done':''}">Pembuat ruang · ${approvals.host?'Setuju':'Menunggu'}</span><span class="ready-chip ${approvals.guest?'done':''}">Tamu · ${approvals.guest?'Setuju':'Menunggu'}</span></div><div class="photo-controls"><button class="button button-primary" data-pb="final-approve">${approvals[role]?'Batalkan persetujuan':'Setujui hasil akhir'}</button><button class="button button-quiet" data-pb="retake-all">Minta ulang seluruh foto</button></div><p class="small-note">Tombol unduh/cetak tersedia setelah kalian berdua menyetujui pratinjau ini.</p></section></div>`;
+    return `${gameTop('Pratinjau gabungan berdua','Periksa hasil delapan foto pada satu strip. Kalian dapat meminta pengambilan ulang sebelum menyetujui hasil akhir.','PRATINJAU SEBELUM CETAK')}<div class="photo-layout"><section class="panel shared-editor-panel"><h2>Pratinjau hasil gabungan</h2><div class="pb-shared-preview">${renderSharedStrip()}</div>${renderElementTools('couple',selected)}<h2>Tampilan foto</h2>${renderFilterControls(sharedFilter(),sharedAdjustments(),'couple')}<p class="small-note">Filter, kecerahan, kontras, saturasi, dan temperatur diterapkan pada hasil unduhan dan tersinkron ke pasangan. Kolom kiri adalah Pembuat ruang, kolom kanan adalah Tamu. Inilah susunan yang akan diunduh atau dicetak.</p>${retakeNotice}<h2>Ulangi foto tertentu</h2><p class="small-note">Pilih salah satu foto milikmu. Pasangan perlu menyetujui sebelum kamera dibuka kembali untuk satu foto tersebut.</p>${slotGrid}<div class="photo-controls"><h3>Hiasan tanpa latar</h3>${renderStickerPicker('add-sticker')}<form data-pb-form="couple-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Ketuk hiasan untuk memilih, lalu seret dengan satu jari untuk memindahkan. Gunakan dua jari untuk mencubit agar ukuran berubah atau putar kedua jari untuk memutar hiasan. Pengatur sudut tetap tersedia untuk penyesuaian presisi. Tombol hapus berada di panel bawah, tidak menempel pada hiasan. Perubahan tersinkron ke pasangan.</p><div class="approval-grid"><span class="ready-chip ${approvals.host?'done':''}">Pembuat ruang · ${approvals.host?'Setuju':'Menunggu'}</span><span class="ready-chip ${approvals.guest?'done':''}">Tamu · ${approvals.guest?'Setuju':'Menunggu'}</span></div><div class="photo-controls"><button class="button button-primary" data-pb="final-approve">${approvals[role]?'Batalkan persetujuan':'Setujui hasil akhir'}</button><button class="button button-quiet" data-pb="retake-all">Minta ulang seluruh foto</button></div><p class="small-note">Tombol unduh/cetak tersedia setelah kalian berdua menyetujui pratinjau ini.</p></section></div>`;
   }
 
   async function requestSlotRetake(index) {
@@ -1283,20 +1284,20 @@ export function mountPhotobooth(root, context) {
     if (!gesture?.node) return;
     gesture.node.style.left = `${gesture.x * 100}%`;
     gesture.node.style.top = `${gesture.y * 100}%`;
-    const current = gestureElement(gesture.type, gesture.id);
-    gesture.node.style.transform = `translate(-50%,-50%) rotate(${Number(current?.rotate || gesture.rotate || 0)}deg) scale(${clampElementScale(gesture.scale)})`;
+    gesture.node.style.transform = `translate(-50%,-50%) rotate(${normalizeElementRotation(gesture.rotate)}deg) scale(${clampElementScale(gesture.scale)})`;
   }
   function onPointerDown(event) {
-    if (event.target.closest('.pb-element-remove')) return;
-
-    // Sentuhan kedua pada area strip mengubah gerakan menjadi pinch-to-resize.
+    // Jari kedua pada area foto mengaktifkan gestur gabungan: cubit untuk ukuran,
+    // putar dua jari untuk rotasi. Tidak ada pegangan visual yang menutupi foto.
     if (activeGesture && activeGesture.stage.contains(event.target) && !activeGesture.pointers.has(event.pointerId)) {
       activeGesture.pointers.set(event.pointerId, { x:event.clientX, y:event.clientY });
       if (activeGesture.pointers.size >= 2) {
         const points = [...activeGesture.pointers.values()].slice(0,2);
-        activeGesture.mode = 'pinch';
+        activeGesture.mode = 'pinch-rotate';
         activeGesture.startDistance = Math.max(1, Math.hypot(points[1].x-points[0].x, points[1].y-points[0].y));
         activeGesture.startScale = clampElementScale(activeGesture.scale);
+        activeGesture.startAngle = Math.atan2(points[1].y-points[0].y, points[1].x-points[0].x) * 180 / Math.PI;
+        activeGesture.startRotate = normalizeElementRotation(activeGesture.rotate);
         activeGesture.changed = false;
         try { activeGesture.stage.setPointerCapture(event.pointerId); } catch {}
         event.preventDefault();
@@ -1304,8 +1305,7 @@ export function mountPhotobooth(root, context) {
       return;
     }
 
-    const resizeHandle = event.target.closest('.pb-element-resize');
-    const node = resizeHandle?.closest('[data-drag-element]') || event.target.closest('[data-drag-element]');
+    const node = event.target.closest('[data-drag-element]');
     if (!node || (event.pointerType === 'mouse' && event.button !== 0)) return;
     const type = node.dataset.dragElement;
     const stage = node.closest(type === 'solo' ? '#solo-strip' : '.pb-couple-strip');
@@ -1318,16 +1318,14 @@ export function mountPhotobooth(root, context) {
     const startY = clampPosition(Number.parseFloat(node.style.top) / 100);
     const offsetX = startX * box.width - (event.clientX - box.left);
     const offsetY = startY * box.height - (event.clientY - box.top);
-    const startScale = clampElementScale(element.scale);
-    const nodeRect = node.getBoundingClientRect();
-    const centerX = nodeRect.left + nodeRect.width / 2;
-    const centerY = nodeRect.top + nodeRect.height / 2;
-    const startDistance = Math.max(1, Math.hypot(event.clientX-centerX, event.clientY-centerY));
     activeGesture = {
-      type, id:node.dataset.elementId, node, stage, mode:resizeHandle ? 'resize' : 'drag',
+      type, id:node.dataset.elementId, node, stage, mode:'drag',
       pointers:new Map([[event.pointerId, {x:event.clientX,y:event.clientY}]]),
       startX, startY, x:startX, y:startY,
-      offsetX, offsetY, scale:startScale, startScale, startDistance, centerX, centerY, changed:false, ended:false
+      offsetX, offsetY,
+      scale:clampElementScale(element.scale), startScale:clampElementScale(element.scale),
+      rotate:normalizeElementRotation(element.rotate), startRotate:normalizeElementRotation(element.rotate),
+      startDistance:1, startAngle:0, changed:false, ended:false
     };
     if (type === 'solo') selectedSoloElementId = activeGesture.id;
     else selectedElementId = activeGesture.id;
@@ -1340,30 +1338,23 @@ export function mountPhotobooth(root, context) {
     if (!gesture || !gesture.pointers.has(event.pointerId) || gesture.ended) return;
     gesture.pointers.set(event.pointerId, {x:event.clientX,y:event.clientY});
 
-    if (gesture.mode === 'pinch') {
+    if (gesture.mode === 'pinch-rotate') {
       if (gesture.pointers.size < 2) return;
       const points = [...gesture.pointers.values()].slice(0,2);
       const distance = Math.max(1, Math.hypot(points[1].x-points[0].x, points[1].y-points[0].y));
+      const angle = Math.atan2(points[1].y-points[0].y, points[1].x-points[0].x) * 180 / Math.PI;
+      const angleDelta = signedAngleDelta(angle, gesture.startAngle);
       gesture.scale = clampElementScale(gesture.startScale * distance / gesture.startDistance);
-      if (Math.abs(gesture.scale-gesture.startScale) > .008) gesture.changed = true;
+      gesture.rotate = normalizeElementRotation(gesture.startRotate + angleDelta);
+      if (Math.abs(gesture.scale-gesture.startScale) > .008 || Math.abs(angleDelta) > .5) gesture.changed = true;
       const element = gestureElement(gesture.type, gesture.id);
-      if (element) element.scale = gesture.scale;
+      if (element) { element.scale = gesture.scale; element.rotate = gesture.rotate; }
       applyGestureTransform(gesture);
       event.preventDefault();
       return;
     }
 
     const pointer = gesture.pointers.get(event.pointerId);
-    if (gesture.mode === 'resize') {
-      const distance = Math.max(1, Math.hypot(pointer.x-gesture.centerX, pointer.y-gesture.centerY));
-      gesture.scale = clampElementScale(gesture.startScale * distance / gesture.startDistance);
-      if (Math.abs(gesture.scale-gesture.startScale) > .008) gesture.changed = true;
-      const element = gestureElement(gesture.type, gesture.id);
-      if (element) element.scale = gesture.scale;
-      applyGestureTransform(gesture);
-      event.preventDefault();
-      return;
-    }
     const box = stageBox(gesture.stage);
     if (!box.width || !box.height) return;
     const x = clampPosition((pointer.x - box.left + gesture.offsetX) / box.width);
@@ -1379,8 +1370,8 @@ export function mountPhotobooth(root, context) {
     const gesture = activeGesture;
     if (!gesture || !gesture.pointers.has(event.pointerId)) return;
     gesture.pointers.delete(event.pointerId);
-    // Saat satu jari dari pinch dilepas, jangan lanjutkan sebagai gerakan satu jari.
-    if (gesture.mode === 'pinch' && gesture.pointers.size > 0) {
+    // Setelah salah satu jari dari gestur dua jari dilepas, tunggu sampai semua jari terangkat.
+    if (gesture.mode === 'pinch-rotate' && gesture.pointers.size > 0) {
       gesture.ended = true;
       return;
     }
@@ -1401,7 +1392,10 @@ export function mountPhotobooth(root, context) {
         if (state.phase !== 'editor') return false;
         const element = (state.elements || []).find(item => item.id === gesture.id);
         if (!element) return false;
-        element.x = gesture.x; element.y = gesture.y; element.scale = clampElementScale(gesture.scale); element.rotate = Number(gesture.rotate || element.rotate || 0);
+        element.x = gesture.x;
+        element.y = gesture.y;
+        element.scale = clampElementScale(gesture.scale);
+        element.rotate = normalizeElementRotation(gesture.rotate);
         state.approvals = {host:false,guest:false};
       });
     } catch (error) { showToast(`Perubahan hiasan tidak tersimpan: ${error.message}`, 'error'); }
@@ -1420,7 +1414,7 @@ export function mountPhotobooth(root, context) {
     const scale = clampElementScale(Number(element.scale || 1) * (event.deltaY < 0 ? 1.08 : .92));
     element.scale = scale;
     node.classList.add('selected');
-    node.style.transform = `translate(-50%,-50%) scale(${scale})`;
+    node.style.transform = `translate(-50%,-50%) rotate(${normalizeElementRotation(element.rotate)}deg) scale(${scale})`;
     if (type === 'solo') return;
     pendingWheelScale = {id, scale};
     if (wheelSaveTimer) clearTimeout(wheelSaveTimer);

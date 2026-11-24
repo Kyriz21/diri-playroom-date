@@ -98,10 +98,10 @@ Lihat `REVIEW-BUILD-QA.md`, `KNOWN-LIMITATIONS.md`, dan `SECURITY-NOTES.md` sebe
 
 ### Editor hiasan langsung (v0.3)
 - Seret teks atau stiker langsung pada pratinjau untuk memindahkan.
-- Tarik pegangan ↘ pada sudut elemen untuk mengubah ukurannya langsung.
-- Pada HP/tablet, gunakan dua jari untuk mencubit elemen dan mengubah ukurannya.
-- Pada desktop, arahkan kursor ke elemen dan putar roda mouse untuk mengubah ukurannya.
-- Pilih elemen lalu tekan tanda × kecil untuk menghapusnya.
+- Seret satu jari untuk memindahkan elemen.
+- Gunakan dua jari untuk mencubit agar ukuran berubah dan memutar agar sudut berubah.
+- Pada desktop, roda mouse tetap dapat mengubah ukuran elemen.
+- Pilih elemen lalu gunakan tombol Hapus di panel editor; tidak ada tombol overlay di atas foto.
 - Tidak ada lagi toolbar panah atau tombol A+/A−.
 
 

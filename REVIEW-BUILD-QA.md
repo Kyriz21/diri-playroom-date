@@ -160,7 +160,7 @@ Enam permainan memiliki tahap pengaturan: **Kuis Cinta, Pilih Salah Satu, Jujur 
 - [ ] Ulangi drag menggunakan layar sentuh HP.
 - [ ] Pastikan elemen tetap berada dalam kanvas setelah digeser.
 - [ ] Pastikan posisi elemen yang tampil pada pratinjau sama dengan hasil PNG/JPEG/cetak.
-- [ ] Tarik pegangan ↘ untuk mengubah ukuran, gunakan cubit dua jari pada HP, dan ketuk tanda × untuk menghapus elemen.
+- [ ] Gunakan cubit dua jari untuk mengubah ukuran dan putar dua jari untuk merotasi elemen; hapus melalui tombol terpisah di panel editor.
 - [ ] Filter dan pengaturan kecerahan, kontras, warna, serta temperatur dapat digunakan.
 - [ ] Stiker dan teks terlihat pada pratinjau.
 - [ ] PNG dan JPEG dapat diunduh.
@@ -225,9 +225,19 @@ Temuan:
 ## Editor hiasan langsung — v0.3
 - [ ] Tidak ada tombol panah atau A+/A− di bawah pratinjau.
 - [ ] Seret hiasan di pratinjau untuk memindahkan.
-- [ ] Tarik pegangan ↘ pada sudut elemen untuk mengubah ukurannya.
+- [ ] Tidak ada pegangan panah atau lingkaran pembesar pada hiasan.
 - [ ] Cubit dua jari pada area pratinjau untuk mengubah ukuran hiasan di HP/tablet.
+- [ ] Putar dua jari pada area pratinjau untuk merotasi hiasan 0–360 derajat.
 - [ ] Putar roda mouse saat kursor di atas hiasan untuk mengubah ukuran di desktop.
-- [ ] Tanda × hanya terlihat pada elemen yang dipilih dan menghapus elemen tersebut.
+- [ ] Tombol hapus hanya berada di panel editor dan menghapus elemen yang dipilih.
 - [ ] Hasil PNG/JPEG mempertahankan posisi serta ukuran teks/stiker.
 - [ ] Pada mode berdua, perubahan posisi/ukuran tersimpan dan terlihat di perangkat pasangan setelah interaksi selesai.
+
+
+## v0.11 editor gesture checks
+- [ ] Select a sticker/text and drag with one finger to move it.
+- [ ] Use two fingers: pinch apart/together to resize.
+- [ ] Rotate two fingers around each other to rotate through 0–360 degrees.
+- [ ] Confirm no arrow handle or white resize bubble appears on the photo.
+- [ ] Delete the selected item only using the separate editor-panel button.
+- [ ] Verify exported PNG/JPEG retains the element size and rotation.
