@@ -129,3 +129,14 @@
 - Transfer WebRTC kini meminta ACK untuk setiap foto dan membandingkan SHA-256 penerima dengan file pengirim. Kegagalan kanal menutup DataChannel sehingga fallback dapat berjalan lebih cepat.
 - Firebase Rules menambahkan validasi ukuran, tipe, peran, nomor slot, dan struktur ACK. Rules v0.9 wajib dipublikasikan di Firebase Console.
 - Tidak menambahkan Cloud Storage, Cloud Functions, server sendiri, atau TURN berbayar.
+
+## v0.12.0 — Gambar Bareng (24 November 2026)
+
+- Menambahkan game pertama Diri. Playroom Date: **Gambar Bareng**.
+- Menambahkan pilihan Buat sesi dan Gabung sesi khusus Gambar Bareng pada halaman utama.
+- Ruang baru menyimpan game yang dipilih; pemain yang bergabung harus memakai kode untuk aktivitas yang sama.
+- Kedua pemain menerima satu instruksi gambar yang sama dan memulai timer dua menit setelah keduanya menekan tombol siap.
+- Menambahkan dua kanvas yang terlihat dari kedua perangkat; coretan dikirim berkala melalui Firebase Realtime Database.
+- Menambahkan palet warna, tiga ukuran kuas, penghapus, urungkan goresan, status selesai, dan hasil akhir PNG berdampingan.
+- Menambahkan aturan Realtime Database khusus `drawTogether`, termasuk pembatasan tulis berdasarkan UID pemilik goresan dan batas jumlah goresan.
+- Menambahkan tes logika, timer, prompt, dan integrasi room game.

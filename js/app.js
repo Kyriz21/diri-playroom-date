@@ -18,7 +18,8 @@ const state = {
   expiring: false,
   recoveringRoom: false,
   mountedGame: null,
-  loadingGameKey: null
+  loadingGameKey: null,
+  pendingGameId: 'photobooth'
 };
 
 let backendPromise = null;
@@ -90,10 +91,15 @@ function setFormBusy(form, busy) {
   }
 }
 
-function openDialog(mode) {
+function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
+  state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  dialogTitle.textContent = createMode ? 'Buat sesi berdua' : 'Gabung sesi';
+  const activityName = gameId === 'drawtogether' ? 'Gambar Bareng' : 'Photobooth';
+  dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
+  dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
+  createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
+  joinForm.querySelector('button[type="submit"]').innerHTML = `Gabung ${activityName} <span>→</span>`;
   createForm.hidden = !createMode;
   joinForm.hidden = createMode;
   const savedName = loadDisplayName();
@@ -242,23 +248,24 @@ function renderLanding() {
         <div class="date-visual-note"><span>✧</span> simpan yang sederhana</div>
       </div>
     </section>
-    <section class="date-next-preview">
-      <span class="date-kicker">SEGERA HADIR</span>
-      <div><h2>Lebih banyak cara untuk dekat.</h2><p>Photobooth adalah langkah pertama. Mini Games dan aktivitas berdua akan menyusul tanpa mengubah fondasi project.</p></div>
-      <span class="date-preview-pill">MINI GAMES · COMING NEXT</span>
+    <section class="date-next-preview date-game-preview">
+      <span class="date-kicker">MINI GAME PERTAMA</span>
+      <div><h2>Gambar Bareng ✎</h2><p>Dapatkan instruksi yang sama, gambar dari dua tempat, dan lihat coretan satu sama lain secara langsung.</p></div>
+      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-draw-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-draw-join">Gabung sesi</button></div>
     </section>`;
 }
 
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
+  const activityName = room.lobby?.selections?.host === 'drawtogether' ? 'Gambar Bareng' : 'Photobooth';
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
-      <span class="date-kicker">SESI PHOTOBOOTH BERDUA</span>
+      <span class="date-kicker">SESI ${activityName.toUpperCase()}</span>
       <div class="date-waiting-icon">♡</div>
       <h1>${guestJoined ? 'Menghubungkan kalian…' : 'Sesi berhasil dibuat.'}</h1>
-      <p>${guestJoined ? 'Pasanganmu sudah bergabung. Photobooth akan terbuka otomatis.' : 'Bagikan kode ini kepada pasanganmu. Begitu ia bergabung, Photobooth akan langsung dimulai.'}</p>
+      <p>${guestJoined ? `Pasanganmu sudah bergabung. ${activityName} akan terbuka otomatis.` : `Bagikan kode ini kepada pasanganmu. Begitu ia bergabung, ${activityName} akan langsung dimulai.`}</p>
       <div class="date-invite-code"><span>KODE UNDANGAN · ${roleText.toUpperCase()}</span><strong>${escapeHtml(current.code)}</strong><button class="button button-secondary" data-action="copy-code">Salin kode</button></div>
       <div class="date-waiting-people"><span class="date-person"><i>♡</i><b>${escapeHtml(room.host?.name || 'Pembuat sesi')}</b><small>Pembuat sesi</small></span><span class="date-connection-line"></span><span class="date-person ${guestJoined ? 'is-here' : ''}"><i>✿</i><b>${escapeHtml(room.guest?.name || 'Menunggu pasangan')}</b><small>${guestJoined ? 'Sudah bergabung' : 'Belum bergabung'}</small></span></div>
       <p class="date-small-note">Sesi dibatasi untuk dua orang. Jangan bagikan kode kepada orang lain.</p>
@@ -276,10 +283,14 @@ function renderActiveSession(room, current) {
   if (state.mountedGame?.key === key || state.loadingGameKey === key) return;
   disposeMountedGame();
   state.loadingGameKey = key;
-  appRoot.innerHTML = '<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka Photobooth berdua…</p></section>';
-  void import('./photobooth/photobooth.js').then(({ mountPhotobooth }) => {
+  const isDrawTogether = session.gameId === 'drawtogether';
+  appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${isDrawTogether ? 'Gambar Bareng' : 'Photobooth'}…</p></section>`;
+  const modulePromise = isDrawTogether
+    ? import('./games/draw-together.js').then(module => ({ mount: module.mountDrawTogether }))
+    : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
+  void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;
-    const instance = mountPhotobooth(appRoot, {
+    const instance = mount(appRoot, {
       code: current.code,
       session,
       room,
@@ -288,11 +299,10 @@ function renderActiveSession(room, current) {
       mode: 'couple',
       toast: showToast,
       onBack: async () => {
-        const accepted = window.confirm('Tutup sesi Photobooth dan kembali ke halaman utama?');
+        if (current.role !== 'host') { showToast('Pembuat ruang yang dapat mengembalikan sesi ke lobi.'); return; }
+        const accepted = window.confirm(`Kembali ke lobi dan mengakhiri ${isDrawTogether ? 'Gambar Bareng' : 'Photobooth'}?`);
         if (!accepted) return;
-        await backend.rooms.leaveRoom({ code: current.code, uid: state.player.uid });
-        clearCurrentRoom();
-        renderLanding();
+        await backend.rooms.returnToLobby({ code: current.code, uid: state.player.uid });
       }
     });
     state.mountedGame = { key, destroy: instance?.destroy };
@@ -300,7 +310,7 @@ function renderActiveSession(room, current) {
     return instance;
   }).catch((error) => {
     state.loadingGameKey = null;
-    appRoot.innerHTML = `<section class="panel date-waiting"><h1>Photobooth belum bisa dibuka</h1><p>${escapeHtml(friendlyError(error))}</p><button class="button button-secondary" data-action="leave-room">Kembali</button></section>`;
+    appRoot.innerHTML = `<section class="panel date-waiting"><h1>Aktivitas belum bisa dibuka</h1><p>${escapeHtml(friendlyError(error))}</p><button class="button button-secondary" data-action="leave-room">Kembali</button></section>`;
   });
 }
 
@@ -341,7 +351,7 @@ async function openSoloPhotobooth() {
     });
     state.mountedGame = { key: 'standalone-photobooth', destroy: instance?.destroy };
   } catch (error) {
-    appRoot.innerHTML = `<section class="panel date-waiting"><h1>Photobooth belum bisa dibuka</h1><p>${escapeHtml(error.message)}</p><button class="button button-secondary" data-action="go-home">Kembali</button></section>`;
+    appRoot.innerHTML = `<section class="panel date-waiting"><h1>Aktivitas belum bisa dibuka</h1><p>${escapeHtml(error.message)}</p><button class="button button-secondary" data-action="go-home">Kembali</button></section>`;
   }
 }
 
@@ -357,7 +367,7 @@ async function handleCreateSubmit(event) {
     await ensureBackend();
     state.player = await backend.auth.getCurrentPlayer();
     saveDisplayName(name.trim());
-    const room = await backend.rooms.createRoom({ uid: state.player.uid, name });
+    const room = await backend.rooms.createRoom({ uid: state.player.uid, name, gameId: state.pendingGameId });
     await enterRoom(room);
     showToast(`Sesi dibuat. Bagikan kode ${room.code} kepada pasangan.`, 'success');
   } catch (error) {
@@ -382,7 +392,7 @@ async function handleJoinSubmit(event) {
     await ensureBackend();
     state.player = await backend.auth.getCurrentPlayer();
     saveDisplayName(name.trim());
-    const room = await backend.rooms.joinRoom({ code, uid: state.player.uid, name });
+    const room = await backend.rooms.joinRoom({ code, uid: state.player.uid, name, expectedGameId: state.pendingGameId });
     await enterRoom(room);
     showToast(room.rejoined ? 'Kembali ke sesi sebelumnya.' : 'Berhasil bergabung ke sesi.', 'success');
   } catch (error) {
@@ -418,8 +428,10 @@ async function resumeRoom() {
 }
 
 async function runAction(action, element) {
-  if (action === 'open-create') return openDialog('create');
-  if (action === 'open-join') return openDialog('join');
+  if (action === 'open-create') return openDialog('create', 'photobooth');
+  if (action === 'open-join') return openDialog('join', 'photobooth');
+  if (action === 'open-draw-create') return openDialog('create', 'drawtogether');
+  if (action === 'open-draw-join') return openDialog('join', 'drawtogether');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

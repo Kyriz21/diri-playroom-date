@@ -1,12 +1,7 @@
-# Build verification — v0.11
+# Build verification — v0.12.0
 
-- Base: Diri. Playroom Date v0.10.
-- Removed the visible resize arrow/circular handle from all sticker/text overlays.
-- One-finger drag moves the selected decoration.
-- Two-finger pinch changes scale; two-finger rotation updates rotation in the 0–360 degree range.
-- The editor-panel delete button remains separate from the photo surface.
-- The angle slider remains available for precise rotation.
-- Firebase client configuration and database rules are preserved from v0.10.
-- Node test suite: 64/64 passed.
-- JavaScript syntax checks: all files passed.
-- Browser/touch-device gesture behavior still requires real-device validation.
+- Node.js syntax check: seluruh file JavaScript berhasil diperiksa dengan `node --check`.
+- Unit tests: 73 lulus, 0 gagal (`npm test`).
+- Firebase Realtime Database Rules: berhasil diparsing sebagai JSON.
+- Gambar Bareng: pemeriksaan statis mencakup katalog, rute buat/gabung, validasi kode aktivitas, rules per-UID, prompt, koordinat, sanitasi stroke, dan timer.
+- Tidak dilakukan uji perangkat nyata atau koneksi Firebase live dari lingkungan build ini. Harus diuji dengan dua akun anonim pada dua perangkat setelah Rules v0.12 dipublikasikan.

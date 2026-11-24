@@ -1,3 +1,7 @@
+# Mulai di sini — Diri. Playroom Date v0.12
+
+Mini game pertama yang sudah ditambahkan adalah **Gambar Bareng**. Ikuti `DRAW-TOGETHER.md` untuk cara bermain dan `FIREBASE-SETUP.md` untuk konfigurasi. Saat update ke v0.12, publikasikan ulang Rules dari `firebase-database.rules.json` agar node sinkronisasi gambar mendapat izin yang benar.
+
 # Mulai di sini — Diri. Playroom Date v0.1
 
 Project baru ini menggunakan build Photobooth v1.2 sebagai basis agar pekerjaan sebelumnya tidak diulang. Ikuti urutan ini:

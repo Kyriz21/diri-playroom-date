@@ -133,3 +133,11 @@ Katalog berisi 18 tema. Dua tambahan baru: **Dunia Mainan** (tema kartun ceria d
 - Sendiri: pilih bingkai, buka kamera dan ambil empat foto, lanjut ke editor hiasan/filter, lalu unduh.
 - Berdua: pilih satu bingkai bersama, masing-masing mengambil empat foto dengan kamera, gabungkan hasil, edit hiasan bersama, setujui, lalu unduh/cetak.
 - File ekspor memvalidasi bahwa semua foto sudah benar-benar digambar agar tidak lagi menghasilkan frame kosong.
+
+## Mini game pertama: Gambar Bareng
+
+Gambar Bareng adalah game dua pemain dengan satu prompt yang sama. Buat sesi dari kartu Gambar Bareng pada halaman utama, lalu pasangan memilih Gabung sesi dan memasukkan kode. Kedua pemain menekan **Aku siap menggambar**; timer dua menit dimulai setelah keduanya siap.
+
+Setiap perangkat menampilkan kanvas sendiri dan kanvas pasangan. Coretan disinkronkan langsung menggunakan Firebase Realtime Database. Tersedia palet warna, ukuran kuas, penghapus, undo, tombol selesai, dan unduhan hasil gabungan PNG.
+
+**Penting saat memperbarui:** publikasikan `firebase-database.rules.json` yang disertakan pada Firebase Console → Realtime Database → Rules. Rules versi ini menambahkan node `roomGames/{kode}/{sessionId}/drawTogether` dengan izin menulis yang dibatasi per UID. Tanpa Rules baru, game dapat menampilkan `permission_denied` ketika mencoba menyimpan coretan.

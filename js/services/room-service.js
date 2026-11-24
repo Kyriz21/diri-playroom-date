@@ -23,9 +23,10 @@ function assertRoomCode(code) {
   return normalized;
 }
 
-export async function createRoom({ uid, name }) {
+export async function createRoom({ uid, name, gameId = 'photobooth' }) {
   if (!uid) throw new Error('Identitas pemain belum siap.');
   const playerName = cleanName(name);
+  if (!isAllowedGameId(gameId)) throw new Error('Aktivitas yang dipilih tidak dikenal.');
 
   // Random code + create-only database rule prevents overwriting an existing room.
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -35,7 +36,7 @@ export async function createRoom({ uid, name }) {
       createdAt: serverTimestamp(),
       lastMeaningfulActivityAt: serverTimestamp(),
       lobby: {
-        selections: { host: 'photobooth', guest: '' },
+        selections: { host: gameId, guest: '' },
         ready: { host: true, guest: false },
         activeSession: null
       }
@@ -55,7 +56,7 @@ export async function createRoom({ uid, name }) {
   throw new Error('Ruang tidak berhasil dibuat. Periksa apakah Aturan Realtime Database sudah dipublikasikan dan URL Firebase sesuai.');
 }
 
-export async function joinRoom({ code, uid, name }) {
+export async function joinRoom({ code, uid, name, expectedGameId = null }) {
   if (!uid) throw new Error('Identitas pemain belum siap.');
   const normalized = assertRoomCode(code);
   const playerName = cleanName(name);
@@ -70,6 +71,7 @@ export async function joinRoom({ code, uid, name }) {
   }
   const room = snapshot.val();
   if (!room) throw new Error('Ruang tidak ditemukan atau tidak tersedia. Periksa kembali kode undangan.');
+  if (expectedGameId && room.lobby?.selections?.host !== expectedGameId) throw new Error('Kode ini bukan sesi untuk aktivitas yang dipilih. Minta pasangan mengirim kode sesi yang sesuai.');
 
   const existingRole = getPlayerRole(room, uid);
   if (existingRole) return { code: normalized, role: existingRole, rejoined: true };
@@ -100,7 +102,7 @@ export async function joinRoom({ code, uid, name }) {
   }
 
   await update(roomRef(normalized), {
-    'lobby/selections/guest': 'photobooth',
+    'lobby/selections/guest': room.lobby?.selections?.host || 'photobooth',
     'lobby/ready/guest': true,
     lastMeaningfulActivityAt: serverTimestamp()
   });

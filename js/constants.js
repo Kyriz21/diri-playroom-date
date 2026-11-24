@@ -6,6 +6,7 @@ export const ROOM_STORAGE_KEY = 'diri-ldr-playroom-room-code';
 export const DISPLAY_NAME_STORAGE_KEY = 'diri-ldr-playroom-display-name';
 
 export const GAME_CATALOG = [
+  { id: 'drawtogether', number: '01', title: 'Gambar Bareng', subtitle: 'Satu instruksi, dua gambar', description: 'Gambar secara bersamaan dan lihat coretan pasangan secara langsung.', icon: '✎', state: 'active' },
   { id: 'tictactoe', number: '01', title: 'Tiga Serangkai', subtitle: 'Tiga simbol berurutan', description: 'Susun tiga simbol dan rebut kemenangan.', icon: '✿', state: 'active' },
   { id: 'lovequiz', number: '02', title: 'Kuis Cinta', subtitle: 'Seberapa kenal kita?', description: 'Uji seberapa baik kalian saling mengenal.', icon: '♡', state: 'active' },
   { id: 'thisorthat', number: '03', title: 'Pilih Salah Satu', subtitle: 'Dua pilihan, satu kecocokan', description: 'Pilih jawaban secara terpisah, lalu lihat hasilnya bersama.', icon: '↔', state: 'active' },
