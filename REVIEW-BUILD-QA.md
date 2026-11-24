@@ -260,3 +260,22 @@ Temuan:
 - [ ] Main lagi hanya dimulai setelah host dan guest sama-sama menyetujui.
 - [ ] Muat ulang masing-masing perangkat saat fase playing, reveal, round-result, dan result-game; pastikan status dipulihkan.
 - [ ] Pastikan Firebase Rules v0.14 telah dipublikasikan dan tidak ada `PERMISSION_DENIED`.
+
+
+## L. Bomb Storm
+
+- [ ] Buat sesi Bomb Storm dan gabung dari perangkat kedua; kedua perangkat membuka game yang sama.
+- [ ] Ambil selfie/pilih foto pada masing-masing HP; avatar pasangan muncul dan foto yang disimpan merupakan JPEG kecil, bukan foto asli resolusi penuh.
+- [ ] Tanpa memilih foto, avatar bawaan tetap dapat digunakan.
+- [ ] Kedua pemain menekan siap; hitung mundur mulai dengan waktu start bersama.
+- [ ] Kedua perangkat melihat susunan dan gerakan bom/hati yang sama.
+- [ ] Slider posisi, tombol kiri/kanan, sentuhan langsung pada arena, serta keyboard panah menggerakkan karakter pemiliknya.
+- [ ] Gerakan pemain pertama terlihat pada perangkat kedua dan sebaliknya.
+- [ ] Menyentuh hati menambah 10 poin satu kali; terkena bom mengurangi satu nyawa satu kali.
+- [ ] Nyawa berhenti di nol; pemain yang kehabisan nyawa tidak lagi bergerak.
+- [ ] Ronde berakhir setelah 60 detik dan objek jatuh terakhir selesai diproses, atau kedua pemain telah selesai.
+- [ ] Kedua perangkat menampilkan skor dan pemenang/seri yang sama.
+- [ ] Rematch hanya berjalan setelah kedua pemain setuju; avatar tetap dipakai, skor/nyawa/posisi direset, seed baru dibuat, dan kedua pemain perlu siap lagi.
+- [ ] Muat ulang salah satu perangkat selama lobby/playing/result; status ronde dan skor tersimpan dipulihkan.
+- [ ] Rules menolak perangkat menulis profil, avatar, skor, atau posisi role pemain lain.
+- [ ] Avatar tidak ikut terkirim ulang pada setiap pembaruan posisi; hanya node avatar yang berubah saat pengguna mengganti foto.

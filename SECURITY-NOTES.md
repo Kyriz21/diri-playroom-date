@@ -46,3 +46,10 @@ Room secara logis kedaluwarsa setelah 24 jam tanpa aktivitas bermakna. Rules men
 - Periksa room path dan permission errors sebelum mengubah Rules.
 - Uji Rules pada project pengembangan sebelum menggunakan data/foto pribadi.
 - Berhenti menggunakan room jika UID berubah atau room bukan milik pemain yang sedang login; lakukan recovery melalui Host sesuai kebijakan strict UID.
+
+
+## Bomb Storm avatar
+- Selfie pilihan pengguna dikompres di browser menjadi avatar JPEG 128 × 128 sebelum dikirim. Foto asli beresolusi penuh tidak diunggah oleh game ini.
+- Avatar disimpan di `roomGames/{roomCode}/{sessionId}/bombStormAvatars/{role}`, terpisah dari state posisi/score yang sering berubah.
+- Realtime Database Rules hanya memperbolehkan UID pemilik role menulis avatarnya; hanya dua anggota sesi aktif yang dapat membacanya.
+- Avatar tetap tersedia sepanjang sesi agar Rematch tidak meminta unggah ulang. Saat sesi dihapus, node avatar ikut terhapus bersama node `roomGames`.

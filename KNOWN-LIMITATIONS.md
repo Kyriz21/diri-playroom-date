@@ -1,4 +1,4 @@
-# Keterbatasan yang diketahui — Diri. Playroom Date v0.9
+# Keterbatasan yang diketahui — Diri. Playroom Date v0.17
 
 1. Konfigurasi Web App pada `js/firebase.js` sudah menunjuk ke project `diri-playroom-date` milik pengguna. Create/Gabung Sesi tetap memerlukan Anonymous Authentication, Realtime Database, domain GitHub Pages yang diizinkan, dan Rules terbaru yang sudah dipublikasikan.
 2. Foto Sendiri dirancang berjalan tanpa Firebase. Galeri dan media disimpan pada IndexedDB browser lokal dan tidak otomatis berpindah ke perangkat lain.
@@ -12,8 +12,15 @@
 10. Menghapus data situs/browser dapat menghapus galeri pribadi dan Anonymous UID lokal. Simpan hasil foto ke perangkat sebelum membersihkan data browser.
 11. Firebase Rules membatasi akses berdasarkan sesi/UID, tetapi client-side game logic bukan backend tepercaya untuk hadiah, uang, atau data sensitif.
 
-## Tebak Pasangan v0.14
-12. Penilaian otomatis menggunakan kecocokan token/kata kunci setelah reveal. Sistem tidak memahami sinonim atau makna semantik; variasi kata yang tidak sama bisa tidak dihitung cocok.
+## Tebak Pasangan v0.16
+12. Penilaian otomatis membandingkan jawaban yang dinormalisasi: jawaban sama persis setelah normalisasi kapital, spasi, dan tanda baca = Tepat (2); minimal satu kata bermakna cocok tetapi keseluruhan frasa berbeda = Hampir (1); tidak ada kata bermakna yang cocok = Meleset (0). Sistem tidak memahami sinonim atau makna semantik.
 13. Durasi tiap ronde adalah 60 detik. Host memajukan ke reveal saat kedua status terkunci atau waktu habis. Jika penilaian tidak diberikan dalam 20 detik, ronde berlanjut tanpa poin; jika pemain tidak menekan Lanjutkan, host melanjutkan setelah 12 detik.
 14. Jawaban privat hanya dapat dibuka peserta lain pada fase reveal atau hasil menurut Rules v0.14. Rules harus dipublikasikan sebelum game digunakan; JSON valid belum membuktikan aturan diterima Firebase Console.
 15. Uji produksi dengan dua akun/perangkat, privasi jawaban, timer, reconnect, dan rematch masih diperlukan.
+
+
+## Bomb Storm v0.17
+- Arena menggunakan simulasi objek deterministik dari seed bersama; setiap pemain menghitung tabrakan untuk karakternya sendiri dan mengirim progres ke Firebase. Keterlambatan jaringan dapat membuat posisi lawan terlihat sedikit tertinggal.
+- Skor disinkronkan dari perangkat pemilik karakter, bukan dihitung oleh server tepercaya; game ini untuk permainan santai dua orang, bukan kompetisi berhadiah.
+- Foto selfie dikompres ke avatar kecil dan hanya dibagikan ke anggota room; aplikasi tidak mengirim foto resolusi penuh.
+- Belum dilakukan uji dua perangkat fisik, jaringan seluler yang berbeda, atau evaluasi kuota Firebase aktual.

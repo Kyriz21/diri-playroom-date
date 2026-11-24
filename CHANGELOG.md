@@ -1,3 +1,14 @@
+# Changelog — Diri. Playroom Date
+
+## v0.17.0 — Bomb Storm (mini-game 03)
+- Menambahkan game arcade Bomb Storm ke katalog halaman utama dengan jalur Buat/Gabung sesi khusus.
+- Menambahkan avatar selfie JPEG 128 × 128 yang dibagikan hanya kepada dua anggota sesi; avatar berada di node terpisah dari state yang sering berubah dan tetap dipertahankan di HUD/hasil ketika snapshot posisi diperbarui.
+- Menambahkan arena Canvas dengan pola bom/hati deterministik dari seed ronde, tiga nyawa, timer 60 detik, skor hati, serta hasil akhir.
+- Menambahkan kontrol sentuh/drag arena, slider posisi, tombol arah tahan, dan tombol panah keyboard.
+- Menambahkan rematch dua pihak dengan reset ronde yang menunggu persiapan kedua pemain.
+- Memperbarui Firebase Rules untuk game ID `bombstorm`, field pemain berdasarkan role, avatar privat per sesi, start/result/rematch, serta pembatasan ukuran avatar.
+- Menambahkan tes logika deterministik, skor/nyawa, timer, pemenang, routing, avatar terpisah, dan aturan akses.
+
 # Changelog
 
 ## v0.11.0 — Gesture-only decoration controls

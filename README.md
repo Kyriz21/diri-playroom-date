@@ -1,6 +1,6 @@
-# Diri. Playroom Date v0.14 — Photobooth, Gambar Bareng & Tebak Pasangan
+# Diri. Playroom Date v0.17 — Photobooth, Gambar Bareng, Tebak Pasangan & Bomb Storm
 
-Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini dua mini-game pertama juga tersedia: Gambar Bareng dan Tebak Pasangan.
+Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini tiga mini-game tersedia: Gambar Bareng, Tebak Pasangan, dan Bomb Storm.
 
 ## Keputusan produk
 
@@ -10,7 +10,7 @@ Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur 
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games aktif:** Gambar Bareng (menggambar secara live) dan Tebak Pasangan (menjawab/menebak secara bergantian). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), dan Bomb Storm (arcade menghindari bom serta mengumpulkan hati). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 
@@ -46,7 +46,7 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 
 - Permainan enam ronde dengan 40 pertanyaan berbahasa Indonesia dan timer 60 detik per ronde.
 - Peran menjawab dan menebak bergantian. Jawaban asli dan tebakan disimpan privat per UID dan baru dibuka ketika fase reveal.
-- Penilaian otomatis berbasis kata kunci: semua kata kunci jawaban cocok = Tepat (2), sebagian cocok = Hampir (1), tidak ada yang cocok = Meleset (0). Poin diberikan kepada penebak.
+- Penilaian otomatis: jawaban sama persis setelah normalisasi huruf kapital, spasi, dan tanda baca = Tepat (2); minimal satu kata bermakna cocok tetapi keseluruhan jawaban berbeda = Hampir (1); tidak ada kata bermakna yang cocok = Meleset (0). Jadi `mie ayam` dan `mie ayam goreng` hanya mendapat Hampir. Poin diberikan kepada penebak.
 - Kedua pemain dapat melanjutkan ronde dan melakukan rematch setelah menyelesaikan enam ronde.
 - Baca `TEBAK-PASANGAN.md` untuk struktur data, aturan, dan pengujian.
 
@@ -171,3 +171,13 @@ Setiap perangkat menampilkan kanvas sendiri dan kanvas pasangan. Coretan disinkr
 Saat memasang v0.14, publikasikan ulang seluruh `firebase-database.rules.json` di Firebase Console. Rules v0.14 menambahkan `guesspartner` dan akses jawaban privat yang baru terbuka saat reveal/hasil. Jangan mengganti Rules dengan akses publik. Konfigurasi Firebase pada `js/firebase.js` tetap dipertahankan.
 
 Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `node --check`, dan Rules valid sebagai JSON. Belum dilakukan uji end-to-end pada project Firebase aktif dengan dua perangkat; selesaikan checklist Tebak Pasangan sebelum pemakaian rutin.
+
+
+## Mini-game 03 — Bomb Storm
+
+- Arcade dua pemain dengan satu arena bersama. Keduanya melihat pola objek jatuh yang sama berdasarkan seed ronde.
+- Setiap pemain memakai karakter dari selfie yang diperkecil ke avatar JPEG 128 × 128; foto asli tidak dikirim. Avatar hanya dapat dibaca oleh anggota sesi dan disimpan pada node terpisah agar pembaruan posisi tidak mengirim ulang gambar setiap saat.
+- Kontrol dioptimalkan untuk HP: geser slider kiri/kanan, tahan tombol arah, atau sentuh arena untuk memindahkan karakter. Keyboard panah juga didukung pada desktop.
+- Bom mengurangi satu nyawa, hati memberi 10 poin, setiap pemain memiliki tiga nyawa dan ronde berlangsung 60 detik dengan waktu penyelesaian objek terakhir.
+- Skor dihitung lokal untuk pemilik karakter lalu disinkronkan ke Firebase; hasil akhir menentukan pemenang atau seri. Rematch memerlukan persetujuan kedua pemain dan memulai seed/ronde baru.
+- Baca `BOMB-STORM.md` dan bagian Bomb Storm di `REVIEW-BUILD-QA.md`.

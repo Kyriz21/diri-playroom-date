@@ -95,7 +95,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -257,13 +257,18 @@ function renderLanding() {
       <span class="date-kicker">MINI GAME KEDUA · BARU</span>
       <div><h2>Tebak Pasangan ♡</h2><p>Satu orang menjawab pertanyaan tentang dirinya, pasangannya menebak. Buka jawaban bersama dan lihat seberapa cocok tebakan kalian.</p></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-guess-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-guess-join">Gabung sesi</button></div>
+    </section>
+    <section class="date-next-preview date-game-preview bs-landing-preview">
+      <span class="date-kicker">MINI GAME KETIGA · BARU</span>
+      <div><h2>Bomb Storm ☄</h2><p>Jadikan selfie sebagai karakter, hindari bom yang berjatuhan, dan kumpulkan hati untuk meraih skor tertinggi.</p></div>
+      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-bomb-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-bomb-join">Gabung sesi</button></div>
     </section>`;
 }
 
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
@@ -290,13 +295,16 @@ function renderActiveSession(room, current) {
   state.loadingGameKey = key;
   const isDrawTogether = session.gameId === 'drawtogether';
   const isGuessPartner = session.gameId === 'guesspartner';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : 'Photobooth';
+  const isBombStorm = session.gameId === 'bombstorm';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isDrawTogether
     ? import('./games/draw-together.js?v=0.13.0').then(module => ({ mount: module.mountDrawTogether }))
     : isGuessPartner
       ? import('./games/guess-partner.js?v=0.16.0').then(module => ({ mount: module.mountGuessPartner }))
-      : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
+      : isBombStorm
+        ? import('./games/bomb-storm.js?v=0.17.0').then(module => ({ mount: module.mountBombStorm }))
+        : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
   void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;
     const instance = mount(appRoot, {
@@ -443,6 +451,8 @@ async function runAction(action, element) {
   if (action === 'open-draw-join') return openDialog('join', 'drawtogether');
   if (action === 'open-guess-create') return openDialog('create', 'guesspartner');
   if (action === 'open-guess-join') return openDialog('join', 'guesspartner');
+  if (action === 'open-bomb-create') return openDialog('create', 'bombstorm');
+  if (action === 'open-bomb-join') return openDialog('join', 'bombstorm');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {
