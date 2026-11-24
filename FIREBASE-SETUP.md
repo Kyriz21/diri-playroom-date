@@ -24,7 +24,7 @@ Jangan menaruh Admin SDK service-account JSON, private key, atau token administr
 
 Build v0.13 memperkenalkan jalur relay foto sementara di Realtime Database ketika WebRTC gagal. Catatan ini merupakan riwayat; untuk pemasangan baru gunakan Rules lengkap dari build terbaru, bukan file v0.13.
 
-Urutan tersebut dipertahankan sebagai referensi historis. Build v0.17 menambah Bomb Storm. Untuk pemasangan v0.17, publikasikan seluruh `firebase-database.rules.json` dari ZIP v0.17 melalui Firebase Console → Build → Realtime Database → Rules. Cadangkan Rules aktif sebelum mengganti seluruh isinya. Jangan membuka akses dengan `.read: true` atau `.write: true`.
+Urutan tersebut dipertahankan sebagai referensi historis. Build v0.17 menambah Bomb Storm; v0.18 menambahkan pilihan avatar karakter, kamera, dan galeri. Untuk pemasangan v0.18, publikasikan seluruh `firebase-database.rules.json` dari ZIP v0.18 melalui Firebase Console → Build → Realtime Database → Rules. Cadangkan Rules aktif sebelum mengganti seluruh isinya. Jangan membuka akses dengan `.read: true` atau `.write: true`.
 
 Rules v0.9 membatasi node relay ke anggota sesi, membatasi foto ke JPEG maksimum 256 KiB, dan memvalidasi peran, nomor slot, tipe, ukuran, serta struktur tanda terima. Jika Firebase menampilkan `PERMISSION_DENIED`, periksa bahwa Rules v0.9 benar-benar sudah dipublikasikan.
 
@@ -81,17 +81,26 @@ Rules sudah divalidasi sebagai JSON dan diperiksa statis dalam build, tetapi bel
 Pembaruan penilaian otomatis tidak mengubah struktur Firebase Rules. Rules v0.14 yang sudah dipublikasikan tetap digunakan; node `ratings/{roundKey}` tetap ditulis satu kali oleh pemain yang menjadi penjawab setelah reveal.
 
 
-## Bomb Storm v0.17
+## Bomb Storm v0.18
 
-Untuk mengaktifkan Bomb Storm, publikasikan Rules dari `firebase-database.rules.json` pada build v0.17. Rules tersebut mencakup seluruh fitur sebelumnya ditambah jalur `roomGames/{roomCode}/{sessionId}/bombStorm` dan `bombStormAvatars`. Avatar JPEG kecil hanya dapat ditulis oleh pemilik role host/guest dan dibaca anggota sesi yang sama. Jangan hanya menambahkan potongan rules Bomb Storm; gunakan file rules lengkap dari build v0.17 agar seluruh permainan tetap berjalan.
+Untuk mengaktifkan Bomb Storm, publikasikan Rules dari `firebase-database.rules.json` pada build v0.18. Rules tersebut mencakup seluruh fitur sebelumnya ditambah jalur `roomGames/{roomCode}/{sessionId}/bombStorm` dan `bombStormAvatars`. Avatar JPEG kecil hanya dapat ditulis oleh pemilik role host/guest dan dibaca anggota sesi yang sama. Jangan hanya menambahkan potongan rules Bomb Storm; gunakan file rules lengkap dari build v0.18 agar seluruh permainan tetap berjalan.
 
 Bomb Storm menyimpan posisi, skor, nyawa, kesiapan, dan indeks objek yang telah diproses secara terpisah dari gambar avatar. Foto sumber yang dipilih pengguna diperkecil pada perangkat menjadi JPEG 128 × 128 dan tidak dikirim sebagai foto resolusi penuh.
 
 
-## 11. Rules Bomb Storm v0.17
+## 11. Rules Bomb Storm v0.18
 
-Build v0.17 menambahkan ID game `bombstorm`, jalur state `roomGames/{roomCode}/{sessionId}/bombStorm`, serta jalur avatar terpisah `bombStormAvatars/{role}`. Setiap pemain hanya dapat menulis field profil dan avatar miliknya sendiri. Avatar dibatasi maksimal 22.000 karakter dan hanya dapat dibaca anggota sesi aktif. Host mengelola fase lobby/playing/result/rematch berdasarkan kesiapan serta persetujuan kedua pemain.
+Build v0.18 mempertahankan ID game `bombstorm` dan menambahkan validasi pilihan avatar karakter bawaan. Build v0.17 sebelumnya menambahkan ID game `bombstorm`, jalur state `roomGames/{roomCode}/{sessionId}/bombStorm`, serta jalur avatar terpisah `bombStormAvatars/{role}`. Setiap pemain hanya dapat menulis field profil dan avatar miliknya sendiri. Avatar foto dibatasi maksimal 22.000 karakter; avatar bawaan hanya menerima ID yang tercantum (alien, bear, cat, rabbit, panda, fox, frog, monkey, koala, tiger, chick, unicorn). Avatar hanya dapat dibaca anggota sesi aktif. Host mengelola fase lobby/playing/result/rematch berdasarkan kesiapan serta persetujuan kedua pemain.
 
-Untuk mengaktifkan build v0.17, ganti seluruh isi Realtime Database Rules dengan file `firebase-database.rules.json` pada ZIP v0.17, setelah mencadangkan Rules aktif. Jangan hanya menambahkan potongan Bomb Storm karena file lengkap juga memuat Photobooth, relay foto, Gambar Bareng, dan Tebak Pasangan.
+Untuk mengaktifkan build v0.18, ganti seluruh isi Realtime Database Rules dengan file `firebase-database.rules.json` pada ZIP v0.18, setelah mencadangkan Rules aktif. Jangan hanya menambahkan potongan Bomb Storm karena file lengkap juga memuat Photobooth, relay foto, Gambar Bareng, dan Tebak Pasangan.
 
 Rules telah divalidasi sebagai JSON dan diuji secara statis. Rules belum dipublikasikan pada Firebase Console maupun diuji dengan Firebase Emulator atau dua perangkat fisik. Uji pembuatan sesi, kesiapan kedua pemain, gerakan, skor, nyawa, hasil, avatar, dan rematch setelah Publish.
+
+## 12. Pilihan avatar Bomb Storm v0.18
+
+Rules perlu diperbarui karena nilai avatar kini dapat berupa ID karakter `character:<id>` selain data gambar. Gunakan seluruh file `firebase-database.rules.json` v0.18; jangan mengubah hanya satu ekspresi secara manual. Kamera dan galeri tetap memerlukan browser permission/HTTPS.
+
+
+## Bomb Storm v0.19
+
+Build v0.19 hanya memperbaiki rendering posisi dan menambahkan animasi visual untuk hati/bom. Tidak ada perubahan pada struktur data atau Firebase Realtime Database Rules. Rules v0.18 yang sudah dipublikasikan tetap digunakan.

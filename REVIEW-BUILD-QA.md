@@ -279,3 +279,12 @@ Temuan:
 - [ ] Muat ulang salah satu perangkat selama lobby/playing/result; status ronde dan skor tersimpan dipulihkan.
 - [ ] Rules menolak perangkat menulis profil, avatar, skor, atau posisi role pemain lain.
 - [ ] Avatar tidak ikut terkirim ulang pada setiap pembaruan posisi; hanya node avatar yang berubah saat pengguna mengganti foto.
+
+
+## Bomb Storm v0.19 — regression checks
+- [ ] Gerakan karakter sendiri tetap halus saat menggeser slider atau arena.
+- [ ] Gerakan karakter pasangan tidak berpindah mendadak saat update Firebase diterima.
+- [ ] Mengambil hati menampilkan pantulan karakter, `+10`, ikon hati, dan partikel pada kedua perangkat.
+- [ ] Terkena bom menampilkan squash/shake, cincin benturan, dan `-1 NYAWA` pada kedua perangkat.
+- [ ] Animasi tidak mengubah posisi gameplay, skor, atau hitbox selain dampak yang sudah dihitung.
+- [ ] Rematch menghentikan efek ronde lama dan memulai animasi dari keadaan bersih.

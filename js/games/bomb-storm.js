@@ -2,10 +2,32 @@ import { db, ref, get, set, update, onValue, runTransaction } from '../firebase.
 import {
   BOMB_STORM_DURATION_SECONDS, BOMB_STORM_FALL_GRACE_MS,
   createBombStormObject, getBombStormObjectY, processLandedObjects,
-  getBombStormRemaining, determineBombStormWinner, nextBombStormSeed, clampPlayerX
+  getBombStormRemaining, determineBombStormWinner, nextBombStormSeed, clampPlayerX,
+  smoothPlayerX, getBombStormEffectFrame
 } from './bomb-storm-logic.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
+const DEFAULT_CHARACTERS = [
+  { id: 'alien', emoji: '👾', name: 'Alien' },
+  { id: 'bear', emoji: '🧸', name: 'Beruang' },
+  { id: 'cat', emoji: '🐱', name: 'Kucing' },
+  { id: 'rabbit', emoji: '🐰', name: 'Kelinci' },
+  { id: 'panda', emoji: '🐼', name: 'Panda' },
+  { id: 'fox', emoji: '🦊', name: 'Rubah' },
+  { id: 'frog', emoji: '🐸', name: 'Katak' },
+  { id: 'monkey', emoji: '🐵', name: 'Monyet' },
+  { id: 'koala', emoji: '🐨', name: 'Koala' },
+  { id: 'tiger', emoji: '🐯', name: 'Harimau' },
+  { id: 'chick', emoji: '🐥', name: 'Anak ayam' },
+  { id: 'unicorn', emoji: '🦄', name: 'Unicorn' }
+];
+const CHARACTER_BY_ID = Object.fromEntries(DEFAULT_CHARACTERS.map(item => [item.id, item]));
+const DEFAULT_CHARACTER_BY_ROLE = { host: 'alien', guest: 'bear' };
+const characterValue = id => `character:${CHARACTER_BY_ID[id] ? id : 'alien'}`;
+const avatarCharacter = value => CHARACTER_BY_ID[String(value || '').replace(/^character:/, '')]?.emoji || '';
+const isImageAvatar = value => typeof value === 'string' && /^data:image\/(jpeg|png|webp);base64,/i.test(value) && value.length <= 22000;
+const safeAvatar = value => isImageAvatar(value) || /^character:(alien|bear|cat|rabbit|panda|fox|frog|monkey|koala|tiger|chick|unicorn)$/.test(String(value || '')) ? value : '';
+
 const makeSeed = () => {
   const bytes = new Uint32Array(1);
   crypto.getRandomValues(bytes);
@@ -90,6 +112,11 @@ export function mountBombStorm(root, context) {
   let lastPositionWrite = 0;
   let lastProgressToast = 0;
   let observedRoundNo = null;
+  let lastArenaFrameAt = 0;
+  let observedStatsRound = null;
+  let observedPlayerStats = null;
+  const renderedPlayerX = { host: null, guest: null };
+  const characterEffects = { host: null, guest: null };
   let lastStartAttempt = '';
   let dragPointer = null;
   let moveHoldTimer = 0;
@@ -99,7 +126,6 @@ export function mountBombStorm(root, context) {
 
   const ownState = () => data.players?.[role] || localPlayer;
   const otherState = () => data.players?.[opponentRole] || {};
-  const safeAvatar = value => typeof value === 'string' && value.length <= 22000 && /^data:image\/(jpeg|png|webp);base64,/i.test(value) ? value : '';
 
   function shell() {
     root.innerHTML = `
@@ -110,19 +136,27 @@ export function mountBombStorm(root, context) {
         </header>
 
         <section class="bs-panel" data-bs-panel="lobby">
-          <div class="bs-lobby-heading"><span class="bs-kicker">PERSIAPAN ARCADE</span><h2>Siapkan karaktermu!</h2><p>Gunakan selfie sebagai karakter. Foto diperkecil menjadi avatar 128 × 128 piksel dan hanya terlihat oleh dua pemain dalam sesi ini.</p></div>
+          <div class="bs-lobby-heading"><span class="bs-kicker">PERSIAPAN ARCADE</span><h2>Siapkan karaktermu!</h2><p>Pilih karakter bawaan, ambil foto langsung, atau pilih foto dari galeri. Kamu bisa menggantinya sebelum siap bermain.</p></div>
           <div class="bs-player-setup">
             <article class="bs-player-setup-card is-mine">
               <div class="bs-avatar-preview" data-bs-avatar="mine">${role === 'host' ? '👾' : '🧸'}</div>
               <strong>${esc(names[role])}</strong><small>Karakter kamu</small>
-              <label class="button button-secondary bs-upload-button" for="bs-avatar-file">Ambil selfie / pilih foto</label>
-              <input id="bs-avatar-file" class="bs-file-input" type="file" accept="image/*" capture="user">
-              <span class="bs-avatar-status" data-bs-avatar-status>Gunakan foto atau avatar bawaan.</span>
+              <div class="bs-character-heading">Pilih karakter bawaan</div>
+              <div class="bs-character-grid" role="group" aria-label="Daftar karakter bawaan">
+                ${DEFAULT_CHARACTERS.map(character => `<button type="button" class="bs-character-option" data-bs-character="${character.id}" aria-label="Pilih ${character.name}" title="${character.name}"><span>${character.emoji}</span><small>${character.name}</small></button>`).join('')}
+              </div>
+              <div class="bs-avatar-actions">
+                <button type="button" class="button button-secondary bs-upload-button" data-bs-action="camera">📷 Ambil foto</button>
+                <button type="button" class="button button-secondary bs-upload-button" data-bs-action="gallery">🖼️ Pilih dari galeri</button>
+              </div>
+              <input id="bs-avatar-camera" class="bs-file-input" type="file" accept="image/*" capture="user" aria-label="Ambil foto dengan kamera">
+              <input id="bs-avatar-gallery" class="bs-file-input" type="file" accept="image/*" aria-label="Pilih foto dari galeri">
+              <span class="bs-avatar-status" data-bs-avatar-status>Karakter bawaan siap digunakan.</span>
             </article>
             <article class="bs-player-setup-card">
               <div class="bs-avatar-preview" data-bs-avatar="partner">${opponentRole === 'host' ? '👾' : '🧸'}</div>
               <strong>${esc(names[opponentRole])}</strong><small>Karakter pasangan</small>
-              <span class="bs-partner-avatar-status" data-bs-partner-avatar-status>Menunggu avatar pasangan…</span>
+              <span class="bs-partner-avatar-status" data-bs-partner-avatar-status>Menunggu pasangan memilih karakter…</span>
             </article>
           </div>
           <div class="bs-howto">
@@ -183,8 +217,8 @@ export function mountBombStorm(root, context) {
     const target = root.querySelector(selector);
     if (!target || avatarDomSources.get(selector) === (source || '')) return;
     avatarDomSources.set(selector, source || '');
-    if (source) target.innerHTML = `<img src="${esc(source)}" alt="Avatar pemain">`;
-    else target.textContent = fallback;
+    if (isImageAvatar(source)) target.innerHTML = `<img src="${esc(source)}" alt="Avatar pemain">`;
+    else target.textContent = avatarCharacter(source) || fallback;
   }
 
   function updateAvatarDisplays() {
@@ -199,8 +233,19 @@ export function mountBombStorm(root, context) {
     setAvatarPreview('[data-bs-result-avatar="guest"]', safeAvatar(avatarData.guest), '🧸');
     const mineStatus = root.querySelector('[data-bs-avatar-status]');
     const partnerStatus = root.querySelector('[data-bs-partner-avatar-status]');
-    if (mineStatus) mineStatus.textContent = mineAvatar ? 'Selfie siap menjadi karakter.' : 'Avatar bawaan digunakan jika belum memilih foto.';
-    if (partnerStatus) partnerStatus.textContent = partnerAvatar ? 'Avatar pasangan sudah siap.' : 'Pasangan belum memilih foto.';
+    if (mineStatus) mineStatus.textContent = isImageAvatar(mineAvatar) ? 'Foto pilihanmu siap menjadi karakter.' : mineAvatar ? `Karakter ${CHARACTER_BY_ID[mineAvatar.replace('character:', '')]?.name || 'bawaan'} dipilih.` : 'Pilih karakter bawaan atau fotomu.';
+    if (partnerStatus) partnerStatus.textContent = isImageAvatar(partnerAvatar) ? 'Foto pasangan sudah siap.' : partnerAvatar ? 'Karakter bawaan pasangan sudah dipilih.' : 'Pasangan belum memilih karakter.';
+    const selectedId = String(mineAvatar || '').startsWith('character:') ? mineAvatar.slice(10) : '';
+    const isReady = Boolean(players[role]?.ready);
+    root.querySelectorAll('[data-bs-character]').forEach(button => {
+      const selected = button.dataset.bsCharacter === selectedId;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+      button.disabled = isReady || avatarBusy || data.meta?.phase !== 'lobby';
+    });
+    root.querySelectorAll('[data-bs-action="camera"],[data-bs-action="gallery"]').forEach(button => {
+      button.disabled = isReady || avatarBusy || data.meta?.phase !== 'lobby';
+    });
     for (const playerRole of ['host', 'guest']) {
       const ready = root.querySelector(`[data-bs-ready="${playerRole}"]`);
       if (ready) ready.textContent = players[playerRole]?.ready ? 'Siap bermain ✓' : 'Belum siap';
@@ -258,6 +303,74 @@ export function mountBombStorm(root, context) {
     ctx.restore();
   }
 
+  function observePlayerEffects(nextData) {
+    const roundNo = Number(nextData.meta?.roundNo || 0);
+    const players = nextData.players || {};
+    const stats = {
+      host: { score: Number(players.host?.score) || 0, lives: Number(players.host?.lives ?? 3) },
+      guest: { score: Number(players.guest?.score) || 0, lives: Number(players.guest?.lives ?? 3) }
+    };
+    if (observedStatsRound !== roundNo || !observedPlayerStats) {
+      observedStatsRound = roundNo;
+      observedPlayerStats = stats;
+      return;
+    }
+    for (const playerRole of ['host', 'guest']) {
+      const before = observedPlayerStats[playerRole];
+      const after = stats[playerRole];
+      if (after.lives < before.lives) triggerCharacterEffect(playerRole, 'bomb');
+      else if (after.score > before.score) triggerCharacterEffect(playerRole, 'heart');
+    }
+    observedPlayerStats = stats;
+  }
+
+  function triggerCharacterEffect(playerRole, kind) {
+    characterEffects[playerRole] = { kind, startedAt: nowServer(), token: `${playerRole}-${kind}-${Date.now()}-${Math.random()}` };
+  }
+
+  function drawCharacterEffect(ctx, kind, x, y, radius, frame) {
+    if (!frame) return;
+    ctx.save();
+    if (kind === 'heart') {
+      const lift = frame.progress * 31;
+      ctx.globalAlpha = frame.alpha;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '900 17px system-ui, sans-serif';
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+      ctx.strokeText('+10', x, y - radius - 17 - lift);
+      ctx.fillStyle = '#df438d'; ctx.fillText('+10', x, y - radius - 17 - lift);
+      ctx.font = '17px system-ui, sans-serif'; ctx.fillText('💗', x + radius + 9, y - radius - 14 - lift * .75);
+      for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 * i / 5) - Math.PI / 2;
+        const distance = radius + 8 + frame.progress * 20;
+        const px = x + Math.cos(angle) * distance;
+        const py = y + Math.sin(angle) * distance - lift * .3;
+        ctx.fillStyle = i % 2 ? '#ffe08b' : '#ff8fc2';
+        ctx.beginPath(); ctx.arc(px, py, Math.max(1.2, 3.2 * frame.alpha), 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (kind === 'bomb') {
+      ctx.globalAlpha = frame.alpha;
+      ctx.strokeStyle = `rgba(255,75,105,${.72 * frame.alpha})`;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.arc(x, y, radius + 8 + frame.progress * 20, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = `rgba(255,70,100,${frame.flash * .3})`;
+      ctx.beginPath(); ctx.arc(x, y, radius + 4, 0, Math.PI * 2); ctx.fill();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '900 12px system-ui, sans-serif';
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.9)';
+      ctx.strokeText('-1 NYAWA', x, y - radius - 15 - frame.progress * 18);
+      ctx.fillStyle = '#d94b65'; ctx.fillText('-1 NYAWA', x, y - radius - 15 - frame.progress * 18);
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI * 2 * i / 6) + frame.progress * .8;
+        const distance = radius + 8 + frame.progress * 23;
+        ctx.fillStyle = i % 2 ? '#ff9a83' : '#ffe08b';
+        ctx.beginPath(); ctx.arc(x + Math.cos(angle) * distance, y + Math.sin(angle) * distance, Math.max(1, 2.8 * frame.alpha), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawArena(now) {
     const canvas = root.querySelector('[data-bs-arena]');
     if (!canvas) return;
@@ -270,6 +383,8 @@ export function mountBombStorm(root, context) {
     if (!ctx) return;
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const width = rect.width, height = rect.height;
+    const deltaMs = lastArenaFrameAt ? Math.max(0, Math.min(80, now - lastArenaFrameAt)) : 16;
+    lastArenaFrameAt = now;
     const meta = data.meta || {};
     const elapsed = Math.max(0, now - Number(meta.startedAt || now));
     const seed = Number(meta.seed) || 1;
@@ -320,13 +435,30 @@ export function mountBombStorm(root, context) {
     const players = data.players || {};
     for (const playerRole of ['host','guest']) {
       const profile = playerRole === role ? { ...(players[playerRole] || {}), ...localPlayer } : (players[playerRole] || {});
-      const x = clampPlayerX(profile.x ?? (playerRole==='host'?.32:.68))*width;
-      const y = groundY-15;
-      const image = avatarImages[playerRole];
-      drawAvatar(ctx,image,x,y,Math.max(18,Math.min(27,width*.072)),playerRole==='host'?'👾':'🧸',playerRole==='host'?'#4ea8f4':'#f18aae');
+      const targetX = clampPlayerX(profile.x ?? (playerRole==='host'?.32:.68));
+      if (renderedPlayerX[playerRole] === null) renderedPlayerX[playerRole] = targetX;
+      else renderedPlayerX[playerRole] = smoothPlayerX(renderedPlayerX[playerRole], targetX, deltaMs, 68);
+      const x = renderedPlayerX[playerRole] * width;
+      const baseY = groundY-15;
+      const radius = Math.max(18,Math.min(27,width*.072));
+      const effect = characterEffects[playerRole];
+      const frame = effect ? getBombStormEffectFrame(effect.kind, now - effect.startedAt) : null;
+      if (effect && !frame) characterEffects[playerRole] = null;
+      if (frame) {
+        ctx.save();
+        ctx.translate(x + frame.xOffset, baseY + frame.yOffset);
+        ctx.rotate(frame.rotation);
+        ctx.scale(frame.scaleX, frame.scaleY);
+        drawAvatar(ctx,avatarImages[playerRole],0,0,radius,avatarCharacter(avatarData[playerRole])||(playerRole==='host'?'👾':'🧸'),playerRole==='host'?'#4ea8f4':'#f18aae');
+        ctx.restore();
+        // Floating points, particles, and an impact ring are separate from the avatar's coordinates.
+        drawCharacterEffect(ctx, effect.kind, x, baseY, radius, frame);
+      } else {
+        drawAvatar(ctx,avatarImages[playerRole],x,baseY,radius,avatarCharacter(avatarData[playerRole])||(playerRole==='host'?'👾':'🧸'),playerRole==='host'?'#4ea8f4':'#f18aae');
+      }
       ctx.save(); ctx.font='700 10px system-ui'; ctx.textAlign='center'; ctx.fillStyle='rgba(71,45,89,.82)';
       const label = String(profile.name || names[playerRole]).slice(0,16);
-      ctx.fillText(label,x,y+Math.max(32,width*.085)); ctx.restore();
+      ctx.fillText(label,x,baseY+Math.max(32,width*.085)); ctx.restore();
     }
     if (now < Number(meta.startedAt || 0)) {
       const count = Math.max(1,Math.ceil((Number(meta.startedAt)-now)/1000));
@@ -465,7 +597,7 @@ export function mountBombStorm(root, context) {
     showPanel(phase==='playing'?'playing':phase==='result'?'result':'lobby');
     const readyButton=root.querySelector('[data-bs-action="ready"]');
     const isPreparedForRound=Number(data.players?.[role]?.roundNo)===Number(data.meta?.roundNo);
-    if(readyButton){readyButton.disabled=Boolean(data.players?.[role]?.ready)||readyBusy||!isPreparedForRound;readyButton.textContent=data.players?.[role]?.ready?'Kamu siap ✓':readyBusy?'Menyimpan…':!isPreparedForRound?'Menyiapkan ronde…':'Aku siap bermain';}
+    if(readyButton){readyButton.disabled=Boolean(data.players?.[role]?.ready)||readyBusy||avatarBusy||!isPreparedForRound;readyButton.textContent=data.players?.[role]?.ready?'Kamu siap ✓':readyBusy?'Menyimpan…':!isPreparedForRound?'Menyiapkan ronde…':'Aku siap bermain';}
     const rematchButton=root.querySelector('[data-bs-action="rematch"]');
     if(rematchButton){const voted=Number(data.rematchRequests?.[role])===Number(data.meta?.roundNo);rematchButton.disabled=voted||rematchBusy;rematchButton.textContent=voted?'Menunggu pasangan…':rematchBusy?'Menyimpan…':'Main lagi';}
     if(phase==='playing'){
@@ -488,7 +620,7 @@ export function mountBombStorm(root, context) {
     }
     if(phase==='lobby' && data.meta?.roundNo){
       const note=root.querySelector('.bs-lobby-heading p');
-      if(note)note.textContent=Number(data.meta.roundNo)>1?'Ronde baru siap! Sesuaikan karakter jika perlu, lalu nyatakan siap.':'Gunakan selfie sebagai karakter. Foto diperkecil menjadi avatar 128 × 128 piksel dan hanya terlihat oleh dua pemain dalam sesi ini.';
+      if(note)note.textContent=Number(data.meta.roundNo)>1?'Ronde baru siap! Kamu bisa mengganti karakter, lalu nyatakan siap.':'Pilih karakter bawaan, ambil foto langsung, atau pilih foto dari galeri sebelum siap bermain.';
     }
   }
 
@@ -502,7 +634,7 @@ export function mountBombStorm(root, context) {
 
   async function pickAvatar(file) {
     if(avatarBusy)return;
-    avatarBusy=true;const status=root.querySelector('[data-bs-avatar-status]');if(status)status.textContent='Menyiapkan selfie…';
+    avatarBusy=true;updateAvatarDisplays();const status=root.querySelector('[data-bs-avatar-status]');if(status)status.textContent='Menyiapkan foto…';
     try{
       const avatar=await compressAvatar(file);
       await set(avatarRef,avatar);
@@ -511,7 +643,58 @@ export function mountBombStorm(root, context) {
       avatarData[role]=avatar;avatarSources[role]=avatar;avatarImages[role]=imageFromDataUrl(avatar);if(avatarImages[role])avatarImages[role].onload=()=>{if(!destroyed&&data.meta?.phase==='playing')drawArena(nowServer());};
       updateAvatarDisplays();
     }catch(error){toast(error.message,'error');if(status)status.textContent='Foto belum berhasil dipasang.';}
-    finally{avatarBusy=false;}
+    finally{avatarBusy=false;updateAvatarDisplays();}
+  }
+
+  async function selectCharacter(characterId) {
+    if (avatarBusy || data.meta?.phase !== 'lobby' || data.players?.[role]?.ready || !CHARACTER_BY_ID[characterId]) return;
+    avatarBusy = true;
+    updateAvatarDisplays();
+    try {
+      const value = characterValue(characterId);
+      await set(avatarRef, value);
+      avatarData[role] = value;
+      avatarSources[role] = value;
+      avatarImages[role] = null;
+      updateAvatarDisplays();
+      toast(`Karakter ${CHARACTER_BY_ID[characterId].name} dipilih!`, 'success');
+    } catch (error) {
+      toast(`Karakter belum dapat disimpan: ${error.message}`, 'error');
+    } finally {
+      avatarBusy = false;
+      updateAvatarDisplays();
+    }
+  }
+
+  async function ensureDefaultAvatar() {
+    // Restore a previously selected character/photo before assigning a role default.
+    try {
+      const snapshot = await get(avatarRef);
+      const existing = safeAvatar(snapshot.val());
+      if (existing) {
+        avatarData[role] = existing;
+        avatarSources[role] = existing;
+        avatarImages[role] = isImageAvatar(existing) ? imageFromDataUrl(existing) : null;
+        if (avatarImages[role]) avatarImages[role].onload = () => { if (!destroyed && data.meta?.phase === 'playing') drawArena(nowServer()); };
+        updateAvatarDisplays();
+        return;
+      }
+    } catch (error) {
+      toast(`Pilihan karakter sebelumnya belum dapat dimuat: ${error.message}`, 'error');
+    }
+    const value = characterValue(DEFAULT_CHARACTER_BY_ROLE[role]);
+    try {
+      await set(avatarRef, value);
+      avatarData[role] = value;
+      avatarSources[role] = value;
+      avatarImages[role] = null;
+      updateAvatarDisplays();
+    } catch (error) {
+      // The local default is still used visually if the initial write is unavailable.
+      avatarData[role] = value;
+      updateAvatarDisplays();
+      toast(`Karakter bawaan dipakai sementara. Sinkronisasi tertunda: ${error.message}`, 'error');
+    }
   }
 
   async function requestRematch() {
@@ -527,10 +710,14 @@ export function mountBombStorm(root, context) {
     if(action==='back'){onBack?.();return;}
     if(action==='ready')void markReady();
     if(action==='rematch')void requestRematch();
+    if(action==='camera')root.querySelector('#bs-avatar-camera')?.click();
+    if(action==='gallery')root.querySelector('#bs-avatar-gallery')?.click();
+    const character = event.target.closest('[data-bs-character]')?.dataset.bsCharacter;
+    if(character)void selectCharacter(character);
   }
 
   function changeHandler(event) {
-    if(event.target.matches('#bs-avatar-file')){
+    if(event.target.matches('#bs-avatar-camera,#bs-avatar-gallery')){
       const file=event.target.files?.[0];if(file)void pickAvatar(file);event.target.value='';
     }
   }
@@ -586,10 +773,13 @@ export function mountBombStorm(root, context) {
     try{
       await ensureMeta();
       await ensureOwnPlayer();
+      await ensureDefaultAvatar();
       unsubscribeOffset=onValue(ref(db,'/.info/serverTimeOffset'),snapshot=>{serverOffset=Number(snapshot.val())||0;});
       unsubscribeGame=onValue(baseRef,snapshot=>{
         if(destroyed)return;
-        data=snapshot.val()||{};
+        const nextData=snapshot.val()||{};
+        observePlayerEffects(nextData);
+        data=nextData;
         const playerSnapshot=data.players?.[role];
         if(playerSnapshot){
           const snapshotAt=Number(playerSnapshot.updatedAt)||0;
@@ -620,6 +810,7 @@ export function mountBombStorm(root, context) {
         updateAvatarDisplays();
       },error=>toast(`Avatar pasangan belum dapat dimuat: ${error.message}`,'error'));
       renderState();
+      lastArenaFrameAt=0;
       rafId=requestAnimationFrame(tick);
       timerId=window.setInterval(()=>{if(data.meta?.phase==='playing')renderState();},250);
     }catch(error){

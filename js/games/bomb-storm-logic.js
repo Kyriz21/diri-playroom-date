@@ -85,6 +85,46 @@ export function nextBombStormSeed(seed, roundNo) {
   return value || 1;
 }
 
+
+/** Smooth remote/local avatar movement to avoid snapping between Firebase position updates. */
+export function smoothPlayerX(current, target, deltaMs = 16, smoothingMs = 72) {
+  const from = clampPlayerX(current);
+  const to = clampPlayerX(target);
+  const elapsed = Math.max(0, Math.min(100, Number(deltaMs) || 0));
+  const smoothing = Math.max(1, Number(smoothingMs) || 72);
+  const blend = 1 - Math.exp(-elapsed / smoothing);
+  const next = from + (to - from) * blend;
+  return Math.abs(to - next) < 0.001 ? to : clampPlayerX(next);
+}
+
+/** A short visual-only reaction. It never changes the player's game coordinates. */
+export function getBombStormEffectFrame(kind, elapsedMs) {
+  const duration = kind === 'heart' ? 820 : kind === 'bomb' ? 760 : 0;
+  const elapsed = Number(elapsedMs);
+  if (!duration || !Number.isFinite(elapsed) || elapsed < 0 || elapsed >= duration) return null;
+  const progress = Math.max(0, Math.min(1, elapsed / duration));
+  const wave = Math.sin(Math.PI * progress);
+  if (kind === 'heart') {
+    return {
+      progress, alpha: 1 - progress, xOffset: 0,
+      yOffset: -wave * 20,
+      scaleX: 1 + wave * 0.12, scaleY: 1 + wave * 0.17,
+      rotation: Math.sin(progress * Math.PI * 2) * 0.035 * (1 - progress),
+      flash: 0, shake: 0
+    };
+  }
+  const impact = Math.min(1, progress * 3.2);
+  const squash = Math.sin(impact * Math.PI / 2);
+  const decay = 1 - progress;
+  return {
+    progress, alpha: decay, xOffset: Math.sin(elapsed * 0.095) * 7 * decay,
+    yOffset: -wave * 5,
+    scaleX: 1 + squash * 0.15, scaleY: 1 - squash * 0.2,
+    rotation: Math.sin(elapsed * 0.12) * 0.075 * decay,
+    flash: (1 - Math.min(1, progress * 2.8)) * 0.48, shake: decay
+  };
+}
+
 export function clampPlayerX(value) {
   return Math.max(0.06, Math.min(0.94, Number(value) || 0.5));
 }

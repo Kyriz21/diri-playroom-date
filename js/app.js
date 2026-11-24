@@ -303,7 +303,7 @@ function renderActiveSession(room, current) {
     : isGuessPartner
       ? import('./games/guess-partner.js?v=0.16.0').then(module => ({ mount: module.mountGuessPartner }))
       : isBombStorm
-        ? import('./games/bomb-storm.js?v=0.17.0').then(module => ({ mount: module.mountBombStorm }))
+        ? import('./games/bomb-storm.js?v=0.19.0').then(module => ({ mount: module.mountBombStorm }))
         : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
   void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;

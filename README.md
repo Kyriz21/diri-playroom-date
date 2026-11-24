@@ -1,4 +1,4 @@
-# Diri. Playroom Date v0.17 — Photobooth, Gambar Bareng, Tebak Pasangan & Bomb Storm
+# Diri. Playroom Date v0.19 — Photobooth, Gambar Bareng, Tebak Pasangan & Bomb Storm
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini tiga mini-game tersedia: Gambar Bareng, Tebak Pasangan, dan Bomb Storm.
 
@@ -49,6 +49,15 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 - Penilaian otomatis: jawaban sama persis setelah normalisasi huruf kapital, spasi, dan tanda baca = Tepat (2); minimal satu kata bermakna cocok tetapi keseluruhan jawaban berbeda = Hampir (1); tidak ada kata bermakna yang cocok = Meleset (0). Jadi `mie ayam` dan `mie ayam goreng` hanya mendapat Hampir. Poin diberikan kepada penebak.
 - Kedua pemain dapat melanjutkan ronde dan melakukan rematch setelah menyelesaikan enam ronde.
 - Baca `TEBAK-PASANGAN.md` untuk struktur data, aturan, dan pengujian.
+
+
+### Bomb Storm — pilihan karakter v0.18
+
+- Setiap pemain dapat memilih 12 karakter bawaan: Alien, Beruang, Kucing, Kelinci, Panda, Rubah, Katak, Monyet, Koala, Harimau, Anak ayam, dan Unicorn.
+- Pemain juga dapat mengambil foto langsung dengan kamera depan atau memilih gambar dari galeri. Kedua pilihan memakai input terpisah agar tombol kamera dan galeri jelas di ponsel.
+- Avatar yang terakhir dipilih dipulihkan ketika pemain membuka ulang permainan. Jika belum ada pilihan, host mendapat Alien dan tamu mendapat Beruang sebagai karakter awal.
+- Avatar karakter bawaan disimpan sebagai ID teks yang tervalidasi; foto tetap dikompres menjadi JPEG 128 × 128 pada perangkat.
+- Aturannya diperbarui pada `firebase-database.rules.json` untuk menerima ID karakter yang diizinkan. Publikasikan Rules v0.18 sebelum memainkan Bomb Storm setelah deployment.
 
 ## Teknologi dan batasan biaya
 
@@ -181,3 +190,10 @@ Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `n
 - Bom mengurangi satu nyawa, hati memberi 10 poin, setiap pemain memiliki tiga nyawa dan ronde berlangsung 60 detik dengan waktu penyelesaian objek terakhir.
 - Skor dihitung lokal untuk pemilik karakter lalu disinkronkan ke Firebase; hasil akhir menentukan pemenang atau seri. Rematch memerlukan persetujuan kedua pemain dan memulai seed/ronde baru.
 - Baca `BOMB-STORM.md` dan bagian Bomb Storm di `REVIEW-BUILD-QA.md`.
+
+
+### Bomb Storm v0.19 — animasi karakter
+- Pergerakan karakter di layar dihaluskan dengan interpolasi posisi; state kontrol dan hitbox tetap menggunakan koordinat permainan.
+- Hati memicu pantulan, efek `+10`, dan partikel. Bom memicu squash/shake, cincin benturan, serta indikator kehilangan nyawa.
+- Kedua perangkat memicu animasi berdasarkan perubahan skor dan nyawa yang disinkronkan.
+- Tidak ada perubahan Firebase Rules; cukup perbarui file project di GitHub Pages.

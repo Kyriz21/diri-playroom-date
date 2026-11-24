@@ -1,24 +1,23 @@
-# Build verification — Diri. Playroom Date v0.17.0
+# Build verification — Diri. Playroom Date v0.19.0
 
 ## Automated checks
-- `npm test`: **112/112 tests passed**.
+- `npm test`: **118/118 tests passed**.
 - All JavaScript files under `js/` and `tests/` passed `node --check`.
 - `firebase-database.rules.json` parsed successfully as JSON.
-- Static assertions confirmed `bombstorm` is accepted in room selection and active-session validation, and the `bombStorm` plus `bombStormAvatars` paths are present.
-- Regression test confirms avatars are read from the separate avatar node so frequent game-state snapshots do not erase them from setup/HUD/result displays.
+- `package.json` parsed successfully as JSON.
 
-## Bomb Storm implementation
-- Two players share a deterministic 60-second arena seed.
-- Each player controls their own character position, score, lives, processed-object index, and finished state.
-- Bombs reduce one life; hearts award 10 points; each player begins with three lives.
-- Optional selfie is compressed locally to a 128×128 JPEG avatar and stored separately per room role (maximum 22,000 data-URL characters).
-- Lobby start waits for both players to be ready on the same round.
-- Rematch waits for both requests; host advances the round, and the new round does not start until both player profiles have reset and both are ready again.
+## Bomb Storm v0.19 changes
+- Player positions are rendered with exponential interpolation so remote Firebase position samples do not snap the avatar between updates.
+- The interpolation affects presentation only; collision calculations continue to use the player's game position.
+- Heart collection triggers a short bounce, gentle scale-up, `+10` label, heart icon, and particles.
+- Bomb hits trigger a short squash/shake, impact ring, particles, and `-1 NYAWA` label.
+- Both clients detect score/life changes from the room-game snapshot and animate the corresponding player's avatar.
+- Effects expire automatically and do not write additional game coordinates or change game rules.
+- Firebase Realtime Database Rules and data paths are unchanged from v0.18.
 
 ## Not yet verified in a live environment
-- Firebase Rules have not been published to the user's Firebase project from this build.
-- No Firebase Emulator compilation or two-physical-device test was run in this environment.
-- Camera/selfie permissions, touch feel, real network latency, reconnect, and quota use still require testing after deployment.
-- Score/collision decisions are client-computed and synchronized; this is a casual game, not a tamper-proof competitive or prize game.
+- Physical Android/iOS touch performance and device frame rate.
+- Animation timing under high network latency on two physical devices.
+- Firebase Rules publication and live two-device gameplay remain user-side checks.
 
 Run `npm test` from the project root to repeat the automated checks.

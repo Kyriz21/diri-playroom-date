@@ -1,5 +1,14 @@
 # Changelog — Diri. Playroom Date
 
+## v0.18.0 — Pilihan karakter Bomb Storm
+
+- Menambahkan katalog 12 karakter bawaan untuk avatar pemain.
+- Memisahkan tombol **Ambil foto** (kamera depan) dan **Pilih dari galeri**.
+- Memulihkan avatar yang terakhir dipilih saat game dibuka kembali.
+- Menggunakan avatar default Alien untuk host dan Beruang untuk tamu jika belum ada pilihan.
+- Memperbarui Firebase Rules agar hanya ID karakter terdaftar atau data foto terkompresi yang diterima.
+- Menambahkan tes regresi untuk katalog, pemilih kamera/galeri, pemulihan avatar, dan validasi Rules.
+
 ## v0.17.0 — Bomb Storm (mini-game 03)
 - Menambahkan game arcade Bomb Storm ke katalog halaman utama dengan jalur Buat/Gabung sesi khusus.
 - Menambahkan avatar selfie JPEG 128 × 128 yang dibagikan hanya kepada dua anggota sesi; avatar berada di node terpisah dari state yang sering berubah dan tetap dipertahankan di HUD/hasil ketika snapshot posisi diperbarui.
@@ -194,3 +203,11 @@
 - Zero score is awarded when no meaningful keyword overlaps.
 - Reveal text explicitly explains that an overlapping phrase is still only "Hampir" when the complete answer differs.
 - Added regression coverage for exact, extra-word, omitted-word, reordered-word, punctuation, casing, and no-overlap cases.
+
+
+## v0.19.0 — Bomb Storm: gerakan mulus dan animasi item
+- Menambahkan interpolasi posisi karakter agar pembaruan posisi berkala dari Firebase tidak tampak meloncat.
+- Menambahkan animasi hati: karakter memantul, sedikit membesar, efek `+10`, ikon hati, dan partikel.
+- Menambahkan animasi bom: karakter melakukan squash dan getaran singkat, disertai cincin benturan dan label `-1 NYAWA`.
+- Efek dipicu dari perubahan skor/nyawa yang diterima kedua perangkat; animasi tidak mengubah koordinat atau aturan tabrakan.
+- Tidak ada perubahan Firebase Rules atau struktur data.

@@ -1,12 +1,12 @@
-# Mulai di sini — Diri. Playroom Date v0.17
+# Mulai di sini — Diri. Playroom Date v0.19
 
 Build ini mempertahankan Photobooth, Gambar Bareng, dan Tebak Pasangan, lalu menambahkan mini-game ketiga **Bomb Storm**.
 
-## Pemasangan v0.17
+## Pemasangan v0.19
 1. Backup repository GitHub dan Firebase Rules yang aktif.
-2. Ekstrak ZIP v0.17, lalu unggah seluruh isi folder build ke root repository. Pastikan `index.html` berada langsung di root.
+2. Ekstrak ZIP v0.19, lalu unggah seluruh isi folder build ke root repository. Pastikan `index.html` berada langsung di root.
 3. Pertahankan konfigurasi Firebase pada `js/firebase.js`.
-4. **Wajib:** publikasikan ulang seluruh `firebase-database.rules.json` dari build v0.17 melalui Firebase Console → Realtime Database → Rules. Rules v0.17 mencakup Photobooth, Gambar Bareng, Tebak Pasangan, dan node baru `bombStorm` serta `bombStormAvatars`. Jangan menambahkan potongan saja dan jangan mengubah aturan menjadi publik.
+4. Firebase Rules tidak berubah pada v0.19. Pertahankan Rules v0.18 yang sudah dipublikasikan; build ini hanya memperbarui rendering Bomb Storm.
 5. Commit dan tunggu GitHub Pages selesai deploy. Buka ulang di kedua perangkat dengan hard refresh.
 
 ## Uji cepat Bomb Storm

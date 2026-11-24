@@ -254,7 +254,7 @@
             ".read": "auth != null && (root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid || root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('gameId').val() === 'bombstorm' && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
             "$role": {
               ".write": "auth != null && ((($role === 'host') && root.child('rooms').child($roomCode).child('host').child('uid').val() === auth.uid) || (($role === 'guest') && root.child('rooms').child($roomCode).child('guest').child('uid').val() === auth.uid)) && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('gameId').val() === 'bombstorm' && root.child('rooms').child($roomCode).child('lobby').child('activeSession').child('sessionId').val() === $sessionId && root.child('rooms').child($roomCode).child('lastMeaningfulActivityAt').val() > now - 86400000",
-              ".validate": "($role === 'host' || $role === 'guest') && newData.isString() && newData.val().length <= 22000 && (newData.val() === '' || newData.val().matches(/^data:image\\/(jpeg|png|webp);base64,/))"
+              ".validate": "($role === 'host' || $role === 'guest') && newData.isString() && newData.val().length <= 22000 && (newData.val() === '' || newData.val().matches(/^data:image\\/(jpeg|png|webp);base64,/) || newData.val().matches(/^character:(alien|bear|cat|rabbit|panda|fox|frog|monkey|koala|tiger|chick|unicorn)$/))"
             }
           }
         },

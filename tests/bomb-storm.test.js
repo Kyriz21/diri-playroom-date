@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import {
   BOMB_STORM_DURATION_SECONDS, BOMB_STORM_FALL_GRACE_MS,
   createBombStormObject, getBombStormObjectY, processLandedObjects,
-  getBombStormRemaining, determineBombStormWinner, nextBombStormSeed, clampPlayerX
+  getBombStormRemaining, determineBombStormWinner, nextBombStormSeed, clampPlayerX,
+  smoothPlayerX, getBombStormEffectFrame
 } from '../js/games/bomb-storm-logic.js';
 
 const read = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -118,4 +119,69 @@ test('avatar previews read from the separate avatar node and remain independent 
   assert.match(game, /avatarData=snapshot\.val\(\)\|\|\{\}/);
   assert.match(game, /safeAvatar\(avatarData\.host\)/);
   assert.doesNotMatch(game, /safeAvatar\(data\.avatars/);
+});
+
+test('Bomb Storm lobby offers default characters, camera capture, and a separate gallery picker', () => {
+  const game = read('../js/games/bomb-storm.js');
+  assert.match(game, /Pilih karakter bawaan/);
+  assert.match(game, /DEFAULT_CHARACTERS = \[/);
+  assert.match(game, /id: 'alien'.*emoji: '👾'/);
+  assert.match(game, /id: 'unicorn'.*emoji: '🦄'/);
+  assert.match(game, /id="bs-avatar-camera"[^>]*capture="user"/);
+  assert.match(game, /id="bs-avatar-gallery"[^>]*accept="image\/\*"/);
+  assert.match(game, /data-bs-action="camera"/);
+  assert.match(game, /data-bs-action="gallery"/);
+  assert.match(game, /async function selectCharacter/);
+  assert.match(game, /await get\(avatarRef\)/);
+});
+
+test('Firebase Rules only accept the defined Bomb Storm character IDs or compressed image avatars', () => {
+  const rules = JSON.parse(read('../firebase-database.rules.json')).rules;
+  const avatarRule = rules.roomGames.$roomCode.$sessionId.bombStormAvatars.$role['.validate'];
+  assert.match(avatarRule, /character:\(alien\|bear\|cat\|rabbit\|panda\|fox\|frog\|monkey\|koala\|tiger\|chick\|unicorn\)/);
+  assert.match(avatarRule, /data:image/);
+  assert.match(avatarRule, /22000/);
+});
+
+
+test('remote player position interpolates smoothly instead of snapping to Firebase samples', () => {
+  let x = 0.3;
+  const first = smoothPlayerX(x, 0.8, 16, 68);
+  const second = smoothPlayerX(first, 0.8, 16, 68);
+  assert.ok(first > x && first < 0.8);
+  assert.ok(second > first && second < 0.8);
+  let settled = second;
+  for (let i = 0; i < 60; i++) settled = smoothPlayerX(settled, 0.8, 16, 68);
+  assert.equal(settled, 0.8);
+  assert.equal(smoothPlayerX(0.8, 0.8, 16, 68), 0.8);
+});
+
+test('heart reward effect animates with a gentle bounce and expires without changing player coordinates', () => {
+  const start = getBombStormEffectFrame('heart', 0);
+  const middle = getBombStormEffectFrame('heart', 410);
+  const end = getBombStormEffectFrame('heart', 820);
+  assert.ok(Math.abs(start.yOffset) < 1e-9);
+  assert.ok(middle.yOffset < 0);
+  assert.ok(middle.scaleY > 1);
+  assert.equal(end, null);
+});
+
+test('bomb hit effect animates a short shake and squash, then expires', () => {
+  const start = getBombStormEffectFrame('bomb', 0);
+  const impact = getBombStormEffectFrame('bomb', 120);
+  assert.ok(start);
+  assert.ok(impact);
+  assert.ok(impact.scaleX > 1);
+  assert.ok(impact.scaleY < 1);
+  assert.ok(impact.flash > 0);
+  assert.equal(getBombStormEffectFrame('bomb', 760), null);
+});
+
+test('collision effects are triggered from player score/life changes and position is interpolated in the renderer', () => {
+  const game = read('../js/games/bomb-storm.js');
+  assert.match(game, /function observePlayerEffects\(/);
+  assert.match(game, /after\.lives < before\.lives/);
+  assert.match(game, /after\.score > before\.score/);
+  assert.match(game, /smoothPlayerX\(renderedPlayerX/);
+  assert.match(game, /getBombStormEffectFrame\(effect\.kind/);
 });

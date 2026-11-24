@@ -1,10 +1,5 @@
-Diri. Playroom Date v0.17.0
-
-Command: npm test
-Result: PASS
-Tests: 112 passed, 0 failed, 0 skipped
-
-Syntax: all JavaScript files under js/ and tests/ passed node --check.
-Firebase Rules: valid JSON; Bomb Storm game ID, state node, and separate avatar node statically verified.
-
-Live Firebase publication and physical two-device gameplay are not covered by these local tests.
+Diri. Playroom Date v0.19.0
+npm test: 118/118 passed
+JavaScript syntax: all files under js/ and tests/ passed node --check
+Firebase Rules JSON: valid
+package.json: valid

@@ -1,4 +1,4 @@
-# Keterbatasan yang diketahui — Diri. Playroom Date v0.17
+# Keterbatasan yang diketahui — Diri. Playroom Date v0.19
 
 1. Konfigurasi Web App pada `js/firebase.js` sudah menunjuk ke project `diri-playroom-date` milik pengguna. Create/Gabung Sesi tetap memerlukan Anonymous Authentication, Realtime Database, domain GitHub Pages yang diizinkan, dan Rules terbaru yang sudah dipublikasikan.
 2. Foto Sendiri dirancang berjalan tanpa Firebase. Galeri dan media disimpan pada IndexedDB browser lokal dan tidak otomatis berpindah ke perangkat lain.
@@ -19,8 +19,16 @@
 15. Uji produksi dengan dua akun/perangkat, privasi jawaban, timer, reconnect, dan rematch masih diperlukan.
 
 
-## Bomb Storm v0.17
+## Bomb Storm v0.18
 - Arena menggunakan simulasi objek deterministik dari seed bersama; setiap pemain menghitung tabrakan untuk karakternya sendiri dan mengirim progres ke Firebase. Keterlambatan jaringan dapat membuat posisi lawan terlihat sedikit tertinggal.
 - Skor disinkronkan dari perangkat pemilik karakter, bukan dihitung oleh server tepercaya; game ini untuk permainan santai dua orang, bukan kompetisi berhadiah.
 - Foto selfie dikompres ke avatar kecil dan hanya dibagikan ke anggota room; aplikasi tidak mengirim foto resolusi penuh.
 - Belum dilakukan uji dua perangkat fisik, jaringan seluler yang berbeda, atau evaluasi kuota Firebase aktual.
+
+- Avatar dari galeri/kamera tetap memerlukan izin browser dan file gambar yang dapat dibaca. Jika perangkat menolak akses kamera, opsi karakter bawaan dan galeri tetap dapat digunakan.
+
+
+## Bomb Storm v0.19
+- Interpolasi posisi memperhalus pembaruan remote, tetapi kualitas gerakan tetap bergantung pada jaringan dan frekuensi update posisi.
+- Animasi hati/bom dipicu setelah perubahan skor/nyawa diterima melalui Firebase; pada latensi tinggi, efek dapat muncul sedikit setelah objek menyentuh karakter.
+- Simulasi tabrakan tetap dihitung pada perangkat pemilik karakter, bukan server authoritative.
