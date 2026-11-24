@@ -288,3 +288,32 @@ Temuan:
 - [ ] Terkena bom menampilkan squash/shake, cincin benturan, dan `-1 NYAWA` pada kedua perangkat.
 - [ ] Animasi tidak mengubah posisi gameplay, skor, atau hitbox selain dampak yang sudah dihitung.
 - [ ] Rematch menghentikan efek ronde lama dan memulai animasi dari keadaan bersih.
+
+
+## Balloon Pop — checklist uji dua perangkat
+- [ ] Buat sesi Balloon Pop dari HP pertama.
+- [ ] Gabung dari HP kedua dan pastikan activity yang terbuka Balloon Pop.
+- [ ] Pilih karakter berbeda pada kedua perangkat; avatar tampil di kedua papan.
+- [ ] Kedua pemain menekan Siap dan hitung mundur dimulai bersamaan.
+- [ ] Ketuk balon biasa dan pastikan +1.
+- [ ] Ketuk balon hati dan pastikan +5.
+- [ ] Ketuk balon emas dan pastikan +10.
+- [ ] Ketuk bom dan pastikan satu nyawa berkurang.
+- [ ] Ketuk ID balon yang sama dua kali dengan cepat dan pastikan poin hanya masuk sekali.
+- [ ] Pastikan papan pasangan memperbarui skor dan balon yang sudah pecah secara live.
+- [ ] Pastikan hasil akhir menampilkan skor yang sama pada kedua perangkat.
+- [ ] Uji rematch dan pastikan skor/nyawa reset setelah kedua pemain setuju.
+
+**Pemasangan:** v0.20 menambah path Rules `balloonPop` dan `balloonPopAvatars`. Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.20 sebelum uji Firebase dua perangkat.
+
+
+## Balloon Pop v0.20 — regression checks
+- Seed ronde menghasilkan balon yang sama pada dua perangkat.
+- Setiap perangkat hanya dapat mengetuk papan yang menjadi miliknya.
+- Hit ID diproses satu kali melalui transaksi Firebase untuk mencegah skor ganda.
+- Balon normal +1, hati +5, emas +10, bom -1 nyawa.
+- Stats pemain dibaca live oleh kedua perangkat.
+- Timer 60 detik dan grace period memberi waktu bagi balon terakhir untuk keluar dari area permainan.
+- Rematch memerlukan permintaan dari kedua pemain dan mereset stats lokal setiap peran.
+- Avatar bawaan/kamera/galeri tampil pada header papan dan hasil.
+- Rules v0.20 wajib dipublikasikan sebelum pengujian Firebase.

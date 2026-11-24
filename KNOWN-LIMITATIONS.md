@@ -32,3 +32,10 @@
 - Interpolasi posisi memperhalus pembaruan remote, tetapi kualitas gerakan tetap bergantung pada jaringan dan frekuensi update posisi.
 - Animasi hati/bom dipicu setelah perubahan skor/nyawa diterima melalui Firebase; pada latensi tinggi, efek dapat muncul sedikit setelah objek menyentuh karakter.
 - Simulasi tabrakan tetap dihitung pada perangkat pemilik karakter, bukan server authoritative.
+
+
+## Balloon Pop v0.20
+- Kedua papan memakai seed dan jadwal balon yang sama, tetapi setiap pemain mengetuk papan miliknya sendiri.
+- Pergerakan visual dihitung lokal dari waktu mulai server dan seed bersama; ketukan/skor dicatat ke Firebase Realtime Database.
+- Seperti game kasual lainnya pada build ini, klien tetap menghitung input dan skor; ini bukan sistem anti-cheat untuk kompetisi berhadiah.
+- Perlu uji nyata pada dua HP untuk memeriksa sensitivitas sentuhan, izin kamera/galeri avatar, latensi Firebase, countdown, dan rematch.

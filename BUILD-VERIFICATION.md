@@ -1,23 +1,23 @@
-# Build verification — Diri. Playroom Date v0.19.0
+# Build Verification — Diri. Playroom Date v0.20
 
-## Automated checks
-- `npm test`: **118/118 tests passed**.
-- All JavaScript files under `js/` and `tests/` passed `node --check`.
-- `firebase-database.rules.json` parsed successfully as JSON.
-- `package.json` parsed successfully as JSON.
+- Balloon Pop terdaftar sebagai game keempat dan memiliki aksi Buat/Gabung khusus.
+- Mesin Balloon Pop menggunakan seed bersama agar kedua perangkat menampilkan jadwal balon yang sama.
+- Papan pemain dipisahkan; tiap perangkat hanya menerima ketukan pada papan dengan role miliknya.
+- Skor dan nyawa diperbarui melalui transaksi atomik pada node stats pemain.
+- Ada balon biasa (+1), hati (+5), emas (+10), dan bom (-1 nyawa).
+- Timer 60 detik, tiga nyawa, hasil akhir, dan rematch dua pihak tersedia.
+- Avatar mendukung karakter bawaan, kamera, dan galeri; gambar dikompres lokal ke avatar kecil dan disimpan pada node terpisah.
+- Firebase Rules mencakup pemilihan game, meta, player stats, hit records, rematch, dan avatar Balloon Pop.
 
-## Bomb Storm v0.19 changes
-- Player positions are rendered with exponential interpolation so remote Firebase position samples do not snap the avatar between updates.
-- The interpolation affects presentation only; collision calculations continue to use the player's game position.
-- Heart collection triggers a short bounce, gentle scale-up, `+10` label, heart icon, and particles.
-- Bomb hits trigger a short squash/shake, impact ring, particles, and `-1 NYAWA` label.
-- Both clients detect score/life changes from the room-game snapshot and animate the corresponding player's avatar.
-- Effects expire automatically and do not write additional game coordinates or change game rules.
-- Firebase Realtime Database Rules and data paths are unchanged from v0.18.
+## Pemeriksaan lokal
 
-## Not yet verified in a live environment
-- Physical Android/iOS touch performance and device frame rate.
-- Animation timing under high network latency on two physical devices.
-- Firebase Rules publication and live two-device gameplay remain user-side checks.
+- 130/130 unit test lulus.
+- Semua file JavaScript lolos `node --check`.
+- `firebase-database.rules.json` berhasil diparse sebagai JSON.
+- Arsip ZIP diverifikasi setelah dibuat.
 
-Run `npm test` from the project root to repeat the automated checks.
+## Belum dibuktikan
+
+- Pengujian langsung Firebase project aktif dengan dua perangkat.
+- Respons sentuh kamera/galeri pada perangkat fisik.
+- Latensi skor/animasi pada jaringan berbeda.

@@ -1,6 +1,6 @@
-# Diri. Playroom Date v0.19 — Photobooth, Gambar Bareng, Tebak Pasangan & Bomb Storm
+# Diri. Playroom Date v0.20 — Photobooth, Gambar Bareng, Tebak Pasangan, Bomb Storm & Balloon Pop
 
-Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini tiga mini-game tersedia: Gambar Bareng, Tebak Pasangan, dan Bomb Storm.
+Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini empat mini-game tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop.
 
 ## Keputusan produk
 
@@ -10,7 +10,7 @@ Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur 
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), dan Bomb Storm (arcade menghindari bom serta mengumpulkan hati). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), serta Balloon Pop (mengetuk balon dan menghindari bom). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 
@@ -58,6 +58,16 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 - Avatar yang terakhir dipilih dipulihkan ketika pemain membuka ulang permainan. Jika belum ada pilihan, host mendapat Alien dan tamu mendapat Beruang sebagai karakter awal.
 - Avatar karakter bawaan disimpan sebagai ID teks yang tervalidasi; foto tetap dikompres menjadi JPEG 128 × 128 pada perangkat.
 - Aturannya diperbarui pada `firebase-database.rules.json` untuk menerima ID karakter yang diizinkan. Publikasikan Rules v0.18 sebelum memainkan Bomb Storm setelah deployment.
+
+## Mini-game 04 — Balloon Pop
+
+- Permainan ketangkasan dua pemain dengan papan masing-masing. Kedua perangkat menampilkan pola balon yang sama dari seed ronde, tetapi setiap pemain hanya dapat mengetuk papan miliknya sendiri.
+- Balon biasa memberi +1 poin, balon hati +5, balon emas +10, sedangkan bom mengurangi satu dari tiga nyawa.
+- Balon bergerak naik dengan sedikit ayunan. Ketukan diperiksa berdasarkan koordinat papan dan hanya satu transaksi untuk setiap ID balon agar skor tidak terhitung ganda.
+- Skor, jumlah balon pecah, nyawa, dan hasil ronde tersinkron melalui Firebase Realtime Database.
+- Durasi ronde 60 detik, dengan hitung mundur bersama, hasil akhir, serta rematch yang memerlukan persetujuan kedua pemain.
+- Avatar dapat menggunakan 12 karakter bawaan, kamera, atau galeri. Foto dikompres menjadi avatar kecil dan disimpan terpisah dari pembaruan skor.
+- Publikasikan `firebase-database.rules.json` build v0.20 sebelum memainkan Balloon Pop. Rules menambahkan `roomGames/{kode}/{sessionId}/balloonPop` dan `balloonPopAvatars`.
 
 ## Teknologi dan batasan biaya
 

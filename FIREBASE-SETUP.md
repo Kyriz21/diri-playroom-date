@@ -104,3 +104,14 @@ Rules perlu diperbarui karena nilai avatar kini dapat berupa ID karakter `charac
 ## Bomb Storm v0.19
 
 Build v0.19 hanya memperbaiki rendering posisi dan menambahkan animasi visual untuk hati/bom. Tidak ada perubahan pada struktur data atau Firebase Realtime Database Rules. Rules v0.18 yang sudah dipublikasikan tetap digunakan.
+
+
+## v0.20 — Balloon Pop
+- Pilih game Balloon Pop dari halaman utama untuk membuat atau bergabung ke sesi.
+- Publikasikan `firebase-database.rules.json` dari v0.20 ke Realtime Database → Rules.
+- Rules menambahkan `roomGames/{roomCode}/{sessionId}/balloonPop` dan `balloonPopAvatars`. Penulisan statistik dibatasi pada UID pemilik peran dan sesi aktif.
+- Jangan gabungkan Rules v0.20 dengan potongan Rules lama secara manual; ganti seluruh dokumen dengan file lengkap dari build.
+
+
+## v0.20 — Balloon Pop
+Rules v0.20 menambahkan path `roomGames/{roomCode}/{sessionId}/balloonPop` dan `balloonPopAvatars`. Statistik, hit ID, dan event balon dibatasi pada UID pemilik peran serta sesi aktif. Rules mengizinkan inisialisasi stats ketika node meta belum selesai dibuat oleh host, tetapi tetap mewajibkan membership dan activeSession Balloon Pop. Publikasikan seluruh file Rules v0.20 sebelum menguji game ini.

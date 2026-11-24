@@ -1,5 +1,794 @@
-Diri. Playroom Date v0.19.0
-npm test: 118/118 passed
-JavaScript syntax: all files under js/ and tests/ passed node --check
-Firebase Rules JSON: valid
-package.json: valid
+
+> diri-playroom-date@0.20.0 test
+> node --test
+
+TAP version 13
+# Subtest: Balloon Pop is registered as game four with dedicated create/join routes and lazy module loading
+ok 1 - Balloon Pop is registered as game four with dedicated create/join routes and lazy module loading
+  ---
+  duration_ms: 2.753531
+  type: 'test'
+  ...
+# Subtest: balloon generation is deterministic and bounded
+ok 2 - balloon generation is deterministic and bounded
+  ---
+  duration_ms: 0.920088
+  type: 'test'
+  ...
+# Subtest: balloons rise from below the board and drift only slightly
+ok 3 - balloons rise from below the board and drift only slightly
+  ---
+  duration_ms: 0.183181
+  type: 'test'
+  ...
+# Subtest: balloon kind score and hazard values are consistent
+ok 4 - balloon kind score and hazard values are consistent
+  ---
+  duration_ms: 0.58788
+  type: 'test'
+  ...
+# Subtest: tapping balloons finds the nearest visible unclaimed balloon
+ok 5 - tapping balloons finds the nearest visible unclaimed balloon
+  ---
+  duration_ms: 0.307974
+  type: 'test'
+  ...
+# Subtest: normal, heart, gold and bomb hits update score and lives correctly
+ok 6 - normal, heart, gold and bomb hits update score and lives correctly
+  ---
+  duration_ms: 0.217751
+  type: 'test'
+  ...
+# Subtest: hit summaries count balloon classes and calculate remaining lives
+ok 7 - hit summaries count balloon classes and calculate remaining lives
+  ---
+  duration_ms: 0.36113
+  type: 'test'
+  ...
+# Subtest: timer, winner and rematch seed behave deterministically
+ok 8 - timer, winner and rematch seed behave deterministically
+  ---
+  duration_ms: 0.429811
+  type: 'test'
+  ...
+# Subtest: Firebase Rules allow Balloon Pop selection and scope player stats, hit records, avatars and rematch to each member
+ok 9 - Firebase Rules allow Balloon Pop selection and scope player stats, hit records, avatars and rematch to each member
+  ---
+  duration_ms: 0.725944
+  type: 'test'
+  ...
+# Subtest: game UI has touch-ready boards, separate own/opponent lanes and shared readiness
+ok 10 - game UI has touch-ready boards, separate own/opponent lanes and shared readiness
+  ---
+  duration_ms: 3.117158
+  type: 'test'
+  ...
+# Subtest: Balloon Pop supports player stats bootstrap before host meta initializes without opening unrelated paths
+ok 11 - Balloon Pop supports player stats bootstrap before host meta initializes without opening unrelated paths
+  ---
+  duration_ms: 1.14516
+  type: 'test'
+  ...
+# Subtest: Balloon Pop updates an atomic per-player stats transaction and only the current player board accepts taps
+ok 12 - Balloon Pop updates an atomic per-player stats transaction and only the current player board accepts taps
+  ---
+  duration_ms: 0.845715
+  type: 'test'
+  ...
+# Subtest: Bomb Storm is registered as the third game and has dedicated create/join routes
+ok 13 - Bomb Storm is registered as the third game and has dedicated create/join routes
+  ---
+  duration_ms: 1.169027
+  type: 'test'
+  ...
+# Subtest: each falling object is deterministic for both devices with a shared seed
+ok 14 - each falling object is deterministic for both devices with a shared seed
+  ---
+  duration_ms: 0.917552
+  type: 'test'
+  ...
+# Subtest: falling object positions stay deterministic and move down over time
+ok 15 - falling object positions stay deterministic and move down over time
+  ---
+  duration_ms: 0.153583
+  type: 'test'
+  ...
+# Subtest: caught hearts add ten points while caught bombs remove one life
+ok 16 - caught hearts add ten points while caught bombs remove one life
+  ---
+  duration_ms: 0.331073
+  type: 'test'
+  ...
+# Subtest: processed object index prevents duplicate score or repeated collisions
+ok 17 - processed object index prevents duplicate score or repeated collisions
+  ---
+  duration_ms: 0.149834
+  type: 'test'
+  ...
+# Subtest: timer is clamped between zero and the configured duration
+ok 18 - timer is clamped between zero and the configured duration
+  ---
+  duration_ms: 0.10234
+  type: 'test'
+  ...
+# Subtest: winner calculation supports host, guest and draw outcomes
+ok 19 - winner calculation supports host, guest and draw outcomes
+  ---
+  duration_ms: 0.162905
+  type: 'test'
+  ...
+# Subtest: rematch seed changes deterministically and player position is clamped
+ok 20 - rematch seed changes deterministically and player position is clamped
+  ---
+  duration_ms: 0.119264
+  type: 'test'
+  ...
+# Subtest: Firebase Rules register Bomb Storm and restrict each player to their own profile fields
+ok 21 - Firebase Rules register Bomb Storm and restrict each player to their own profile fields
+  ---
+  duration_ms: 1.521396
+  type: 'test'
+  ...
+# Subtest: Bomb Storm keeps avatar data compressed and the game input mobile-friendly
+ok 22 - Bomb Storm keeps avatar data compressed and the game input mobile-friendly
+  ---
+  duration_ms: 0.693767
+  type: 'test'
+  ...
+# Subtest: selfie avatars stay loaded in setup, HUD and results while frequent game snapshots update
+ok 23 - selfie avatars stay loaded in setup, HUD and results while frequent game snapshots update
+  ---
+  duration_ms: 0.617055
+  type: 'test'
+  ...
+# Subtest: avatar previews read from the separate avatar node and remain independent of frequent game-state snapshots
+ok 24 - avatar previews read from the separate avatar node and remain independent of frequent game-state snapshots
+  ---
+  duration_ms: 0.339799
+  type: 'test'
+  ...
+# Subtest: Bomb Storm lobby offers default characters, camera capture, and a separate gallery picker
+ok 25 - Bomb Storm lobby offers default characters, camera capture, and a separate gallery picker
+  ---
+  duration_ms: 0.303969
+  type: 'test'
+  ...
+# Subtest: Firebase Rules only accept the defined Bomb Storm character IDs or compressed image avatars
+ok 26 - Firebase Rules only accept the defined Bomb Storm character IDs or compressed image avatars
+  ---
+  duration_ms: 0.447181
+  type: 'test'
+  ...
+# Subtest: remote player position interpolates smoothly instead of snapping to Firebase samples
+ok 27 - remote player position interpolates smoothly instead of snapping to Firebase samples
+  ---
+  duration_ms: 0.264842
+  type: 'test'
+  ...
+# Subtest: heart reward effect animates with a gentle bounce and expires without changing player coordinates
+ok 28 - heart reward effect animates with a gentle bounce and expires without changing player coordinates
+  ---
+  duration_ms: 0.17445
+  type: 'test'
+  ...
+# Subtest: bomb hit effect animates a short shake and squash, then expires
+ok 29 - bomb hit effect animates a short shake and squash, then expires
+  ---
+  duration_ms: 0.078368
+  type: 'test'
+  ...
+# Subtest: collision effects are triggered from player score/life changes and position is interpolated in the renderer
+ok 30 - collision effects are triggered from player score/life changes and position is interpolated in the renderer
+  ---
+  duration_ms: 0.334331
+  type: 'test'
+  ...
+# Subtest: Gambar Bareng is registered as a first-class activity in the room catalogue
+ok 31 - Gambar Bareng is registered as a first-class activity in the room catalogue
+  ---
+  duration_ms: 2.006733
+  type: 'test'
+  ...
+# Subtest: the landing page has dedicated create and join actions for Gambar Bareng
+ok 32 - the landing page has dedicated create and join actions for Gambar Bareng
+  ---
+  duration_ms: 0.520008
+  type: 'test'
+  ...
+# Subtest: room service creates the selected game and makes the guest adopt the host activity
+ok 33 - room service creates the selected game and makes the guest adopt the host activity
+  ---
+  duration_ms: 0.250703
+  type: 'test'
+  ...
+# Subtest: Firebase rules allow the game ID and isolate drawing writes by the signed-in player UID
+ok 34 - Firebase rules allow the game ID and isolate drawing writes by the signed-in player UID
+  ---
+  duration_ms: 0.522332
+  type: 'test'
+  ...
+# Subtest: Gambar Bareng includes a rematch action and continuous brush-size slider
+ok 35 - Gambar Bareng includes a rematch action and continuous brush-size slider
+  ---
+  duration_ms: 0.380235
+  type: 'test'
+  ...
+# Subtest: brush slider listens to input and displays the selected pixel width
+ok 36 - brush slider listens to input and displays the selected pixel width
+  ---
+  duration_ms: 0.291708
+  type: 'test'
+  ...
+# Subtest: rematch clears local player strokes and requires a round-scoped vote from both roles
+ok 37 - rematch clears local player strokes and requires a round-scoped vote from both roles
+  ---
+  duration_ms: 1.500054
+  type: 'test'
+  ...
+# Subtest: rematch uses a visible reset phase so finished drawings are not deleted before both players accept
+ok 38 - rematch uses a visible reset phase so finished drawings are not deleted before both players accept
+  ---
+  duration_ms: 0.269993
+  type: 'test'
+  ...
+# Subtest: prompt bank contains varied prompts and seeded selection is stable
+ok 39 - prompt bank contains varied prompts and seeded selection is stable
+  ---
+  duration_ms: 2.387019
+  type: 'test'
+  ...
+# Subtest: drawing coordinates are normalized and clamped
+ok 40 - drawing coordinates are normalized and clamped
+  ---
+  duration_ms: 1.225551
+  type: 'test'
+  ...
+# Subtest: stroke input is sanitized and bounded
+ok 41 - stroke input is sanitized and bounded
+  ---
+  duration_ms: 0.633882
+  type: 'test'
+  ...
+# Subtest: shared timer calculates remaining time without going negative
+ok 42 - shared timer calculates remaining time without going negative
+  ---
+  duration_ms: 0.254815
+  type: 'test'
+  ...
+# Subtest: strokes are sorted chronologically and retain player ownership
+ok 43 - strokes are sorted chronologically and retain player ownership
+  ---
+  duration_ms: 0.766995
+  type: 'test'
+  ...
+# Subtest: rematch requires both players to vote for the current round only
+ok 44 - rematch requires both players to vote for the current round only
+  ---
+  duration_ms: 0.382294
+  type: 'test'
+  ...
+# Subtest: next rematch round gets a fresh prompt, timer, and round timestamp
+ok 45 - next rematch round gets a fresh prompt, timer, and round timestamp
+  ---
+  duration_ms: 0.482078
+  type: 'test'
+  ...
+# Subtest: brush slider is clamped to supported widths 1 through 24
+ok 46 - brush slider is clamped to supported widths 1 through 24
+  ---
+  duration_ms: 0.478105
+  type: 'test'
+  ...
+# Subtest: rematch prompt picker avoids repeating the previous prompt
+ok 47 - rematch prompt picker avoids repeating the previous prompt
+  ---
+  duration_ms: 0.770915
+  type: 'test'
+  ...
+# Subtest: rematch cleanup requires both players to confirm their own canvas is cleared
+ok 48 - rematch cleanup requires both players to confirm their own canvas is cleared
+  ---
+  duration_ms: 0.565555
+  type: 'test'
+  ...
+# Subtest: shared editor exposes filter presets and adjustment sliders
+ok 49 - shared editor exposes filter presets and adjustment sliders
+  ---
+  duration_ms: 1.233072
+  type: 'test'
+  ...
+# Subtest: solo and shared decorations preserve rotation in preview and export
+ok 50 - solo and shared decorations preserve rotation in preview and export
+  ---
+  duration_ms: 0.33255
+  type: 'test'
+  ...
+# Subtest: delete control is separate from the sticker surface
+ok 51 - delete control is separate from the sticker surface
+  ---
+  duration_ms: 0.470834
+  type: 'test'
+  ...
+# Subtest: camera stream is only reattached while capture screen is active
+ok 52 - camera stream is only reattached while capture screen is active
+  ---
+  duration_ms: 0.436032
+  type: 'test'
+  ...
+# Subtest: Tic Tac Toe detects all row, column and diagonal wins
+ok 53 - Tic Tac Toe detects all row, column and diagonal wins
+  ---
+  duration_ms: 2.053747
+  type: 'test'
+  ...
+# Subtest: Connect Four finds horizontal, vertical and both diagonal wins
+ok 54 - Connect Four finds horizontal, vertical and both diagonal wins
+  ---
+  duration_ms: 0.878111
+  type: 'test'
+  ...
+# Subtest: Connect Four does not connect across board edges
+ok 55 - Connect Four does not connect across board edges
+  ---
+  duration_ms: 0.209696
+  type: 'test'
+  ...
+# Subtest: answer normalization ignores case, accents and punctuation but not meaning
+ok 56 - answer normalization ignores case, accents and punctuation but not meaning
+  ---
+  duration_ms: 1.663976
+  type: 'test'
+  ...
+# Subtest: compatibility percentages and streaks stay within valid bounds
+ok 57 - compatibility percentages and streaks stay within valid bounds
+  ---
+  duration_ms: 0.720436
+  type: 'test'
+  ...
+# Subtest: Photobooth finds the first empty slot and rejects sparse photo arrays
+ok 58 - Photobooth finds the first empty slot and rejects sparse photo arrays
+  ---
+  duration_ms: 0.988062
+  type: 'test'
+  ...
+# Subtest: Memory custom deck requires four-or-more matching ordered hashes
+ok 59 - Memory custom deck requires four-or-more matching ordered hashes
+  ---
+  duration_ms: 0.136702
+  type: 'test'
+  ...
+# Subtest: Forbidden words are rejected as whole words after punctuation normalization
+ok 60 - Forbidden words are rejected as whole words after punctuation normalization
+  ---
+  duration_ms: 0.205174
+  type: 'test'
+  ...
+# Subtest: Connect Four drops tokens to the lowest empty slot and rejects full columns
+ok 61 - Connect Four drops tokens to the lowest empty slot and rejects full columns
+  ---
+  duration_ms: 0.456666
+  type: 'test'
+  ...
+# Subtest: Memory keeps the player turn on a match and passes it after a miss
+ok 62 - Memory keeps the player turn on a match and passes it after a miss
+  ---
+  duration_ms: 1.590245
+  type: 'test'
+  ...
+# Subtest: rotation normalizes negative and overflow angles into 0–359 degrees
+ok 63 - rotation normalizes negative and overflow angles into 0–359 degrees
+  ---
+  duration_ms: 0.641513
+  type: 'test'
+  ...
+# Subtest: two-finger rotation uses the shortest direction across 0/360 degrees
+ok 64 - two-finger rotation uses the shortest direction across 0/360 degrees
+  ---
+  duration_ms: 0.146667
+  type: 'test'
+  ...
+# Subtest: bank contains varied and unique Indonesian prompts
+ok 65 - bank contains varied and unique Indonesian prompts
+  ---
+  duration_ms: 2.013142
+  type: 'test'
+  ...
+# Subtest: answerer role alternates for all six rounds
+ok 66 - answerer role alternates for all six rounds
+  ---
+  duration_ms: 1.112804
+  type: 'test'
+  ...
+# Subtest: prompt selection avoids repeating the previous prompt when possible
+ok 67 - prompt selection avoids repeating the previous prompt when possible
+  ---
+  duration_ms: 0.301309
+  type: 'test'
+  ...
+# Subtest: player text is trimmed, whitespace-normalized and length-limited
+ok 68 - player text is trimmed, whitespace-normalized and length-limited
+  ---
+  duration_ms: 0.395248
+  type: 'test'
+  ...
+# Subtest: automatic matching awards full points only for the exact normalized phrase
+ok 69 - automatic matching awards full points only for the exact normalized phrase
+  ---
+  duration_ms: 2.04956
+  type: 'test'
+  ...
+# Subtest: extra, missing, or reordered words are never rated as an exact answer
+ok 70 - extra, missing, or reordered words are never rated as an exact answer
+  ---
+  duration_ms: 0.309533
+  type: 'test'
+  ...
+# Subtest: partial keyword overlap ignores capitalization and punctuation but not extra words for exactness
+ok 71 - partial keyword overlap ignores capitalization and punctuation but not extra words for exactness
+  ---
+  duration_ms: 1.21303
+  type: 'test'
+  ...
+# Subtest: empty or punctuation-only answers never award points
+ok 72 - empty or punctuation-only answers never award points
+  ---
+  duration_ms: 0.334413
+  type: 'test'
+  ...
+# Subtest: rating points and score totals are assigned to the guesser
+ok 73 - rating points and score totals are assigned to the guesser
+  ---
+  duration_ms: 0.525439
+  type: 'test'
+  ...
+# Subtest: timer formatting is deterministic and never negative
+ok 74 - timer formatting is deterministic and never negative
+  ---
+  duration_ms: 0.671052
+  type: 'test'
+  ...
+# Subtest: both lock condition requires answerer and guesser for the active round key
+ok 75 - both lock condition requires answerer and guesser for the active round key
+  ---
+  duration_ms: 0.29207
+  type: 'test'
+  ...
+# Subtest: next round flips answerer and preserves match identity
+ok 76 - next round flips answerer and preserves match identity
+  ---
+  duration_ms: 0.188213
+  type: 'test'
+  ...
+# Subtest: rematch starts a new match and resets the round roles
+ok 77 - rematch starts a new match and resets the round roles
+  ---
+  duration_ms: 0.234428
+  type: 'test'
+  ...
+# Subtest: game is registered, exposed on the landing page and routed to its module
+ok 78 - game is registered, exposed on the landing page and routed to its module
+  ---
+  duration_ms: 1.591699
+  type: 'test'
+  ...
+# Subtest: guess partner answers are written to privateRooms, not public game data
+ok 79 - guess partner answers are written to privateRooms, not public game data
+  ---
+  duration_ms: 0.521933
+  type: 'test'
+  ...
+# Subtest: answerer automatically stores keyword scoring after private responses load, without manual score controls
+ok 80 - answerer automatically stores keyword scoring after private responses load, without manual score controls
+  ---
+  duration_ms: 0.448564
+  type: 'test'
+  ...
+# Subtest: Firebase rules register guesspartner and keep private answers hidden until reveal
+ok 81 - Firebase rules register guesspartner and keep private answers hidden until reveal
+  ---
+  duration_ms: 0.469923
+  type: 'test'
+  ...
+# Subtest: initial round history includes the matchKey required by Firebase Rules and final scoring
+ok 82 - initial round history includes the matchKey required by Firebase Rules and final scoring
+  ---
+  duration_ms: 0.416434
+  type: 'test'
+  ...
+# Subtest: katalog Photobooth memuat 18 desain tematik dengan ID unik
+ok 83 - katalog Photobooth memuat 18 desain tematik dengan ID unik
+  ---
+  duration_ms: 1.053607
+  type: 'test'
+  ...
+# Subtest: katalog menyertakan Dunia Mainan dan Polaroid Sosial sebagai konsep desain baru
+ok 84 - katalog menyertakan Dunia Mainan dan Polaroid Sosial sebagai konsep desain baru
+  ---
+  duration_ms: 8.587198
+  type: 'test'
+  ...
+# Subtest: frameById memiliki bingkai cadangan untuk ID yang tidak dikenal
+ok 85 - frameById memiliki bingkai cadangan untuk ID yang tidak dikenal
+  ---
+  duration_ms: 0.234823
+  type: 'test'
+  ...
+# Subtest: posisi hiasan dibatasi dalam rentang aman ternormalisasi
+ok 86 - posisi hiasan dibatasi dalam rentang aman ternormalisasi
+  ---
+  duration_ms: 0.176481
+  type: 'test'
+  ...
+# Subtest: semua desain dapat menggambar latar dan bingkai foto tanpa melempar galat
+ok 87 - semua desain dapat menggambar latar dan bingkai foto tanpa melempar galat
+  ---
+  duration_ms: 3.810764
+  type: 'test'
+  ...
+# Subtest: setiap bingkai mempunyai pratinjau mini dan gaya hasil yang berbeda
+ok 88 - setiap bingkai mempunyai pratinjau mini dan gaya hasil yang berbeda
+  ---
+  duration_ms: 4.46949
+  type: 'test'
+  ...
+# Subtest: Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh
+ok 89 - Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh
+  ---
+  duration_ms: 3.143472
+  type: 'test'
+  ...
+# Subtest: tema Polaroid Sosial mengekspor kartu foto miring seperti pratinjau
+ok 90 - tema Polaroid Sosial mengekspor kartu foto miring seperti pratinjau
+  ---
+  duration_ms: 1.499585
+  type: 'test'
+  ...
+# Subtest: hasil ekspor memakai ornamen tema yang sama dengan pratinjau
+ok 91 - hasil ekspor memakai ornamen tema yang sama dengan pratinjau
+  ---
+  duration_ms: 1.705795
+  type: 'test'
+  ...
+# Subtest: editor tidak lagi merender toolbar panah atau A+/A− untuk manipulasi elemen
+ok 92 - editor tidak lagi merender toolbar panah atau A+/A− untuk manipulasi elemen
+  ---
+  duration_ms: 1.950822
+  type: 'test'
+  ...
+# Subtest: editor mendukung pinch-resize, rotasi dua jari, dan roda mouse tanpa pegangan visual
+ok 93 - editor mendukung pinch-resize, rotasi dua jari, dan roda mouse tanpa pegangan visual
+  ---
+  duration_ms: 1.815219
+  type: 'test'
+  ...
+# Subtest: kamera mencoba ulang elemen video terbaru saat play terinterupsi oleh pembaruan DOM
+ok 94 - kamera mencoba ulang elemen video terbaru saat play terinterupsi oleh pembaruan DOM
+  ---
+  duration_ms: 1.981315
+  type: 'test'
+  ...
+# Subtest: bingkai foto tidak boleh mengecat bidang foto setelah gambar ditempatkan
+ok 95 - bingkai foto tidak boleh mengecat bidang foto setelah gambar ditempatkan
+  ---
+  duration_ms: 0.418996
+  type: 'test'
+  ...
+# Subtest: mode pribadi mengikuti urutan pilih bingkai, ambil foto, lalu editor
+ok 96 - mode pribadi mengikuti urutan pilih bingkai, ambil foto, lalu editor
+  ---
+  duration_ms: 2.186386
+  type: 'test'
+  ...
+# Subtest: mode berdua menyediakan bingkai sebelum pengambilan foto dan editor emoji setelahnya
+ok 97 - mode berdua menyediakan bingkai sebelum pengambilan foto dan editor emoji setelahnya
+  ---
+  duration_ms: 1.522179
+  type: 'test'
+  ...
+# Subtest: ekspor harus memuat sumber foto pribadi dan pasangan sebelum menggambar ke kanvas
+ok 98 - ekspor harus memuat sumber foto pribadi dan pasangan sebelum menggambar ke kanvas
+  ---
+  duration_ms: 2.71909
+  type: 'test'
+  ...
+# Subtest: ekspor menolak file frame kosong jika jumlah foto yang benar-benar digambar tidak lengkap
+ok 99 - ekspor menolak file frame kosong jika jumlah foto yang benar-benar digambar tidak lengkap
+  ---
+  duration_ms: 3.743717
+  type: 'test'
+  ...
+# Subtest: mode berdua menggunakan kamera untuk pengambilan foto standar, bukan unggah empat foto
+ok 100 - mode berdua menggunakan kamera untuk pengambilan foto standar, bukan unggah empat foto
+  ---
+  duration_ms: 1.656997
+  type: 'test'
+  ...
+# Subtest: canvas regression test memeriksa foto sintetis sebelum dan sesudah bingkai
+ok 101 - canvas regression test memeriksa foto sintetis sebelum dan sesudah bingkai
+  ---
+  duration_ms: 0.878886
+  type: 'test'
+  ...
+# Subtest: editor Foto Sendiri merender thumbnail dari sumber foto yang dinormalisasi
+ok 102 - editor Foto Sendiri merender thumbnail dari sumber foto yang dinormalisasi
+  ---
+  duration_ms: 1.869501
+  type: 'test'
+  ...
+# Subtest: pengambilan kamera menunggu frame video terdekode sebelum menyimpan foto
+ok 103 - pengambilan kamera menunggu frame video terdekode sebelum menyimpan foto
+  ---
+  duration_ms: 2.165281
+  type: 'test'
+  ...
+# Subtest: Diri. Playroom Date waits until the invited player has joined before auto-start
+ok 104 - Diri. Playroom Date waits until the invited player has joined before auto-start
+  ---
+  duration_ms: 0.642705
+  type: 'test'
+  ...
+# Subtest: Foto Sendiri entry does not statically load Firebase
+ok 105 - Foto Sendiri entry does not statically load Firebase
+  ---
+  duration_ms: 5.414622
+  type: 'test'
+  ...
+# Subtest: new landing has three distinct Photobooth entry actions
+ok 106 - new landing has three distinct Photobooth entry actions
+  ---
+  duration_ms: 0.76568
+  type: 'test'
+  ...
+# Subtest: Firebase Web App config is connected to the new Diri Playroom Date project
+ok 107 - Firebase Web App config is connected to the new Diri Playroom Date project
+  ---
+  duration_ms: 0.726054
+  type: 'test'
+  ...
+# Subtest: Foto Sendiri requires four camera captures before opening the editor
+ok 108 - Foto Sendiri requires four camera captures before opening the editor
+  ---
+  duration_ms: 1.263439
+  type: 'test'
+  ...
+# Subtest: foto relay mengubah JPEG data URL menjadi Blob
+ok 109 - foto relay mengubah JPEG data URL menjadi Blob
+  ---
+  duration_ms: 0.974008
+  type: 'test'
+  ...
+# Subtest: foto relay menolak URL non-JPEG dan data rusak
+ok 110 - foto relay menolak URL non-JPEG dan data rusak
+  ---
+  duration_ms: 0.409418
+  type: 'test'
+  ...
+# Subtest: payload relay wajib cocok dengan peran, nomor slot, ukuran dan checksum
+ok 111 - payload relay wajib cocok dengan peran, nomor slot, ukuran dan checksum
+  ---
+  duration_ms: 0.337255
+  type: 'test'
+  ...
+# Subtest: payload relay menolak foto melebihi batas ukuran Spark-friendly
+ok 112 - payload relay menolak foto melebihi batas ukuran Spark-friendly
+  ---
+  duration_ms: 1.636879
+  type: 'test'
+  ...
+# Subtest: kegagalan WebRTC otomatis berpindah ke Firebase relay, bukan layar pilih delapan file
+ok 113 - kegagalan WebRTC otomatis berpindah ke Firebase relay, bukan layar pilih delapan file
+  ---
+  duration_ms: 1.434891
+  type: 'test'
+  ...
+# Subtest: transfer Firebase mengirim empat foto, menerima empat foto dan menunggu dua tanda terima
+ok 114 - transfer Firebase mengirim empat foto, menerima empat foto dan menunggu dua tanda terima
+  ---
+  duration_ms: 0.229546
+  type: 'test'
+  ...
+# Subtest: relay memverifikasi ukuran dan SHA-256 sebelum foto dipakai
+ok 115 - relay memverifikasi ukuran dan SHA-256 sebelum foto dipakai
+  ---
+  duration_ms: 0.183607
+  type: 'test'
+  ...
+# Subtest: transfer langsung WebRTC meminta tanda terima per foto
+ok 116 - transfer langsung WebRTC meminta tanda terima per foto
+  ---
+  duration_ms: 0.261728
+  type: 'test'
+  ...
+# Subtest: jalur Firebase relay dibatasi untuk sesi dan memakai validasi ukuran foto
+ok 117 - jalur Firebase relay dibatasi untuk sesi dan memakai validasi ukuran foto
+  ---
+  duration_ms: 0.160763
+  type: 'test'
+  ...
+# Subtest: transfer memiliki ID unik per percobaan untuk mencegah foto lama tercampur
+ok 118 - transfer memiliki ID unik per percobaan untuk mencegah foto lama tercampur
+  ---
+  duration_ms: 0.282525
+  type: 'test'
+  ...
+# Subtest: client dapat mencoba ulang otomatis setelah koneksi internet pulih
+ok 119 - client dapat mencoba ulang otomatis setelah koneksi internet pulih
+  ---
+  duration_ms: 0.185124
+  type: 'test'
+  ...
+# Subtest: relay memantau koneksi Firebase dan otomatis melanjutkan saat SDK tersambung kembali
+ok 120 - relay memantau koneksi Firebase dan otomatis melanjutkan saat SDK tersambung kembali
+  ---
+  duration_ms: 0.127606
+  type: 'test'
+  ...
+# Subtest: transfer langsung mencocokkan checksum ACK dengan hash foto pengirim
+ok 121 - transfer langsung mencocokkan checksum ACK dengan hash foto pengirim
+  ---
+  duration_ms: 0.273496
+  type: 'test'
+  ...
+# Subtest: kesalahan permission Firebase memberi instruksi memperbarui Rules
+ok 122 - kesalahan permission Firebase memberi instruksi memperbarui Rules
+  ---
+  duration_ms: 0.494155
+  type: 'test'
+  ...
+# Subtest: relay photo path has role-scoped writes and permits whole-node deletion only after both ACKs
+ok 123 - relay photo path has role-scoped writes and permits whole-node deletion only after both ACKs
+  ---
+  duration_ms: 0.20581
+  type: 'test'
+  ...
+# Subtest: normalizes room codes to uppercase alphanumeric six characters
+ok 124 - normalizes room codes to uppercase alphanumeric six characters
+  ---
+  duration_ms: 1.49916
+  type: 'test'
+  ...
+# Subtest: generates a six-character code from the ambiguity-safe alphabet
+ok 125 - generates a six-character code from the ambiguity-safe alphabet
+  ---
+  duration_ms: 0.287823
+  type: 'test'
+  ...
+# Subtest: resolves host and guest roles by UID only
+ok 126 - resolves host and guest roles by UID only
+  ---
+  duration_ms: 0.182711
+  type: 'test'
+  ...
+# Subtest: expires a room at the 24-hour inactivity boundary
+ok 127 - expires a room at the 24-hour inactivity boundary
+  ---
+  duration_ms: 0.104906
+  type: 'test'
+  ...
+# Subtest: requires matching selections and both Ready flags before Start
+ok 128 - requires matching selections and both Ready flags before Start
+  ---
+  duration_ms: 0.204812
+  type: 'test'
+  ...
+# Subtest: host can clear guest only after the offline grace period
+ok 129 - host can clear guest only after the offline grace period
+  ---
+  duration_ms: 0.11441
+  type: 'test'
+  ...
+# Subtest: formats a remaining duration as minutes and seconds
+ok 130 - formats a remaining duration as minutes and seconds
+  ---
+  duration_ms: 0.133908
+  type: 'test'
+  ...
+1..130
+# tests 130
+# suites 0
+# pass 130
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 391.556892

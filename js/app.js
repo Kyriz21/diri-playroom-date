@@ -95,7 +95,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -262,13 +262,18 @@ function renderLanding() {
       <span class="date-kicker">MINI GAME KETIGA · BARU</span>
       <div><h2>Bomb Storm ☄</h2><p>Jadikan selfie sebagai karakter, hindari bom yang berjatuhan, dan kumpulkan hati untuk meraih skor tertinggi.</p></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-bomb-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-bomb-join">Gabung sesi</button></div>
+    </section>
+    <section class="date-next-preview date-game-preview bp-landing-preview">
+      <span class="date-kicker">MINI GAME KEEMPAT · BARU</span>
+      <div><h2>Balloon Pop 🎈</h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi jangan sampai menyentuh bom!</p></div>
+      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
     </section>`;
 }
 
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
@@ -296,9 +301,12 @@ function renderActiveSession(room, current) {
   const isDrawTogether = session.gameId === 'drawtogether';
   const isGuessPartner = session.gameId === 'guesspartner';
   const isBombStorm = session.gameId === 'bombstorm';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : 'Photobooth';
+  const isBalloonPop = session.gameId === 'balloonpop';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
-  const modulePromise = isDrawTogether
+  const modulePromise = isBalloonPop
+    ? import('./games/balloon-pop.js?v=0.20.0').then(module => ({ mount: module.mountBalloonPop }))
+    : isDrawTogether
     ? import('./games/draw-together.js?v=0.13.0').then(module => ({ mount: module.mountDrawTogether }))
     : isGuessPartner
       ? import('./games/guess-partner.js?v=0.16.0').then(module => ({ mount: module.mountGuessPartner }))
@@ -453,6 +461,8 @@ async function runAction(action, element) {
   if (action === 'open-guess-join') return openDialog('join', 'guesspartner');
   if (action === 'open-bomb-create') return openDialog('create', 'bombstorm');
   if (action === 'open-bomb-join') return openDialog('join', 'bombstorm');
+  if (action === 'open-balloon-create') return openDialog('create', 'balloonpop');
+  if (action === 'open-balloon-join') return openDialog('join', 'balloonpop');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

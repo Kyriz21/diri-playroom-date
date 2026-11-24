@@ -1,3 +1,13 @@
+# Changelog
+
+## v0.20.0 — Balloon Pop
+- Menambahkan game arcade Balloon Pop sebagai game keempat di halaman utama.
+- Dua papan pribadi menampilkan pola balon deterministik yang sama; tiap pemain mengetuk papan miliknya sendiri.
+- Balon biasa +1, hati +5, emas +10, bom mengurangi satu nyawa.
+- Avatar karakter bawaan, selfie kamera, dan galeri; avatar disimpan di node terpisah.
+- Timer 60 detik, skor/nyawa live, hasil akhir, dan rematch bersama.
+- Menambahkan Firebase Rules scoped untuk `balloonPop` dan `balloonPopAvatars`.
+
 # Changelog — Diri. Playroom Date
 
 ## v0.18.0 — Pilihan karakter Bomb Storm
