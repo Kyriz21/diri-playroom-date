@@ -112,11 +112,21 @@ export function getBalloonPopRemaining(startedAt, durationSeconds = BALLOON_POP_
   return Math.min(durationSeconds, Math.max(0, Math.ceil((durationSeconds * 1000 - (now - startedAt)) / 1000)));
 }
 
+export function hasBalloonPopElimination(players = {}) {
+  const host = summarizeBalloonHits(players.host?.stats || {});
+  const guest = summarizeBalloonHits(players.guest?.stats || {});
+  return host.lives <= 0 || guest.lives <= 0;
+}
+
 export function determineBalloonPopWinner(players = {}) {
   const host = summarizeBalloonHits(players.host?.stats || {});
   const guest = summarizeBalloonHits(players.guest?.stats || {});
-  if (host.score === guest.score) return { winner: 'draw', host, guest };
-  return { winner: host.score > guest.score ? 'host' : 'guest', host, guest };
+  // If exactly one player runs out of lives, survival wins immediately,
+  // regardless of the opponent's score. If both are eliminated, use score.
+  if (host.lives <= 0 && guest.lives > 0) return { winner: 'guest', reason: 'elimination', host, guest };
+  if (guest.lives <= 0 && host.lives > 0) return { winner: 'host', reason: 'elimination', host, guest };
+  if (host.score === guest.score) return { winner: 'draw', reason: 'score', host, guest };
+  return { winner: host.score > guest.score ? 'host' : 'guest', reason: host.lives <= 0 || guest.lives <= 0 ? 'score-after-elimination' : 'score', host, guest };
 }
 
 export function nextBalloonPopSeed(seed, roundNo) {

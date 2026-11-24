@@ -5,7 +5,7 @@ import {
   BALLOON_POP_DURATION_SECONDS, BALLOON_POP_MAX_OBJECTS, BALLOON_POP_FLIGHT_MS,
   BALLOON_POP_SPAWN_INTERVAL_MS, balloonRandom, createBalloon, getBalloonY,
   getBalloonX, findBalloonAtPoint, applyBalloonPop, summarizeBalloonHits,
-  getBalloonPopRemaining, determineBalloonPopWinner, nextBalloonPopSeed
+  getBalloonPopRemaining, hasBalloonPopElimination, determineBalloonPopWinner, nextBalloonPopSeed
 } from '../js/games/balloon-pop-logic.js';
 const read = path => fs.readFileSync(new URL(path,import.meta.url),'utf8');
 
@@ -72,6 +72,11 @@ test('timer, winner and rematch seed behave deterministically',()=>{
   assert.equal(determineBalloonPopWinner({host:{stats:{score:15}},guest:{stats:{score:8}}}).winner,'host');
   assert.equal(determineBalloonPopWinner({host:{stats:{score:8}},guest:{stats:{score:15}}}).winner,'guest');
   assert.equal(determineBalloonPopWinner({host:{stats:{score:8}},guest:{stats:{score:8}}}).winner,'draw');
+  assert.equal(determineBalloonPopWinner({host:{stats:{score:2,lives:0}},guest:{stats:{score:0,lives:2}}}).winner,'guest');
+  assert.equal(determineBalloonPopWinner({host:{stats:{score:0,lives:3}},guest:{stats:{score:30,lives:0}}}).winner,'host');
+  assert.equal(determineBalloonPopWinner({host:{stats:{score:8,lives:0}},guest:{stats:{score:8,lives:0}}}).winner,'draw');
+  assert.equal(hasBalloonPopElimination({host:{stats:{lives:0}},guest:{stats:{lives:3}}}),true);
+  assert.equal(hasBalloonPopElimination({host:{stats:{lives:1}},guest:{stats:{lives:3}}}),false);
   assert.equal(nextBalloonPopSeed(4,2),nextBalloonPopSeed(4,2));
   assert.notEqual(nextBalloonPopSeed(4,2),nextBalloonPopSeed(4,3));
   assert.equal(BALLOON_POP_FLIGHT_MS,3800);
@@ -117,4 +122,45 @@ test('Balloon Pop updates an atomic per-player stats transaction and only the cu
   assert.match(game,/event\.target\.closest\('\[data-bp-board\]'\)/);
   assert.match(game,/canvas\.dataset\.bpBoard!==role/);
   assert.match(game,/hitIds:\{\.\.\./);
+});
+
+
+test('Balloon Pop immediately finishes when either player runs out of lives and retains a visible rematch action',()=>{
+  const game=read('../js/games/balloon-pop.js');
+  assert.match(game,/hasBalloonPopElimination\(data\.players\|\|\{\}\)/);
+  assert.match(game,/!someoneOut&&!both&&elapsedNow<current\.durationSeconds\*1000\+6400/);
+  assert.match(game,/data-bp-action="rematch"/);
+  assert.match(game,/data-bp-rematch="host"/);
+});
+
+test('Balloon Pop uses an in-flow compact notification instead of the global floating toast stack',()=>{
+  const game=read('../js/games/balloon-pop.js');
+  const feedback=read('../js/services/arcade-feedback.js');
+  assert.match(game,/createArcadeFeedback\(root, '\.bp-shell'\)/);
+  assert.match(feedback,/arcade-inline-feedback/);
+  assert.doesNotMatch(feedback,/position:\s*fixed/);
+});
+
+test('both arcade games open the real webcam and keep gallery selection separate',()=>{
+  const balloon=read('../js/games/balloon-pop.js');
+  const bomb=read('../js/games/bomb-storm.js');
+  const camera=read('../js/services/avatar-camera.js');
+  for(const game of [balloon,bomb]){
+    assert.match(game,/createAvatarCamera\(root/);
+    assert.match(game,/data-bp-action="camera"|data-bs-action="camera"/);
+    assert.doesNotMatch(game,/type="file"[^>]*capture="user"/);
+  }
+  assert.match(camera,/navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(camera,/video\.play\(\)/);
+  assert.match(camera,/video\.srcObject\s*=\s*stream/);
+  assert.match(camera,/canvas\.toBlob/);
+});
+
+
+test('Firebase Rules allow Balloon Pop to finish immediately when either role reaches zero lives',()=>{
+  const rules=JSON.parse(read('../firebase-database.rules.json')).rules;
+  const write=rules.roomGames.$roomCode.$sessionId.balloonPop.meta['.write'];
+  assert.match(write,/players.*host.*stats.*lives.*val\(\) <= 0/);
+  assert.match(write,/players.*guest.*stats.*lives.*val\(\) <= 0/);
+  assert.match(write,/data\.child\('phase'\)\.val\(\) === 'playing'/);
 });

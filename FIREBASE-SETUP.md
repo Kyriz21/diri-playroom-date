@@ -115,3 +115,9 @@ Build v0.19 hanya memperbaiki rendering posisi dan menambahkan animasi visual un
 
 ## v0.20 — Balloon Pop
 Rules v0.20 menambahkan path `roomGames/{roomCode}/{sessionId}/balloonPop` dan `balloonPopAvatars`. Statistik, hit ID, dan event balon dibatasi pada UID pemilik peran serta sesi aktif. Rules mengizinkan inisialisasi stats ketika node meta belum selesai dibuat oleh host, tetapi tetap mewajibkan membership dan activeSession Balloon Pop. Publikasikan seluruh file Rules v0.20 sebelum menguji game ini.
+
+
+## v0.21 — Perbaikan hasil Balloon Pop
+Rules v0.21 mempertahankan seluruh path sebelumnya. Perubahan aturan Balloon Pop mengizinkan host mengubah fase dari `playing` ke `result` segera ketika statistik `lives` milik host atau guest mencapai 0, selain jalur selesai karena timer atau kedua pemain selesai. Ini diperlukan agar pemain yang masih memiliki nyawa dapat langsung dinyatakan menang. Publikasikan seluruh `firebase-database.rules.json` v0.21 melalui Realtime Database → Rules. Tidak perlu mengganti Firebase Web App config.
+
+Notifikasi kecil, pemanggilan webcam `getUserMedia`, dan pemisahan tombol kamera/galeri tidak mengubah struktur database. Namun, Rules v0.21 tetap wajib karena transisi hasil saat eliminasi berubah.

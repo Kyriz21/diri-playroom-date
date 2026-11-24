@@ -1,9 +1,11 @@
 import { db, ref, get, set, update, onValue, runTransaction } from '../firebase.js';
+import { createAvatarCamera } from '../services/avatar-camera.js';
+import { createArcadeFeedback } from '../services/arcade-feedback.js';
 import {
   BALLOON_POP_DURATION_SECONDS, BALLOON_POP_MAX_OBJECTS, BALLOON_POP_FLIGHT_MS,
   BALLOON_POP_SPAWN_INTERVAL_MS, createBalloon, getBalloonY, getBalloonX,
   findBalloonAtPoint, applyBalloonPop, summarizeBalloonHits,
-  getBalloonPopRemaining, determineBalloonPopWinner, nextBalloonPopSeed
+  getBalloonPopRemaining, hasBalloonPopElimination, determineBalloonPopWinner, nextBalloonPopSeed
 } from './balloon-pop-logic.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
@@ -51,7 +53,10 @@ async function compressAvatar(file) {
 const freshStats = () => ({ score:0, lives:3, popped:0, finished:false, hitIds:{}, events:{} });
 
 export function mountBalloonPop(root, context) {
-  const { code, session, room, role, player, onBack, toast=()=>{} } = context;
+  const { code, session, room, role, player, onBack, toast: globalToast=()=>{} } = context;
+  let arcadeFeedback = null;
+  let avatarCamera = null;
+  const notify = (message, type = 'default', options) => arcadeFeedback ? arcadeFeedback.show(message, type, options) : globalToast(message, type);
   const opponentRole = role === 'host' ? 'guest' : 'host';
   const names = { host:room.host?.name || 'Pembuat ruang', guest:room.guest?.name || 'Tamu' };
   const basePath = `roomGames/${code}/${session.sessionId}/balloonPop`;
@@ -92,7 +97,6 @@ export function mountBalloonPop(root, context) {
               <div class="bp-avatar" data-bp-avatar="mine">${role==='host'?'👾':'🧸'}</div><strong>${esc(names[role])}</strong><small>Karakter kamu</small>
               <div class="bp-character-grid">${CHARACTERS.map(item=>`<button type="button" class="bp-character" data-bp-character="${item.id}" aria-label="Pilih ${item.name}"><span>${item.emoji}</span><small>${item.name}</small></button>`).join('')}</div>
               <div class="bp-avatar-actions"><button class="button button-secondary" data-bp-action="camera">📷 Ambil foto</button><button class="button button-secondary" data-bp-action="gallery">🖼️ Pilih dari galeri</button></div>
-              <input id="bp-camera" class="bp-file-input" type="file" accept="image/*" capture="user" aria-label="Ambil foto dengan kamera">
               <input id="bp-gallery" class="bp-file-input" type="file" accept="image/*" aria-label="Pilih foto dari galeri">
               <span class="bp-avatar-status" data-bp-avatar-status>Pilih karakter untuk mulai.</span>
             </article>
@@ -257,7 +261,14 @@ export function mountBalloonPop(root, context) {
       const result=determineBalloonPopWinner(data.players||{});
       const title=root.querySelector('[data-bp-result-title]'),subtitle=root.querySelector('[data-bp-result-subtitle]');
       if(title)title.textContent=result.winner==='draw'?'Seri! Sama-sama jago!':`${names[result.winner]} menang!`;
-      if(subtitle)subtitle.textContent=`${result.host.score} poin untuk ${names.host}, ${result.guest.score} poin untuk ${names.guest}.`;
+      if(subtitle){
+        if(result.reason==='elimination'){
+          const eliminated=result.winner==='host'?'guest':'host';
+          subtitle.textContent=`${names[eliminated]} kehabisan nyawa. ${names[result.winner]} menang karena masih bertahan!`;
+        } else {
+          subtitle.textContent=`${result.host.score} poin untuk ${names.host}, ${result.guest.score} poin untuk ${names.guest}.`;
+        }
+      }
       for(const playerRole of ['host','guest']){
         const stats=summarizeBalloonHits(data.players?.[playerRole]?.stats||freshStats());
         const score=root.querySelector(`[data-bp-result-score="${playerRole}"]`);if(score)score.textContent=String(stats.score);
@@ -282,13 +293,13 @@ export function mountBalloonPop(root, context) {
   async function resetOwnForRound(nextRound) {
     const reset={ready:false,roundNo:Number(nextRound),finished:false,updatedAt:nowServer()};
     try{await update(playerRef(role),reset);await set(statsRef(role),freshStats());}
-    catch(error){toast(`Persiapan ronde baru gagal: ${error.message}`,'error');}
+    catch(error){notify(`Persiapan ronde baru gagal: ${error.message}`,'error');}
   }
   async function markReady() {
     if(readyBusy||data.players?.[role]?.ready||Number(data.players?.[role]?.roundNo)!==roundNo())return;
     readyBusy=true;updateState();
-    try{await update(playerRef(role),{ready:true,updatedAt:nowServer()});toast('Kesiapan tersimpan. Menunggu pasangan…','success');}
-    catch(error){toast(`Belum bisa menyimpan kesiapan: ${error.message}`,'error');}
+    try{await update(playerRef(role),{ready:true,updatedAt:nowServer()});notify('Kesiapan tersimpan. Menunggu pasangan…','success');}
+    catch(error){notify(`Belum bisa menyimpan kesiapan: ${error.message}`,'error');}
     finally{readyBusy=false;updateState();}
   }
   async function maybeStart() {
@@ -296,16 +307,27 @@ export function mountBalloonPop(root, context) {
     if(Number(data.players.host.roundNo)!==roundNo()||Number(data.players.guest.roundNo)!==roundNo())return;
     const key=String(roundNo());if(lastStartAttempt===key)return;lastStartAttempt=key;
     try{await runTransaction(metaRef,current=>{if(!current||current.phase!=='lobby'||Number(current.roundNo)!==Number(key))return;return {...current,phase:'playing',startedAt:nowServer()+3000};},{applyLocally:false});}
-    catch(error){lastStartAttempt='';toast(`Permainan belum bisa dimulai: ${error.message}`,'error');}
+    catch(error){lastStartAttempt='';notify(`Permainan belum bisa dimulai: ${error.message}`,'error');}
   }
   async function finishIfNeeded(now) {
     if(role!=='host'||data.meta?.phase!=='playing'||resultBusy)return;
     const elapsed=now-Number(data.meta.startedAt||now);
     const bothFinished=Boolean(data.players?.host?.finished&&data.players?.guest?.finished);
-    if(!bothFinished&&elapsed<BALLOON_POP_DURATION_SECONDS*1000+6400)return;
+    const eliminated=hasBalloonPopElimination(data.players||{});
+    // Elimination ends the shared round immediately; otherwise finish on timer/both done.
+    if(!eliminated&&!bothFinished&&elapsed<BALLOON_POP_DURATION_SECONDS*1000+6400)return;
     resultBusy=true;
-    try{await runTransaction(metaRef,current=>{if(!current||current.phase!=='playing')return;const both=Boolean(data.players?.host?.finished&&data.players?.guest?.finished);const elapsedNow=nowServer()-Number(current.startedAt||nowServer());if(!both&&elapsedNow<current.durationSeconds*1000+6400)return;return {...current,phase:'result',endedAt:nowServer()};},{applyLocally:false});}
-    catch(error){toast(`Hasil belum tersimpan: ${error.message}`,'error');}finally{resultBusy=false;}
+    try{
+      await runTransaction(metaRef,current=>{
+        if(!current||current.phase!=='playing')return;
+        const both=Boolean(data.players?.host?.finished&&data.players?.guest?.finished);
+        const someoneOut=hasBalloonPopElimination(data.players||{});
+        const elapsedNow=nowServer()-Number(current.startedAt||nowServer());
+        if(!someoneOut&&!both&&elapsedNow<current.durationSeconds*1000+6400)return;
+        return {...current,phase:'result',endedAt:nowServer()};
+      },{applyLocally:false});
+    } catch(error){notify(`Hasil belum tersimpan: ${error.message}`,'error');}
+    finally{resultBusy=false;}
   }
   async function maybeStartRematch() {
     if(role!=='host'||data.meta?.phase!=='result'||rematchBusy)return;
@@ -313,7 +335,7 @@ export function mountBalloonPop(root, context) {
     if(Number(data.rematchRequests?.host)!==currentRound||Number(data.rematchRequests?.guest)!==currentRound)return;
     rematchBusy=true;
     try{await runTransaction(metaRef,current=>{if(!current||current.phase!=='result'||Number(current.roundNo)!==currentRound)return;return {...current,phase:'lobby',roundNo:currentRound+1,seed:nextBalloonPopSeed(current.seed,currentRound),createdAt:nowServer(),startedAt:0};},{applyLocally:false});}
-    catch(error){toast(`Ronde baru belum dapat disiapkan: ${error.message}`,'error');}finally{rematchBusy=false;}
+    catch(error){notify(`Ronde baru belum dapat disiapkan: ${error.message}`,'error');}finally{rematchBusy=false;}
   }
 
   async function tapBalloon(event) {
@@ -335,36 +357,38 @@ export function mountBalloonPop(root, context) {
       if(result.committed){
         const latestStats=result.snapshot.val()||{};
         if(latestStats.finished) await update(playerRef(role),{finished:true,updatedAt:nowServer()});
-        if(outcome.lifeLoss)toast('Ups! Terkena bom. Satu nyawa berkurang.','error');
-        else toast(balloon.kind==='gold'?'Balon emas! +10 ✨':balloon.kind==='heart'?'Balon hati! +5 💗':'+1 poin 🎈','success');
+        if(outcome.lifeLoss)notify('Terkena bom · 1 nyawa berkurang','error',{duration:1200});
+        else if(balloon.kind==='gold')notify('Balon emas · +10 poin ✨','success',{duration:1100});
+        else if(balloon.kind==='heart')notify('Balon hati · +5 poin 💗','success',{duration:1100});
+        // Balon biasa hanya memperbarui HUD dan efek pecah di kanvas; tidak membuat notifikasi.
       }
-    }catch(error){const now=Date.now();if(now-lastToastAt>3500){lastToastAt=now;toast(`Balon belum tercatat: ${error.message}`,'error');}}
+    }catch(error){const now=Date.now();if(now-lastToastAt>3500){lastToastAt=now;notify(`Balon belum tercatat: ${error.message}`,'error');}}
     finally{pendingHits.delete(balloon.id);}
   }
 
   async function selectCharacter(id) {
     if(avatarBusy||data.meta?.phase!=='lobby'||data.players?.[role]?.ready||!CHARACTER_MAP[id])return;
     avatarBusy=true;updateAvatars();
-    try{const value=characterValue(id);await set(avatarRef(role),value);avatarData[role]=value;avatarSources[role]=value;avatarImages[role]=null;updateAvatars();toast(`Karakter ${CHARACTER_MAP[id].name} dipilih!`,'success');}
-    catch(error){toast(`Karakter belum tersimpan: ${error.message}`,'error');}finally{avatarBusy=false;updateAvatars();}
+    try{const value=characterValue(id);await set(avatarRef(role),value);avatarData[role]=value;avatarSources[role]=value;avatarImages[role]=null;updateAvatars();notify(`Karakter ${CHARACTER_MAP[id].name} dipilih!`,'success');}
+    catch(error){notify(`Karakter belum tersimpan: ${error.message}`,'error');}finally{avatarBusy=false;updateAvatars();}
   }
   async function pickAvatar(file) {
     if(avatarBusy)return;avatarBusy=true;updateAvatars();
-    try{const value=await compressAvatar(file);await set(avatarRef(role),value);avatarData[role]=value;avatarSources[role]=value;avatarImages[role]=imageFromDataUrl(value);if(avatarImages[role])avatarImages[role].onload=()=>{if(!destroyed)drawAll(nowServer());};updateAvatars();toast('Foto berhasil dijadikan karakter!','success');}
-    catch(error){toast(error.message,'error');}finally{avatarBusy=false;updateAvatars();}
+    try{const value=await compressAvatar(file);await set(avatarRef(role),value);avatarData[role]=value;avatarSources[role]=value;avatarImages[role]=imageFromDataUrl(value);if(avatarImages[role])avatarImages[role].onload=()=>{if(!destroyed)drawAll(nowServer());};updateAvatars();notify('Foto berhasil dijadikan karakter!','success');}
+    catch(error){notify(error.message,'error');}finally{avatarBusy=false;updateAvatars();}
   }
   async function ensureAvatar() {
     try{const snapshot=await get(avatarRef(role));const value=safeAvatar(snapshot.val());if(value){avatarData[role]=value;avatarSources[role]=value;avatarImages[role]=imageFromDataUrl(value);updateAvatars();return;}}
-    catch(error){toast(`Avatar belum dapat dimuat: ${error.message}`,'error');}
+    catch(error){notify(`Avatar belum dapat dimuat: ${error.message}`,'error');}
     const value=characterValue(DEFAULTS[role]);
-    try{await set(avatarRef(role),value);}catch(error){toast(`Karakter bawaan dipakai sementara: ${error.message}`,'error');}
+    try{await set(avatarRef(role),value);}catch(error){notify(`Karakter bawaan dipakai sementara: ${error.message}`,'error');}
     avatarData[role]=value;avatarSources[role]=value;updateAvatars();
   }
   async function requestRematch() {
     if(rematchBusy||data.meta?.phase!=='result'||Number(data.rematchRequests?.[role])===roundNo())return;
     rematchBusy=true;updateState();
-    try{await set(ref(db,`${basePath}/rematchRequests/${role}`),roundNo());toast('Permintaan main lagi dikirim. Menunggu pasangan…','success');}
-    catch(error){toast(`Rematch belum tersimpan: ${error.message}`,'error');}finally{rematchBusy=false;updateState();}
+    try{await set(ref(db,`${basePath}/rematchRequests/${role}`),roundNo());notify('Permintaan main lagi dikirim. Menunggu pasangan…','success');}
+    catch(error){notify(`Rematch belum tersimpan: ${error.message}`,'error');}finally{rematchBusy=false;updateState();}
   }
 
   function clickHandler(event) {
@@ -372,12 +396,12 @@ export function mountBalloonPop(root, context) {
     if(action==='back'){onBack?.();return;}
     if(action==='ready')void markReady();
     if(action==='rematch')void requestRematch();
-    if(action==='camera')root.querySelector('#bp-camera')?.click();
+    if(action==='camera')void avatarCamera?.open();
     if(action==='gallery')root.querySelector('#bp-gallery')?.click();
     const character=event.target.closest('[data-bp-character]')?.dataset.bpCharacter;if(character)void selectCharacter(character);
   }
   function changeHandler(event) {
-    if(event.target.matches('#bp-camera,#bp-gallery')){const file=event.target.files?.[0];if(file)void pickAvatar(file);event.target.value='';}
+    if(event.target.matches('#bp-gallery')){const file=event.target.files?.[0];if(file)void pickAvatar(file);event.target.value='';}
   }
   function pointerDownHandler(event) {
     const canvas=event.target.closest('[data-bp-board]');if(!canvas||canvas.dataset.bpBoard!==role)return;
@@ -415,21 +439,25 @@ export function mountBalloonPop(root, context) {
         updateState();void maybeStart();
         if(data.meta?.phase==='playing')drawAll(nowServer());
         if(role==='host'&&data.meta?.phase==='result')void maybeStartRematch();
-      },error=>toast(`Koneksi Balloon Pop terganggu: ${error.message}`,'error'));
+      },error=>notify(`Koneksi Balloon Pop terganggu: ${error.message}`,'error'));
       unsubscribeAvatars=onValue(ref(db,`roomGames/${code}/${session.sessionId}/balloonPopAvatars`),snap=>{
         if(destroyed)return;avatarData=snap.val()||{};
         for(const playerRole of ['host','guest']){const value=safeAvatar(avatarData[playerRole]);if(value!==avatarSources[playerRole]){avatarSources[playerRole]=value;avatarImages[playerRole]=imageFromDataUrl(value);}}
         updateAvatars();
-      },error=>toast(`Avatar pasangan belum dapat dimuat: ${error.message}`,'error'));
+      },error=>notify(`Avatar pasangan belum dapat dimuat: ${error.message}`,'error'));
       updateState();rafId=requestAnimationFrame(tick);
     }catch(error){showPanel('error');const node=root.querySelector('[data-bp-error]');if(node)node.textContent=error.message||'Tidak dapat membuka permainan.';}
     finally{initBusy=false;}
   }
 
-  shell();void init();
+  shell();
+  arcadeFeedback = createArcadeFeedback(root, '.bp-shell');
+  avatarCamera = createAvatarCamera(root, { onCapture: pickAvatar, onNotice: notify });
+  void init();
   return { destroy(){
     destroyed=true;if(unsubscribeGame)unsubscribeGame();if(unsubscribeAvatars)unsubscribeAvatars();if(unsubscribeOffset)unsubscribeOffset();
     if(rafId)cancelAnimationFrame(rafId);if(intervalId)clearInterval(intervalId);
     root.removeEventListener('click',clickHandler);root.removeEventListener('change',changeHandler);root.removeEventListener('pointerdown',pointerDownHandler);
+    avatarCamera?.destroy();arcadeFeedback?.destroy();
   }};
 }

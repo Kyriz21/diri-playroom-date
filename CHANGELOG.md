@@ -1,3 +1,9 @@
+## v0.21.0 — Arcade UX, Balloon Pop elimination, and desktop webcam
+- Replaced floating arcade toasts in Bomb Storm and Balloon Pop with compact in-flow feedback under the game header so notifications do not cover the play area.
+- Balloon Pop now transitions to results immediately when either player's lives reach zero. The surviving player wins; if both are out, the score breaks the tie. The existing result panel displays the two-player rematch action.
+- Added a shared webcam capture modal using `navigator.mediaDevices.getUserMedia` for both arcade games. The camera button opens webcam preview and capture on desktop/mobile; gallery selection remains a separate file picker.
+- Updated Firebase Rules to authorize the early Balloon Pop `playing` → `result` transition on zero lives. Publish the full v0.21 rules file.
+
 # Changelog
 
 ## v0.20.0 — Balloon Pop

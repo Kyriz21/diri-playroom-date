@@ -305,13 +305,13 @@ function renderActiveSession(room, current) {
   const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isBalloonPop
-    ? import('./games/balloon-pop.js?v=0.20.0').then(module => ({ mount: module.mountBalloonPop }))
+    ? import('./games/balloon-pop.js?v=0.21.0').then(module => ({ mount: module.mountBalloonPop }))
     : isDrawTogether
     ? import('./games/draw-together.js?v=0.13.0').then(module => ({ mount: module.mountDrawTogether }))
     : isGuessPartner
       ? import('./games/guess-partner.js?v=0.16.0').then(module => ({ mount: module.mountGuessPartner }))
       : isBombStorm
-        ? import('./games/bomb-storm.js?v=0.19.0').then(module => ({ mount: module.mountBombStorm }))
+        ? import('./games/bomb-storm.js?v=0.21.0').then(module => ({ mount: module.mountBombStorm }))
         : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
   void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;

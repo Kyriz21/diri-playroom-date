@@ -317,3 +317,18 @@ Temuan:
 - Rematch memerlukan permintaan dari kedua pemain dan mereset stats lokal setiap peran.
 - Avatar bawaan/kamera/galeri tampil pada header papan dan hasil.
 - Rules v0.20 wajib dipublikasikan sebelum pengujian Firebase.
+
+
+## v0.21 — Arcade notifikasi, hasil eliminasi, Rematch, dan webcam
+- [ ] Pada HP, notifikasi Bomb Storm muncul ringkas di bawah header dan tidak menutupi arena atau kontrol.
+- [ ] Pada HP, notifikasi Balloon Pop muncul ringkas di bawah header dan tidak menutupi papan balon.
+- [ ] Di PC, klik **Ambil foto** pada Bomb Storm membuka dialog webcam dan browser meminta izin kamera; tidak membuka file picker.
+- [ ] Di PC, klik **Pilih dari galeri** tetap membuka file picker.
+- [ ] Ulangi uji kamera dan galeri pada Balloon Pop.
+- [ ] Pada Balloon Pop, ketika host kehilangan nyawa terakhir sementara guest masih memiliki nyawa, fase hasil segera muncul dan guest dinyatakan menang.
+- [ ] Ulangi dengan guest kehabisan nyawa; host harus menang.
+- [ ] Jika kedua pemain kehilangan nyawa pada saat sama, skor menjadi penentu hasil.
+- [ ] Panel hasil Balloon Pop menampilkan tombol **Main lagi** di kedua perangkat. Ronde baru dimulai hanya setelah kedua pemain menyetujui rematch.
+- [ ] Pastikan hasil dan rematch tetap sinkron ketika satu perangkat melakukan refresh.
+
+**Pemasangan v0.21:** publikasikan seluruh `firebase-database.rules.json` v0.21 karena aturan transisi hasil Balloon Pop berubah untuk mendukung eliminasi dini. Konfigurasi Firebase Web App tidak berubah.

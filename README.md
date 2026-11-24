@@ -1,4 +1,4 @@
-# Diri. Playroom Date v0.20 — Photobooth, Gambar Bareng, Tebak Pasangan, Bomb Storm & Balloon Pop
+# Diri. Playroom Date v0.21 — Photobooth, Gambar Bareng, Tebak Pasangan, Bomb Storm & Balloon Pop
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini empat mini-game tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop.
 
@@ -67,7 +67,7 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 - Skor, jumlah balon pecah, nyawa, dan hasil ronde tersinkron melalui Firebase Realtime Database.
 - Durasi ronde 60 detik, dengan hitung mundur bersama, hasil akhir, serta rematch yang memerlukan persetujuan kedua pemain.
 - Avatar dapat menggunakan 12 karakter bawaan, kamera, atau galeri. Foto dikompres menjadi avatar kecil dan disimpan terpisah dari pembaruan skor.
-- Publikasikan `firebase-database.rules.json` build v0.20 sebelum memainkan Balloon Pop. Rules menambahkan `roomGames/{kode}/{sessionId}/balloonPop` dan `balloonPopAvatars`.
+- Publikasikan `firebase-database.rules.json` build v0.21 sebelum memainkan Balloon Pop. Rules mencakup `balloonPop` dan mengizinkan fase hasil segera ketika salah satu pemain kehabisan nyawa.
 
 ## Teknologi dan batasan biaya
 
@@ -207,3 +207,11 @@ Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `n
 - Hati memicu pantulan, efek `+10`, dan partikel. Bom memicu squash/shake, cincin benturan, serta indikator kehilangan nyawa.
 - Kedua perangkat memicu animasi berdasarkan perubahan skor dan nyawa yang disinkronkan.
 - Tidak ada perubahan Firebase Rules; cukup perbarui file project di GitHub Pages.
+
+
+## Arcade UX dan kamera v0.21
+
+- Notifikasi Bomb Storm dan Balloon Pop tampil sebagai pesan kecil di alur halaman di bawah header, bukan toast mengambang yang menutupi arena.
+- Balloon Pop langsung mengakhiri ronde ketika salah satu pemain mencapai 0 nyawa. Jika hanya satu pemain yang kehabisan nyawa, pemain yang masih memiliki nyawa menjadi pemenang; jika keduanya habis pada saat yang sama, skor menjadi penentu. Panel hasil menyediakan **Main lagi** dengan persetujuan kedua pemain.
+- Tombol **Ambil foto** di kedua game arcade membuka webcam melalui `navigator.mediaDevices.getUserMedia` dan menampilkan pratinjau video. Tombol **Pilih dari galeri** tetap membuka pemilih berkas terpisah. Pada PC, kamera membutuhkan browser modern, HTTPS, perangkat kamera, dan izin pengguna.
+- Firebase Rules v0.21 memperbolehkan transisi Balloon Pop dari `playing` ke `result` ketika salah satu pemain kehabisan nyawa. Publikasikan Rules lengkap v0.21 sebelum menguji perubahan ini.

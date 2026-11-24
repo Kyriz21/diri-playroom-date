@@ -1,23 +1,21 @@
-# Build Verification — Diri. Playroom Date v0.20
+# Build Verification — Diri. Playroom Date v0.21
 
-- Balloon Pop terdaftar sebagai game keempat dan memiliki aksi Buat/Gabung khusus.
-- Mesin Balloon Pop menggunakan seed bersama agar kedua perangkat menampilkan jadwal balon yang sama.
-- Papan pemain dipisahkan; tiap perangkat hanya menerima ketukan pada papan dengan role miliknya.
-- Skor dan nyawa diperbarui melalui transaksi atomik pada node stats pemain.
-- Ada balon biasa (+1), hati (+5), emas (+10), dan bom (-1 nyawa).
-- Timer 60 detik, tiga nyawa, hasil akhir, dan rematch dua pihak tersedia.
-- Avatar mendukung karakter bawaan, kamera, dan galeri; gambar dikompres lokal ke avatar kecil dan disimpan pada node terpisah.
-- Firebase Rules mencakup pemilihan game, meta, player stats, hit records, rematch, dan avatar Balloon Pop.
+- Notifikasi Bomb Storm dan Balloon Pop memakai feedback kecil dalam alur halaman, tidak memakai toast fixed yang menutupi arena.
+- Balloon Pop mengakhiri fase `playing` segera ketika host atau guest memiliki 0 nyawa; pemain yang masih bertahan menang. Bila keduanya habis, skor menentukan hasil.
+- Panel hasil Balloon Pop menampilkan aksi Rematch yang meminta persetujuan kedua pemain.
+- Kedua game arcade menggunakan helper webcam bersama berbasis `navigator.mediaDevices.getUserMedia`; kamera dan galeri merupakan tombol serta jalur terpisah.
+- Kamera menggunakan dialog pratinjau video, tombol Ambil foto, dan kompresi canvas JPEG. Galeri tetap memakai input file biasa.
+- Firebase Rules memperbolehkan transisi Balloon Pop `playing` → `result` ketika salah satu pemain memiliki `lives <= 0`.
 
 ## Pemeriksaan lokal
 
-- 130/130 unit test lulus.
+- 134/134 unit test lulus (`npm test`).
 - Semua file JavaScript lolos `node --check`.
 - `firebase-database.rules.json` berhasil diparse sebagai JSON.
 - Arsip ZIP diverifikasi setelah dibuat.
 
 ## Belum dibuktikan
 
-- Pengujian langsung Firebase project aktif dengan dua perangkat.
-- Respons sentuh kamera/galeri pada perangkat fisik.
-- Latensi skor/animasi pada jaringan berbeda.
+- Webcam PC dan kamera HP fisik dengan izin browser pada perangkat pengguna.
+- Sinkronisasi eliminasi, hasil, dan rematch pada Firebase project aktif dengan dua perangkat nyata.
+- Sensasi notifikasi dan layout responsif pada berbagai ukuran layar fisik.

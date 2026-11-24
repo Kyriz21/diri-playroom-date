@@ -1,4 +1,6 @@
 import { db, ref, get, set, update, onValue, runTransaction } from '../firebase.js';
+import { createAvatarCamera } from '../services/avatar-camera.js';
+import { createArcadeFeedback } from '../services/arcade-feedback.js';
 import {
   BOMB_STORM_DURATION_SECONDS, BOMB_STORM_FALL_GRACE_MS,
   createBombStormObject, getBombStormObjectY, processLandedObjects,
@@ -78,7 +80,10 @@ async function compressAvatar(file) {
 }
 
 export function mountBombStorm(root, context) {
-  const { code, session, room, role, player, onBack, toast = () => {} } = context;
+  const { code, session, room, role, player, onBack, toast: globalToast = () => {} } = context;
+  let arcadeFeedback = null;
+  let avatarCamera = null;
+  const notify = (message, type = 'default', options) => arcadeFeedback ? arcadeFeedback.show(message, type, options) : globalToast(message, type);
   const opponentRole = role === 'host' ? 'guest' : 'host';
   const names = {
     host: room.host?.name || 'Pembuat ruang',
@@ -149,7 +154,6 @@ export function mountBombStorm(root, context) {
                 <button type="button" class="button button-secondary bs-upload-button" data-bs-action="camera">📷 Ambil foto</button>
                 <button type="button" class="button button-secondary bs-upload-button" data-bs-action="gallery">🖼️ Pilih dari galeri</button>
               </div>
-              <input id="bs-avatar-camera" class="bs-file-input" type="file" accept="image/*" capture="user" aria-label="Ambil foto dengan kamera">
               <input id="bs-avatar-gallery" class="bs-file-input" type="file" accept="image/*" aria-label="Pilih foto dari galeri">
               <span class="bs-avatar-status" data-bs-avatar-status>Karakter bawaan siap digunakan.</span>
             </article>
@@ -473,7 +477,7 @@ export function mountBombStorm(root, context) {
     localPlayer = { ...localPlayer, ...fields, updatedAt: nowServer() };
     return update(playerRef, { ...fields, updatedAt: localPlayer.updatedAt }).catch(error => {
       const now = Date.now();
-      if (now - lastProgressToast > 5000) { lastProgressToast=now; toast(`Progres belum tersinkron: ${error.message}. Periksa jaringan.`, 'error'); }
+      if (now - lastProgressToast > 5000) { lastProgressToast=now; notify(`Progres belum tersinkron: ${error.message}. Periksa jaringan.`, 'error'); }
       throw error;
     });
   }
@@ -508,10 +512,10 @@ export function mountBombStorm(root, context) {
     if (Object.keys(updates).length) {
       localPlayer = { ...localPlayer, ...updates, updatedAt:now };
       void update(playerRef,{...updates,updatedAt:now}).catch(error=>{
-        const current=Date.now(); if(current-lastProgressToast>5000){lastProgressToast=current;toast(`Skor belum tersinkron: ${error.message}.`, 'error');}
+        const current=Date.now(); if(current-lastProgressToast>5000){lastProgressToast=current;notify(`Skor belum tersinkron: ${error.message}.`, 'error');}
       });
-      if(next.events.some(event=>event.result==='collected')) toast('Hati berhasil dikumpulkan! +10 💗','success');
-      if(next.events.some(event=>event.result==='hit')) toast('Aduh, terkena bom! Satu nyawa berkurang.','error');
+      if(next.events.some(event=>event.result==='collected')) notify('Hati berhasil dikumpulkan! +10 💗','success');
+      if(next.events.some(event=>event.result==='hit')) notify('Aduh, terkena bom! Satu nyawa berkurang.','error');
     }
   }
 
@@ -541,7 +545,7 @@ export function mountBombStorm(root, context) {
       await update(playerRef,reset);
       localPlayer={...localPlayer,...reset};
       localPlayer._roundNo=roundNo;
-    } catch(error) { toast(`Persiapan ronde baru gagal: ${error.message}`,'error'); }
+    } catch(error) { notify(`Persiapan ronde baru gagal: ${error.message}`,'error'); }
   }
 
   async function maybeStart() {
@@ -555,7 +559,7 @@ export function mountBombStorm(root, context) {
         if(!current||current.phase!=='lobby'||Number(current.roundNo)!==Number(key)) return;
         return {...current,phase:'playing',startedAt:nowServer()+3500};
       },{applyLocally:false});
-    } catch(error) { lastStartAttempt=''; toast(`Permainan belum bisa dimulai: ${error.message}`,'error'); }
+    } catch(error) { lastStartAttempt=''; notify(`Permainan belum bisa dimulai: ${error.message}`,'error'); }
   }
 
   async function finishGameIfNeeded(now) {
@@ -572,7 +576,7 @@ export function mountBombStorm(root, context) {
         if(!both && elapsedNow < current.durationSeconds*1000+BOMB_STORM_FALL_GRACE_MS+1200) return;
         return {...current,phase:'result',endedAt:nowServer()};
       },{applyLocally:false});
-    } catch(error) { toast(`Hasil permainan belum tersimpan: ${error.message}`,'error'); }
+    } catch(error) { notify(`Hasil permainan belum tersimpan: ${error.message}`,'error'); }
     finally { resultBusy=false; }
   }
 
@@ -586,7 +590,7 @@ export function mountBombStorm(root, context) {
         if(!current||current.phase!=='result'||Number(current.roundNo)!==roundNo) return;
         return {...current,phase:'lobby',roundNo:roundNo+1,seed:nextBombStormSeed(current.seed,roundNo),createdAt:nowServer(),startedAt:0};
       },{applyLocally:false});
-    } catch(error) { toast(`Ronde baru belum bisa disiapkan: ${error.message}`,'error'); }
+    } catch(error) { notify(`Ronde baru belum bisa disiapkan: ${error.message}`,'error'); }
     finally { rematchBusy=false; }
   }
 
@@ -627,8 +631,8 @@ export function mountBombStorm(root, context) {
   async function markReady() {
     if(readyBusy||data.players?.[role]?.ready||Number(data.players?.[role]?.roundNo)!==Number(data.meta?.roundNo))return;
     readyBusy=true;renderState();
-    try{await writeOwn({ready:true});toast('Kesiapan tersimpan. Menunggu pasangan…','success');}
-    catch(error){toast(`Belum bisa menyimpan kesiapan: ${error.message}`,'error');}
+    try{await writeOwn({ready:true});notify('Kesiapan tersimpan. Menunggu pasangan…','success');}
+    catch(error){notify(`Belum bisa menyimpan kesiapan: ${error.message}`,'error');}
     finally{readyBusy=false;renderState();}
   }
 
@@ -638,11 +642,11 @@ export function mountBombStorm(root, context) {
     try{
       const avatar=await compressAvatar(file);
       await set(avatarRef,avatar);
-      toast('Selfie berhasil dijadikan avatar!','success');
+      notify('Selfie berhasil dijadikan avatar!','success');
       updateAvatarDisplays();
       avatarData[role]=avatar;avatarSources[role]=avatar;avatarImages[role]=imageFromDataUrl(avatar);if(avatarImages[role])avatarImages[role].onload=()=>{if(!destroyed&&data.meta?.phase==='playing')drawArena(nowServer());};
       updateAvatarDisplays();
-    }catch(error){toast(error.message,'error');if(status)status.textContent='Foto belum berhasil dipasang.';}
+    }catch(error){notify(error.message,'error');if(status)status.textContent='Foto belum berhasil dipasang.';}
     finally{avatarBusy=false;updateAvatarDisplays();}
   }
 
@@ -657,9 +661,9 @@ export function mountBombStorm(root, context) {
       avatarSources[role] = value;
       avatarImages[role] = null;
       updateAvatarDisplays();
-      toast(`Karakter ${CHARACTER_BY_ID[characterId].name} dipilih!`, 'success');
+      notify(`Karakter ${CHARACTER_BY_ID[characterId].name} dipilih!`, 'success');
     } catch (error) {
-      toast(`Karakter belum dapat disimpan: ${error.message}`, 'error');
+      notify(`Karakter belum dapat disimpan: ${error.message}`, 'error');
     } finally {
       avatarBusy = false;
       updateAvatarDisplays();
@@ -680,7 +684,7 @@ export function mountBombStorm(root, context) {
         return;
       }
     } catch (error) {
-      toast(`Pilihan karakter sebelumnya belum dapat dimuat: ${error.message}`, 'error');
+      notify(`Pilihan karakter sebelumnya belum dapat dimuat: ${error.message}`, 'error');
     }
     const value = characterValue(DEFAULT_CHARACTER_BY_ROLE[role]);
     try {
@@ -693,15 +697,15 @@ export function mountBombStorm(root, context) {
       // The local default is still used visually if the initial write is unavailable.
       avatarData[role] = value;
       updateAvatarDisplays();
-      toast(`Karakter bawaan dipakai sementara. Sinkronisasi tertunda: ${error.message}`, 'error');
+      notify(`Karakter bawaan dipakai sementara. Sinkronisasi tertunda: ${error.message}`, 'error');
     }
   }
 
   async function requestRematch() {
     if(rematchBusy||data.meta?.phase!=='result'||Number(data.rematchRequests?.[role])===Number(data.meta.roundNo))return;
     rematchBusy=true;renderState();
-    try{await set(ref(db,`${basePath}/rematchRequests/${role}`),Number(data.meta.roundNo));toast('Permintaan main lagi terkirim. Menunggu pasangan…','success');}
-    catch(error){toast(`Permintaan main lagi gagal: ${error.message}`,'error');}
+    try{await set(ref(db,`${basePath}/rematchRequests/${role}`),Number(data.meta.roundNo));notify('Permintaan main lagi terkirim. Menunggu pasangan…','success');}
+    catch(error){notify(`Permintaan main lagi gagal: ${error.message}`,'error');}
     finally{rematchBusy=false;renderState();}
   }
 
@@ -710,14 +714,14 @@ export function mountBombStorm(root, context) {
     if(action==='back'){onBack?.();return;}
     if(action==='ready')void markReady();
     if(action==='rematch')void requestRematch();
-    if(action==='camera')root.querySelector('#bs-avatar-camera')?.click();
+    if(action==='camera')void avatarCamera?.open();
     if(action==='gallery')root.querySelector('#bs-avatar-gallery')?.click();
     const character = event.target.closest('[data-bs-character]')?.dataset.bsCharacter;
     if(character)void selectCharacter(character);
   }
 
   function changeHandler(event) {
-    if(event.target.matches('#bs-avatar-camera,#bs-avatar-gallery')){
+    if(event.target.matches('#bs-avatar-gallery')){
       const file=event.target.files?.[0];if(file)void pickAvatar(file);event.target.value='';
     }
   }
@@ -795,7 +799,7 @@ export function mountBombStorm(root, context) {
         void maybeStart();
         if(role==='host'&&data.meta?.phase==='result')void maybeStartRematch();
         if(data.meta?.phase==='playing')drawArena(nowServer());
-      },error=>toast(`Koneksi Bomb Storm terganggu: ${error.message}`,'error'));
+      },error=>notify(`Koneksi Bomb Storm terganggu: ${error.message}`,'error'));
       unsubscribeAvatars=onValue(avatarsRef,snapshot=>{
         if(destroyed)return;
         avatarData=snapshot.val()||{};
@@ -808,7 +812,7 @@ export function mountBombStorm(root, context) {
           }
         }
         updateAvatarDisplays();
-      },error=>toast(`Avatar pasangan belum dapat dimuat: ${error.message}`,'error'));
+      },error=>notify(`Avatar pasangan belum dapat dimuat: ${error.message}`,'error'));
       renderState();
       lastArenaFrameAt=0;
       rafId=requestAnimationFrame(tick);
@@ -819,6 +823,8 @@ export function mountBombStorm(root, context) {
   }
 
   shell();
+  arcadeFeedback = createArcadeFeedback(root, '.bs-shell');
+  avatarCamera = createAvatarCamera(root, { onCapture: pickAvatar, onNotice: notify });
   void init();
   return {
     destroy(){
@@ -829,6 +835,8 @@ export function mountBombStorm(root, context) {
       root.removeEventListener('click',clickHandler);root.removeEventListener('change',changeHandler);root.removeEventListener('input',inputHandler);
       root.removeEventListener('pointerdown',pointerDownHandler);root.removeEventListener('pointermove',pointerMoveHandler);root.removeEventListener('pointerup',pointerUpHandler);root.removeEventListener('pointercancel',pointerUpHandler);
       window.removeEventListener('keydown',keyHandler);
+      avatarCamera?.destroy();
+      arcadeFeedback?.destroy();
     }
   };
 }

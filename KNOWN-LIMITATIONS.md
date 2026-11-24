@@ -39,3 +39,9 @@
 - Pergerakan visual dihitung lokal dari waktu mulai server dan seed bersama; ketukan/skor dicatat ke Firebase Realtime Database.
 - Seperti game kasual lainnya pada build ini, klien tetap menghitung input dan skor; ini bukan sistem anti-cheat untuk kompetisi berhadiah.
 - Perlu uji nyata pada dua HP untuk memeriksa sensitivitas sentuhan, izin kamera/galeri avatar, latensi Firebase, countdown, dan rematch.
+
+
+## Arcade UX dan kamera v0.21
+- Webcam di PC memerlukan browser yang mendukung `navigator.mediaDevices.getUserMedia`, halaman HTTPS, kamera yang tidak sedang dipakai aplikasi lain, serta izin kamera. Tombol galeri tetap tersedia sebagai pilihan terpisah. Webcam perangkat fisik belum diuji dari lingkungan build.
+- Notifikasi arcade kini berada di alur halaman dan tidak menutupi area permainan; pesan dapat mendorong konten halaman sedikit ke bawah saat tampil.
+- Balloon Pop mengakhiri ronde saat snapshot statistik menunjukkan salah satu pemain memiliki 0 nyawa. Waktu hasil yang muncul pada perangkat kedua tetap bergantung pada sinkronisasi Firebase.

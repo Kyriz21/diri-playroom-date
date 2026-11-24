@@ -101,7 +101,8 @@ test('Bomb Storm keeps avatar data compressed and the game input mobile-friendly
   assert.match(game, /data-bs-move-slider/);
   assert.match(game, /pointerdown/);
   assert.match(css, /touch-action:none/);
-  assert.match(game, /capture="user"/);
+  assert.match(game, /createAvatarCamera\(root/);
+  assert.match(read('../js/services/avatar-camera.js'), /navigator\.mediaDevices\.getUserMedia/);
 });
 
 test('selfie avatars stay loaded in setup, HUD and results while frequent game snapshots update', () => {
@@ -127,8 +128,10 @@ test('Bomb Storm lobby offers default characters, camera capture, and a separate
   assert.match(game, /DEFAULT_CHARACTERS = \[/);
   assert.match(game, /id: 'alien'.*emoji: '👾'/);
   assert.match(game, /id: 'unicorn'.*emoji: '🦄'/);
-  assert.match(game, /id="bs-avatar-camera"[^>]*capture="user"/);
+  assert.doesNotMatch(game, /id="bs-avatar-camera"/);
   assert.match(game, /id="bs-avatar-gallery"[^>]*accept="image\/\*"/);
+  assert.match(game, /if\(action==='camera'\)void avatarCamera\?\.open\(\)/);
+  assert.match(game, /if\(action==='gallery'\)root\.querySelector\('#bs-avatar-gallery'\)/);
   assert.match(game, /data-bs-action="camera"/);
   assert.match(game, /data-bs-action="gallery"/);
   assert.match(game, /async function selectCharacter/);
