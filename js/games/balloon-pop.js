@@ -6,7 +6,7 @@ import {
   BALLOON_POP_SPAWN_INTERVAL_MS, createBalloon, getBalloonY, getBalloonX,
   findBalloonAtPoint, applyBalloonPop, summarizeBalloonHits,
   getBalloonPopRemaining, hasBalloonPopElimination, determineBalloonPopWinner, nextBalloonPopSeed
-} from './balloon-pop-logic.js';
+} from './balloon-pop-logic.js?v=0.23.0';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTERS = [
@@ -406,7 +406,10 @@ export function mountBalloonPop(root, context) {
   function pointerDownHandler(event) {
     const canvas=event.target.closest('[data-bp-board]');if(!canvas||canvas.dataset.bpBoard!==role)return;
     if(data.meta?.phase!=='playing')return;
-    event.preventDefault();void tapBalloon(event);
+    if (event.cancelable) event.preventDefault();
+    event.stopPropagation();
+    try { canvas.setPointerCapture?.(event.pointerId); } catch {}
+    void tapBalloon(event);
   }
   function tick() {
     if(destroyed)return;

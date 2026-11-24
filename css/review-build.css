@@ -558,3 +558,15 @@
 .pb-deco,.pb-shared-element{transform-origin:center center;}
 .pb-deco.selected,.pb-shared-element.selected{outline:1.5px dashed rgba(199,125,165,.8)!important;outline-offset:7px}
 @media(max-width:600px){.pb-element-tools{align-items:stretch;flex-direction:column}.pb-delete-selected{width:100%}}
+
+
+/* v0.23 — Photobooth previews are painted by the same canvas renderer as exports. */
+.pb-preview-canvas-wrap{width:min(100%,360px);margin:18px auto;container-type:inline-size}
+.pb-preview-canvas-stage{position:relative!important;display:block!important;width:100%!important;height:auto!important;aspect-ratio:1000/2800;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;isolation:isolate}
+.pb-preview-canvas-stage.pb-couple-strip{aspect-ratio:1400/2600}
+.pb-preview-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill}
+.pb-preview-decoration-layer{position:absolute;inset:0;z-index:20;pointer-events:none;container-type:inline-size}
+.pb-preview-hitbox{position:absolute;z-index:1;display:grid;place-items:center;min-width:32px;min-height:32px;max-width:85%;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:inherit!important;-webkit-text-stroke:.075em rgba(255,255,255,.82);font:700 7cqw/1.1 "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",Georgia,sans-serif!important;text-align:center;white-space:pre;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;text-shadow:0 2px 0 rgba(255,255,255,.9),0 4px 8px rgba(40,20,30,.16)}
+.pb-preview-hitbox.sticker{font-size:10cqw!important}
+.pb-preview-hitbox.selected{outline:1.5px dashed rgba(199,125,165,.9)!important;outline-offset:5px;background:transparent!important}
+.pb-preview-hitbox.dragging{cursor:grabbing}

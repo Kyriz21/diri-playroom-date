@@ -511,11 +511,18 @@ export function mountBombStorm(root, context) {
     if (next.finished || elapsed >= meta.durationSeconds*1000+BOMB_STORM_FALL_GRACE_MS) updates.finished=true;
     if (Object.keys(updates).length) {
       localPlayer = { ...localPlayer, ...updates, updatedAt:now };
+      const collected = next.events.some(event=>event.result==='collected');
+      const hit = next.events.some(event=>event.result==='hit');
+      // Local progress is already known on this device. Trigger its character
+      // effect immediately instead of waiting for the Firebase echo snapshot.
+      if (hit) triggerCharacterEffect(role, 'bomb');
+      else if (collected) triggerCharacterEffect(role, 'heart');
+      if (observedPlayerStats) observedPlayerStats[role] = { score:next.score, lives:next.lives };
       void update(playerRef,{...updates,updatedAt:now}).catch(error=>{
         const current=Date.now(); if(current-lastProgressToast>5000){lastProgressToast=current;notify(`Skor belum tersinkron: ${error.message}.`, 'error');}
       });
-      if(next.events.some(event=>event.result==='collected')) notify('Hati berhasil dikumpulkan! +10 💗','success');
-      if(next.events.some(event=>event.result==='hit')) notify('Aduh, terkena bom! Satu nyawa berkurang.','error');
+      if(collected) notify('Hati berhasil dikumpulkan! +10 💗','success');
+      if(hit) notify('Aduh, terkena bom! Satu nyawa berkurang.','error');
     }
   }
 

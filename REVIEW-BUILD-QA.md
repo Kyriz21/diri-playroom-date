@@ -332,3 +332,31 @@ Temuan:
 - [ ] Pastikan hasil dan rematch tetap sinkron ketika satu perangkat melakukan refresh.
 
 **Pemasangan v0.21:** publikasikan seluruh `firebase-database.rules.json` v0.21 karena aturan transisi hasil Balloon Pop berubah untuk mendukung eliminasi dini. Konfigurasi Firebase Web App tidak berubah.
+
+
+## Elemental Duo — checklist dua perangkat v0.22
+
+- [ ] Buat sesi Elemental Duo pada perangkat host dan gabung dengan kode pada perangkat kedua.
+- [ ] Pastikan host menjadi Bara dan guest menjadi Nira.
+- [ ] Tekan siap pada kedua perangkat; pastikan kedua perangkat masuk level 1.
+- [ ] Uji gerak kiri/kanan dan lompat dengan keyboard desktop.
+- [ ] Uji tombol kiri/kanan, lompat, dan aksi pada HP.
+- [ ] Pastikan posisi karakter pasangan bergerak halus dan tidak tertinggal jauh.
+- [ ] Pastikan Bara hanya mengaktifkan simpul bara dan Nira hanya mengaktifkan simpul air.
+- [ ] Pastikan gerbang tetap terkunci sampai dua simpul aktif.
+- [ ] Pastikan zona elemen yang tidak cocok mengembalikan pemain ke checkpoint dan menambah jumlah jatuh.
+- [ ] Kumpulkan kedua serpihan dan periksa jumlahnya di HUD.
+- [ ] Pastikan pemain pertama yang sampai menunggu di gerbang, lalu kedua pemain lanjut ke level berikutnya.
+- [ ] Uji pergantian dunia pada level 11, 21, 31, 41 dan penyelesaian level 50.
+- [ ] Pastikan layar akhir menampilkan rekap bintang dan serpihan.
+- [ ] Pastikan kembali ke ruang hanya dapat dilakukan oleh host sesuai alur sesi proyek.
+
+**Catatan:** unit test memverifikasi struktur 50 level, helper gerak/collision, routing, serta integrasi jalur RTDB. Checklist di atas belum diganti oleh uji Firebase aktif atau pengujian perangkat pengguna.
+
+
+## v0.23.0 regression fixes
+- Photobooth preview and export share `drawStripCanvas`; solo and couple canvas previews use transparent hitboxes only for interaction.
+- Camera controls request ideal 1080p/30fps, attempt supported continuous exposure controls, and match the brightness adjustment between preview and capture. Actual exposure remains device/browser dependent.
+- Balloon Pop uses pixel-based hit-testing and prevents the active touch board from becoming a scroll gesture. Re-test with two physical phones because Firebase connectivity and touch hardware are not available in this local test run.
+- Bomb Storm local collisions trigger the local character effect immediately and synchronize the observed baseline to avoid duplicate animation.
+- Guess Partner synonym/inflection canonicalization covers the requested pelukan/berpelukan and shopping/belanja examples.

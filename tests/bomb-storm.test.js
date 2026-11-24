@@ -99,6 +99,8 @@ test('Bomb Storm keeps avatar data compressed and the game input mobile-friendly
   assert.match(game, /createImageBitmap/);
   assert.match(game, /data-bs-arena/);
   assert.match(game, /data-bs-move-slider/);
+  assert.match(game, /if \(hit\) triggerCharacterEffect\(role, 'bomb'\)/);
+  assert.match(game, /else if \(collected\) triggerCharacterEffect\(role, 'heart'\)/);
   assert.match(game, /pointerdown/);
   assert.match(css, /touch-action:none/);
   assert.match(game, /createAvatarCamera\(root/);

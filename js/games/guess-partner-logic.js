@@ -80,6 +80,19 @@ const ANSWER_STOP_WORDS = new Set([
   'itu', 'nya', 'sebuah', 'si', 'sang', 'banget', 'sangat', 'jadi', 'karena'
 ]);
 
+const ANSWER_CANONICAL_WORDS = new Map([
+  // Indonesian word forms and common English equivalents used in casual answers.
+  ['pelukan', 'peluk'], ['berpelukan', 'peluk'], ['memeluk', 'peluk'],
+  ['dipeluk', 'peluk'], ['terpeluk', 'peluk'], ['peluk', 'peluk'],
+  ['hug', 'peluk'], ['hugs', 'peluk'], ['hugging', 'peluk'],
+  ['shopping', 'belanja'], ['shop', 'belanja'], ['belanja', 'belanja'],
+  ['berbelanja', 'belanja'], ['belanjaan', 'belanja']
+]);
+
+function canonicalAnswerToken(token) {
+  return ANSWER_CANONICAL_WORDS.get(token) || token;
+}
+
 export function normalizeAnswerTokens(value) {
   const normalized = String(value ?? '')
     .normalize('NFKD')
@@ -87,7 +100,7 @@ export function normalizeAnswerTokens(value) {
     .toLocaleLowerCase('id-ID')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
-  const allTokens = normalized ? normalized.split(/\s+/).filter(Boolean) : [];
+  const allTokens = normalized ? normalized.split(/\s+/).filter(Boolean).map(canonicalAnswerToken) : [];
   const meaningful = [...new Set(allTokens.filter(token => token.length > 1 && !ANSWER_STOP_WORDS.has(token)))];
   return meaningful.length ? meaningful : [...new Set(allTokens)];
 }
@@ -99,17 +112,19 @@ export function normalizeAnswerTokens(value) {
  *   complete phrase differs (including added/omitted/reordered words).
  * - 0 points when there is no meaningful keyword overlap.
  *
- * Normalization ignores case, repeated whitespace, and punctuation only.
- * It does not ignore extra words or reorder words for an exact match.
+ * Normalization ignores case, repeated whitespace, punctuation, and a small
+ * curated set of common synonyms/inflections (e.g. pelukan/berpelukan and
+ * shopping/belanja). It still does not ignore extra words or reorder words.
  */
 export function normalizeAnswerPhrase(value) {
-  return String(value ?? '')
+  const normalized = String(value ?? '')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('id-ID')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
     .replace(/\s+/g, ' ');
+  return normalized ? normalized.split(' ').map(canonicalAnswerToken).join(' ') : '';
 }
 
 export function evaluateAnswerMatch(answer, guess) {

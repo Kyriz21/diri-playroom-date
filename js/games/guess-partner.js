@@ -3,7 +3,7 @@ import {
   choosePrompt, nextRoundMeta, nextMatchMeta, cleanPlayerText, scoreForRating,
   evaluateAnswerMatch, ratingLabel, calculateGuessScores, answererRoleForRound, oppositeRole, getRemainingSeconds,
   formatTime, isBothLocked, TOTAL_ROUNDS, ROUND_DURATION_SECONDS
-} from './guess-partner-logic.js?v=0.16.0';
+} from './guess-partner-logic.js?v=0.23.0';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const makeKey = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;

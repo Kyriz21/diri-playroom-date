@@ -95,7 +95,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -267,13 +267,18 @@ function renderLanding() {
       <span class="date-kicker">MINI GAME KEEMPAT · BARU</span>
       <div><h2>Balloon Pop 🎈</h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi jangan sampai menyentuh bom!</p></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
+    </section>
+    <section class="date-next-preview date-game-preview ed-landing-preview">
+      <span class="date-kicker">MINI GAME KELIMA · PETUALANGAN BARU</span>
+      <div><h2>Elemental Duo ✧</h2><p>Dua roh kecil dengan kekuatan berbeda. Saling bantu membuka jalan, kumpulkan serpihan energi, dan tuntaskan 50 level di lima dunia.</p><div class="ed-landing-tags"><span>50 LEVEL</span><span>5 DUNIA</span><span>CO-OP</span></div></div>
+      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-elemental-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-elemental-join">Gabung sesi</button></div>
     </section>`;
 }
 
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
@@ -302,17 +307,20 @@ function renderActiveSession(room, current) {
   const isGuessPartner = session.gameId === 'guesspartner';
   const isBombStorm = session.gameId === 'bombstorm';
   const isBalloonPop = session.gameId === 'balloonpop';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : 'Photobooth';
+  const isElementalDuo = session.gameId === 'elementalduo';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
-  const modulePromise = isBalloonPop
-    ? import('./games/balloon-pop.js?v=0.21.0').then(module => ({ mount: module.mountBalloonPop }))
+  const modulePromise = isElementalDuo
+    ? import('./games/elemental-duo.js?v=0.22.0').then(module => ({ mount: module.mountElementalDuo }))
+    : isBalloonPop
+    ? import('./games/balloon-pop.js?v=0.23.0').then(module => ({ mount: module.mountBalloonPop }))
     : isDrawTogether
     ? import('./games/draw-together.js?v=0.13.0').then(module => ({ mount: module.mountDrawTogether }))
     : isGuessPartner
-      ? import('./games/guess-partner.js?v=0.16.0').then(module => ({ mount: module.mountGuessPartner }))
+      ? import('./games/guess-partner.js?v=0.23.0').then(module => ({ mount: module.mountGuessPartner }))
       : isBombStorm
-        ? import('./games/bomb-storm.js?v=0.21.0').then(module => ({ mount: module.mountBombStorm }))
-        : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
+        ? import('./games/bomb-storm.js?v=0.23.0').then(module => ({ mount: module.mountBombStorm }))
+        : import('./photobooth/photobooth.js?v=0.23.0').then(module => ({ mount: module.mountPhotobooth }));
   void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;
     const instance = mount(appRoot, {
@@ -365,7 +373,7 @@ async function openSoloPhotobooth() {
   disposeMountedGame();
   appRoot.innerHTML = '<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan Photobooth pribadi…</p></section>';
   try {
-    const { mountPhotobooth } = await import('./photobooth/photobooth.js');
+    const { mountPhotobooth } = await import('./photobooth/photobooth.js?v=0.23.0');
     const instance = mountPhotobooth(appRoot, {
       standalone: true,
       toast: showToast,
@@ -463,6 +471,8 @@ async function runAction(action, element) {
   if (action === 'open-bomb-join') return openDialog('join', 'bombstorm');
   if (action === 'open-balloon-create') return openDialog('create', 'balloonpop');
   if (action === 'open-balloon-join') return openDialog('join', 'balloonpop');
+  if (action === 'open-elemental-create') return openDialog('create', 'elementalduo');
+  if (action === 'open-elemental-join') return openDialog('join', 'elementalduo');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

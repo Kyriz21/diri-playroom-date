@@ -10,6 +10,7 @@ export const GAME_CATALOG = [
   { id: 'guesspartner', number: '02', title: 'Tebak Pasangan', subtitle: 'Seberapa kenal kalian?', description: 'Jawab pertanyaan tentang dirimu dan tebak jawaban pasangan.', icon: '♡', state: 'active' },
   { id: 'bombstorm', number: '03', title: 'Bomb Storm', subtitle: 'Hindari bom, kumpulkan hati', description: 'Gerakkan karakter dari selfie, hindari bom, dan kumpulkan hati bersama.', icon: '☄', state: 'active' },
   { id: 'balloonpop', number: '04', title: 'Balloon Pop', subtitle: 'Pecahkan balon, hindari bom', description: 'Ketuk balon warna-warni, incar balon bonus, dan hindari bom.', icon: '🎈', state: 'active' },
+  { id: 'elementalduo', number: '05', title: 'Elemental Duo', subtitle: 'Dua roh, satu petualangan', description: 'Bekerja sama melewati 50 level dan lima dunia dengan kemampuan Bara dan Nira.', icon: '✧', state: 'active' },
   { id: 'tictactoe', number: '01', title: 'Tiga Serangkai', subtitle: 'Tiga simbol berurutan', description: 'Susun tiga simbol dan rebut kemenangan.', icon: '✿', state: 'active' },
   { id: 'lovequiz', number: '02', title: 'Kuis Cinta', subtitle: 'Seberapa kenal kita?', description: 'Uji seberapa baik kalian saling mengenal.', icon: '♡', state: 'active' },
   { id: 'thisorthat', number: '03', title: 'Pilih Salah Satu', subtitle: 'Dua pilihan, satu kecocokan', description: 'Pilih jawaban secara terpisah, lalu lihat hasilnya bersama.', icon: '↔', state: 'active' },

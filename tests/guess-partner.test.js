@@ -42,6 +42,12 @@ test('automatic matching awards full points only for the exact normalized phrase
   assert.equal(evaluateAnswerMatch('mie ayam', 'mie   ayam').rating, 'correct');
   assert.equal(evaluateAnswerMatch('Nasi Goreng!', 'nasi, goreng.').rating, 'correct');
   assert.equal(normalizeAnswerPhrase(' Mie   Ayam! '), 'mie ayam');
+  assert.equal(evaluateAnswerMatch('pelukan', 'berpelukan').rating, 'correct');
+  assert.equal(evaluateAnswerMatch('pelukan', 'berpelukan').score, 2);
+  assert.equal(evaluateAnswerMatch('shopping', 'belanja').rating, 'correct');
+  assert.equal(evaluateAnswerMatch('aku suka shopping', 'aku suka berbelanja').rating, 'correct');
+  assert.deepEqual(normalizeAnswerTokens('berpelukan'), ['peluk']);
+  assert.equal(normalizeAnswerPhrase('shopping'), 'belanja');
 });
 
 test('extra, missing, or reordered words are never rated as an exact answer', () => {
@@ -126,7 +132,7 @@ test('game is registered, exposed on the landing page and routed to its module',
   assert.match(constants, /id: 'guesspartner'.*Tebak Pasangan/);
   assert.match(app, /data-action="open-guess-create"/);
   assert.match(app, /data-action="open-guess-join"/);
-  assert.match(app, /guess-partner\.js\?v=0\.16\.0/);
+  assert.match(app, /guess-partner\.js\?v=0\.23\.0/);
 });
 
 test('guess partner answers are written to privateRooms, not public game data', () => {

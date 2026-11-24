@@ -1,6 +1,6 @@
-# Diri. Playroom Date v0.21 — Photobooth, Gambar Bareng, Tebak Pasangan, Bomb Storm & Balloon Pop
+# Diri. Playroom Date v0.22 — Photobooth, Empat Mini-game & Elemental Duo
 
-Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini empat mini-game tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop.
+Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini lima game aktif tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, dan Elemental Duo.
 
 ## Keputusan produk
 
@@ -10,7 +10,7 @@ Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur 
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), serta Balloon Pop (mengetuk balon dan menghindari bom). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (platformer kooperatif 50 level dengan Bara dan Nira). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 
@@ -67,7 +67,7 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 - Skor, jumlah balon pecah, nyawa, dan hasil ronde tersinkron melalui Firebase Realtime Database.
 - Durasi ronde 60 detik, dengan hitung mundur bersama, hasil akhir, serta rematch yang memerlukan persetujuan kedua pemain.
 - Avatar dapat menggunakan 12 karakter bawaan, kamera, atau galeri. Foto dikompres menjadi avatar kecil dan disimpan terpisah dari pembaruan skor.
-- Publikasikan `firebase-database.rules.json` build v0.21 sebelum memainkan Balloon Pop. Rules mencakup `balloonPop` dan mengizinkan fase hasil segera ketika salah satu pemain kehabisan nyawa.
+- Untuk deployment baru atau pembaruan dari v0.21, publikasikan seluruh `firebase-database.rules.json` v0.22. Rules v0.22 tetap mencakup `balloonPop` dan menambahkan node khusus Elemental Duo.
 
 ## Teknologi dan batasan biaya
 
@@ -214,4 +214,14 @@ Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `n
 - Notifikasi Bomb Storm dan Balloon Pop tampil sebagai pesan kecil di alur halaman di bawah header, bukan toast mengambang yang menutupi arena.
 - Balloon Pop langsung mengakhiri ronde ketika salah satu pemain mencapai 0 nyawa. Jika hanya satu pemain yang kehabisan nyawa, pemain yang masih memiliki nyawa menjadi pemenang; jika keduanya habis pada saat yang sama, skor menjadi penentu. Panel hasil menyediakan **Main lagi** dengan persetujuan kedua pemain.
 - Tombol **Ambil foto** di kedua game arcade membuka webcam melalui `navigator.mediaDevices.getUserMedia` dan menampilkan pratinjau video. Tombol **Pilih dari galeri** tetap membuka pemilih berkas terpisah. Pada PC, kamera membutuhkan browser modern, HTTPS, perangkat kamera, dan izin pengguna.
-- Firebase Rules v0.21 memperbolehkan transisi Balloon Pop dari `playing` ke `result` ketika salah satu pemain kehabisan nyawa. Publikasikan Rules lengkap v0.21 sebelum menguji perubahan ini.
+- Catatan historis: perubahan transisi hasil ini pertama kali diperkenalkan di v0.21. Untuk deployment saat ini, gunakan Rules lengkap v0.22 dari paket terbaru.
+
+
+## Mini-game 05 — Elemental Duo (v0.22)
+
+- Platformer kooperatif dua pemain dengan karakter orisinal Bara (host) dan Nira (guest); visual, cerita, nama, dan level dibuat khusus untuk Diri. Playroom Date.
+- Lima dunia berisi 10 level masing-masing. Setiap level dibangun dari konfigurasi platform, zona elemen, dua simpul, dua serpihan, checkpoint, dan gerbang yang harus dicapai bersama.
+- Bara mengaktifkan simpul bara dan aman melewati zona api; Nira mengaktifkan simpul air dan aman melewati zona air. Kedua pemain harus mengaktifkan simpul masing-masing dan menyentuh gerbang.
+- Kontrol desktop: A/D atau panah kiri/kanan, Space atau W/↑ untuk melompat, E/Enter untuk interaksi. Pada HP tersedia tombol arah, lompat, dan aksi.
+- Posisi serta progres tersinkron melalui Firebase Realtime Database pada node `roomGames/{kode}/{sessionId}/elementalDuo`, dengan akses dibatasi ke anggota sesi aktif.
+- Baca `ELEMENTAL-DUO.md`. Deploy v0.22 membutuhkan publikasi seluruh Firebase Rules v0.22.

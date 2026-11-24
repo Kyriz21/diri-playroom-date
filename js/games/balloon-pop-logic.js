@@ -62,10 +62,10 @@ export function findBalloonAtPoint({ seed, elapsedMs, hitIds = {}, x, y, width =
     const bx = getBalloonX(balloon, elapsedMs) * width;
     const by = getBalloonY(balloon, elapsedMs) * height;
     if (by < -balloon.radius * height || by > height + balloon.radius * height) continue;
-    const dx = (x - bx) / Math.max(1, width);
-    const dy = (y - by) / Math.max(1, height);
-    const distance = Math.hypot(dx, dy);
-    const radius = balloon.radius * 1.75;
+    // The artwork radius is derived from canvas width, so use the same pixel
+    // scale on both axes. A minimum 24px hit radius accommodates finger taps.
+    const distance = Math.hypot(x - bx, y - by);
+    const radius = Math.max(24, balloon.radius * width * 2.05);
     if (distance <= radius && distance < nearestDistance) {
       nearest = balloon;
       nearestDistance = distance;

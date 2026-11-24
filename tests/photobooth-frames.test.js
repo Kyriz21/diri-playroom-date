@@ -67,8 +67,8 @@ test('Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh'
   assert.match(source, /addEventListener\('pointerdown',\s*onPointerDown\)/);
   assert.match(source, /addEventListener\('pointermove',\s*onPointerMove\)/);
   assert.match(source, /addEventListener\('pointerup',\s*onPointerUp\)/);
-  assert.match(source, /data-drag-element="solo"/);
-  assert.match(source, /data-drag-element="couple"/);
+  assert.match(source, /data-drag-element="\$\{type\}"/);
+  assert.match(source, /type === 'solo' \? 'select-solo-element' : 'select-element'/);
   assert.match(source, /offsetX, offsetY/);
   assert.match(source, /stage\.clientWidth/);
   assert.match(source, /stage\.clientHeight/);
@@ -79,7 +79,9 @@ test('Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh'
   const css = await readFile(new URL('../css/review-build.css', import.meta.url), 'utf8');
   assert.match(css, /\.pb-deco,\.pb-shared-element\{[^}]*background:transparent!important/s);
   assert.match(source, /pb-themed-header/);
-  assert.match(source, /pb-photo-card/);
+  assert.match(source, /drawFrameBackground/);
+  assert.match(source, /drawPhotoSlotBorder/);
+  assert.match(source, /drawFrameOverlay/);
 });
 
 
@@ -232,4 +234,16 @@ test('pengambilan kamera menunggu frame video terdekode sebelum menyimpan foto',
   assert.match(source, /requestVideoFrameCallback/);
   assert.match(source, /readyState < HTMLMediaElement\.HAVE_CURRENT_DATA/);
   assert.match(source, /Foto berhasil diambil tetapi gambarnya kosong/);
+});
+
+
+test('photobooth editor preview and downloaded image share one canvas painter',async()=>{
+  const { readFile } = await import('node:fs/promises');
+  const source=await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  assert.match(source,/async function drawStripCanvas\(canvas, photos/);
+  assert.match(source,/paintSoloPreview\(\)/);
+  assert.match(source,/paintCouplePreview\(\)/);
+  assert.match(source,/id=\"solo-preview-canvas\"/);
+  assert.match(source,/id=\"couple-preview-canvas\"/);
+  assert.match(source,/await drawStripCanvas\(canvas, photos, frameId/);
 });

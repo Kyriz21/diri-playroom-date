@@ -1,3 +1,24 @@
+# Changelog
+
+## v0.23.0 — Photobooth, mobile touch, and game feedback fixes
+- Photobooth solo/couple editor previews now use the exact same canvas renderer as PNG/JPEG export, including the frame artwork, photo filters, and decorations. Invisible interaction hitboxes preserve selecting and dragging decorations without introducing a second visual layout.
+- Solo and couple decoration placement is kept in the same normalized canvas coordinate system from editor preview to final output.
+- Front camera requests a higher ideal resolution, prefers continuous exposure controls when supported, and applies the same modest brightness lift to live preview and captured frames. Device support varies; the browser camera still cannot promise identical processing to the native camera app.
+- Balloon Pop hit testing now uses actual pixel distances and a finger-friendly target radius; pointer capture and scroll containment reduce missed taps and accidental page movement.
+- Bomb Storm triggers the local player's hit/heart animation immediately; partner animations continue to arrive from synchronized player updates.
+- Tebak Pasangan recognizes a curated set of equivalent forms such as pelukan/berpelukan and shopping/belanja while preserving partial-match scoring for extra or reordered words.
+- Updated cache-busting versions to prevent mobile browsers and GitHub Pages from keeping older game modules or styles.
+
+## v0.22.0 — Elemental Duo
+- Menambahkan game co-op orisinal **Elemental Duo** dengan Bara (host) dan Nira (guest).
+- Menambahkan lima dunia dan 50 konfigurasi level berbasis satu engine platformer Canvas.
+- Menambahkan kontrol keyboard dan tombol sentuh, lompatan yang disesuaikan untuk menjangkau platform, platform, zona bahaya elemen, checkpoint, simpul elemen, serpihan energi, dan gerbang yang membutuhkan kedua pemain.
+- Menyinkronkan posisi, kesiapan, status tiba, sakelar, serpihan, hasil level, dan progres melalui Firebase Realtime Database pada node khusus sesi aktif `elementalDuo`.
+- Menambahkan penghargaan hingga tiga bintang per level; level berikutnya terbuka otomatis ketika kedua pemain tiba. Jumlah jatuh per level ikut disimpan agar penilaian akurat.
+- Memperbarui Firebase Rules untuk mengizinkan ID `elementalduo` pada pemilihan game dan activeSession; data game berada pada node khusus `roomGames/{kode}/{sessionId}/elementalDuo` yang dibatasi ke anggota sesi aktif.
+- Tidak menggunakan layanan berbayar tambahan.
+- Menambahkan lima kelompok tes regresi Elemental Duo; 145/145 unit test suite lulus.
+
 ## v0.21.0 — Arcade UX, Balloon Pop elimination, and desktop webcam
 - Replaced floating arcade toasts in Bomb Storm and Balloon Pop with compact in-flow feedback under the game header so notifications do not cover the play area.
 - Balloon Pop now transitions to results immediately when either player's lives reach zero. The surviving player wins; if both are out, the score breaks the tie. The existing result panel displays the two-player rematch action.

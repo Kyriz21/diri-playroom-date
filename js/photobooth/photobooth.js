@@ -382,17 +382,12 @@ export function mountPhotobooth(root, context) {
   }
 
   // ----------------------------- Fotobooth Sendiri -----------------------------
+  function renderDecorationHitboxes(elements, type, selectedId) {
+    const action = type === 'solo' ? 'select-solo-element' : 'select-element';
+    return (elements || []).map(element => `<button type="button" class="${type === 'solo' ? 'pb-deco' : 'pb-shared-element'} pb-preview-hitbox ${element.kind==='sticker'?'sticker':''} ${selectedId===element.id?'selected':''}" data-pb="${action}" data-element-id="${esc(element.id)}" data-drag-element="${type}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)});color:${esc(element.color || '#a45f82')}" aria-label="Pilih dan geser ${esc(element.text)}">${esc(element.text)}</button>`).join('');
+  }
   function renderSoloPreview() {
-    const selected = frameById(soloFrame);
-    const cssFilter = imageFilter(soloFilter, soloAdjust);
-    const elements = soloElements.map(element => `<button type="button" class="pb-deco ${element.kind==='sticker'?'sticker':''} ${selectedSoloElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)})" data-pb="select-solo-element" data-element-id="${esc(element.id)}" data-drag-element="solo" aria-label="Pilih dan geser ${esc(element.text)}">${esc(element.text)}</button>`).join('');
-    const photoCards = [0,1,2,3].map(index => {
-      const source = photoPreviewSource(soloPhotos[index]);
-      return source
-        ? `<figure class="pb-solo-photo pb-photo-card ${soloFrame}"><img src="${esc(source)}" style="filter:${cssFilter}" alt="Foto ${index+1}" loading="eager" decoding="sync"><figcaption>${photoCaption(selected,index)}</figcaption></figure>`
-        : `<figure class="pb-solo-photo pb-photo-card empty ${soloFrame}"><span>Foto ${index+1} belum tersedia</span><figcaption>${photoCaption(selected,index)}</figcaption></figure>`;
-    }).join('');
-    return `${renderFrameHeader(selected)}<div class="pb-frame-ornaments ${soloFrame}" aria-hidden="true"><span class="ornament-a">${selected[0]==='comic'?'POW!':selected[0]==='kawaii'?'♡':selected[0]==='wanted'?'★':'✦'}</span><span class="ornament-b">${selected[0]==='comic'?'WOW!':selected[0]==='kawaii'?'✿':selected[0]==='wanted'?'REWARD':'♡'}</span></div><div class="pb-solo-photos">${photoCards}</div>${renderFrameFooter(selected)}${elements}`;
+    return `<div class="pb-preview-canvas-wrap"><div class="pb-preview-canvas-stage" id="solo-strip"><canvas class="pb-preview-canvas" id="solo-preview-canvas" width="1000" height="2800" aria-label="Pratinjau hasil fotobooth"></canvas><div class="pb-preview-decoration-layer">${renderDecorationHitboxes(soloElements, 'solo', selectedSoloElementId)}</div></div></div>`;
   }
   async function renderGallery() {
     const holder = root.querySelector('#pb-gallery-list');
@@ -415,6 +410,7 @@ export function mountPhotobooth(root, context) {
         video.muted = true;
         video.autoplay = true;
         video.playsInline = true;
+        video.style.filter = 'brightness(1.08) contrast(1.02)';
         if (video.srcObject !== stream) video.srcObject = stream;
         try {
           if (video.paused || video.readyState < 2) await video.play();
@@ -459,7 +455,8 @@ export function mountPhotobooth(root, context) {
       return;
     }
     const complete = hasCompletePhotoSet(soloPhotos,4);
-    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${[0,1,2,3].map(index=>{const source=photoPreviewSource(soloPhotos[index]);return `<figure class="pb-mini-photo">${source?`<img src="${esc(source)}" alt="Foto ${index+1}" loading="eager" decoding="sync">`:`<span class="pb-mini-missing">Foto ${index+1} belum tersedia</span>`}<figcaption>Foto ${index+1}</figcaption></figure>`;}).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Ketuk hiasan untuk memilih, lalu seret dengan satu jari untuk memindahkan. Gunakan dua jari untuk mencubit agar ukuran berubah atau putar kedua jari untuk memutar hiasan. Pengatur sudut tetap tersedia untuk penyesuaian presisi. Tombol hapus berada di panel bawah, tidak menempel pada hiasan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div><div class="pb-strip ${soloFrame}" id="solo-strip">${renderSoloPreview()}</div>${renderElementTools('solo',soloElements.find(item=>item.id===selectedSoloElementId))}</section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
+    root.innerHTML = `<div class="photo-app">${gameTop('Edit strip fotomu','Tambahkan emoji, teks, dan sesuaikan tampilan sebelum mengunduh.','SESI PRIBADI · LANGKAH 3 DARI 3')}<div class="photo-layout"><section class="panel photo-editor-card"><h2>Empat foto milikmu</h2><div class="pb-mini-strip">${[0,1,2,3].map(index=>{const source=photoPreviewSource(soloPhotos[index]);return `<figure class="pb-mini-photo">${source?`<img src="${esc(source)}" alt="Foto ${index+1}" loading="eager" decoding="sync">`:`<span class="pb-mini-missing">Foto ${index+1} belum tersedia</span>`}<figcaption>Foto ${index+1}</figcaption></figure>`;}).join('')}</div><div class="photo-controls"><button class="button button-quiet" data-pb="solo-retake-all">Kembali dan ulangi foto</button><button class="button button-quiet" data-pb="solo-change-frame">Ganti bingkai</button></div><h2>Tampilan foto</h2>${renderFilterControls(soloFilter,soloAdjust)}<div class="photo-controls"><h3>Hiasan emoji tanpa latar</h3>${renderStickerPicker('solo-sticker')}<form data-pb-form="solo-text"><input name="text" maxlength="50" placeholder="Tulis keterangan"><button class="button button-quiet" type="submit">Tambah teks</button></form></div><p class="small-note">Ketuk hiasan untuk memilih, lalu seret dengan satu jari untuk memindahkan. Gunakan dua jari untuk mencubit agar ukuran berubah atau putar kedua jari untuk memutar hiasan. Pengatur sudut tetap tersedia untuk penyesuaian presisi. Tombol hapus berada di panel bawah, tidak menempel pada hiasan.</p><div class="photo-controls"><button class="button button-primary" data-pb="solo-png" ${complete?'':'disabled'}>Unduh PNG</button><button class="button button-secondary" data-pb="solo-jpeg" ${complete?'':'disabled'}>Unduh JPEG</button><button class="button button-quiet" data-pb="solo-save" ${complete?'':'disabled'}>Simpan ke Galeri Pribadi</button></div>${renderSoloPreview()}${renderElementTools('solo',soloElements.find(item=>item.id===selectedSoloElementId))}</section></div><section class="panel private-gallery-panel"><h3>Galeri Pribadi · Perangkat ini</h3><p class="small-note">Galeri tersimpan di peramban/perangkat ini dan tidak dibagikan otomatis ke pasangan.</p><div id="pb-gallery-list">Memuat galeri…</div></section></div>`;
+    void paintSoloPreview();
     void renderGallery();
   }
 
@@ -477,12 +474,23 @@ export function mountPhotobooth(root, context) {
     stopCamera();
     cameraErrorNotifiedToken = -1;
     const requestToken = cameraRequestToken;
-    const newStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user'}, audio:false });
+    const newStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:{ideal:'user'},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:30}}, audio:false });
     if (destroyed || requestToken !== cameraRequestToken) {
       newStream.getTracks().forEach(track => track.stop());
       return;
     }
     stream = newStream;
+    const track = newStream.getVideoTracks?.()[0];
+    try {
+      const capabilities = track?.getCapabilities?.() || {};
+      const enhancement = {};
+      if (Array.isArray(capabilities.exposureMode) && capabilities.exposureMode.includes('continuous')) enhancement.exposureMode = 'continuous';
+      if (Array.isArray(capabilities.whiteBalanceMode) && capabilities.whiteBalanceMode.includes('continuous')) enhancement.whiteBalanceMode = 'continuous';
+      if (capabilities.exposureCompensation && Number.isFinite(capabilities.exposureCompensation.min) && Number.isFinite(capabilities.exposureCompensation.max)) {
+        enhancement.exposureCompensation = Math.max(capabilities.exposureCompensation.min, Math.min(capabilities.exposureCompensation.max, 0.3));
+      }
+      if (Object.keys(enhancement).length) await track.applyConstraints({advanced:[enhancement]});
+    } catch { /* Optional camera controls vary by phone and browser. */ }
     await attachCameraToCurrentVideo(requestToken);
   }
   async function captureFromKamera(targetMode, index = null) {
@@ -518,6 +526,7 @@ export function mountPhotobooth(root, context) {
     canvas.width = Math.min(1600, activeVideo.videoWidth);
     canvas.height = Math.round(canvas.width * activeVideo.videoHeight / activeVideo.videoWidth);
     const ctx = canvas.getContext('2d');
+    ctx.filter = 'brightness(1.08) contrast(1.02)';
     ctx.translate(canvas.width,0); ctx.scale(-1,1); ctx.drawImage(activeVideo,0,0,canvas.width,canvas.height);
     const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg',0.88));
     if (!blob) throw new Error('Foto tidak berhasil dibuat.');
@@ -559,12 +568,11 @@ export function mountPhotobooth(root, context) {
     const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.style.display='none';document.body.append(anchor);anchor.click();
     setTimeout(()=>{anchor.remove();URL.revokeObjectURL(url);},10000);
   }
-  async function renderStripBlob(photos, frameId, filter, values, elements, couple=false, mime='image/png') {
+  async function drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple=false, drawDecorations=true) {
     if (!Array.isArray(photos) || (couple ? !(photos[0]?.length === 4 && photos[1]?.length === 4 && [...photos[0], ...photos[1]].every(Boolean)) : !hasCompletePhotoSet(photos, 4))) {
       throw new Error('Empat foto belum lengkap. Ambil atau pulihkan semua foto sebelum mengunduh.');
     }
     const selected = frameById(frameId);
-    const canvas = document.createElement('canvas');
     canvas.width = couple ? 1400 : 1000;
     canvas.height = couple ? 2600 : 2800;
     const ctx = canvas.getContext('2d');
@@ -631,7 +639,7 @@ export function mountPhotobooth(root, context) {
     // over the photos in the exported image, keeping preview and print consistent.
     drawFrameOverlay(ctx, selected, canvas.width, canvas.height, couple);
     // Decorations use normalized coordinates in both the preview and exported image.
-    (elements || []).forEach(element => {
+    (drawDecorations ? (elements || []) : []).forEach(element => {
       ctx.save();
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const baseSize = element.kind === 'sticker' ? 0.1 : 0.07;
@@ -647,6 +655,32 @@ export function mountPhotobooth(root, context) {
       ctx.shadowColor = 'rgba(25,15,25,.22)'; ctx.shadowBlur = canvas.width * .006;
       ctx.fillStyle = element.color || selected[3]; ctx.fillText(text, 0, 0, canvas.width * .78); ctx.restore();
     });
+    return canvas;
+  }
+  const previewPaintQueues = new WeakMap();
+  function queueStripPreview(canvas, photos, frameId, filter, values, elements, couple=false) {
+    if (!canvas) return Promise.resolve();
+    const previous = previewPaintQueues.get(canvas) || Promise.resolve();
+    const next = previous.catch(() => {}).then(async () => {
+      if (!canvas.isConnected || !root.contains(canvas)) return;
+      try { await drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple, false); }
+      catch (error) { console.warn('Photobooth preview:', error); }
+    });
+    previewPaintQueues.set(canvas, next);
+    return next;
+  }
+  function paintSoloPreview() {
+    if (!hasCompletePhotoSet(soloPhotos, 4)) return Promise.resolve();
+    return queueStripPreview(root.querySelector('#solo-preview-canvas'), soloPhotos, soloFrame, soloFilter, soloAdjust, soloElements, false);
+  }
+  function paintCouplePreview() {
+    if (!editorData || !hasCompletePhotoSet(editorData.host, 4) || !hasCompletePhotoSet(editorData.guest, 4)) return Promise.resolve();
+    const photos = [editorData.host.map(item => item.url), editorData.guest.map(item => item.url)];
+    return queueStripPreview(root.querySelector('#couple-preview-canvas'), photos, pState?.frameId || 'korean', sharedFilter(), sharedAdjustments(), pState?.elements || [], true);
+  }
+  async function renderStripBlob(photos, frameId, filter, values, elements, couple=false, mime='image/png') {
+    const canvas = document.createElement('canvas');
+    await drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple);
     const type = mime === 'image/jpeg' ? 'image/jpeg' : 'image/png';
     const blob = await new Promise(resolve => canvas.toBlob(resolve, type, 0.92));
     if (!blob || blob.size === 0) throw new Error('Gambar hasil tidak berhasil dibuat. Coba ulangi proses unduh.');
@@ -687,11 +721,8 @@ export function mountPhotobooth(root, context) {
 
   function renderSharedStrip() {
     if(!editorData) return '<div class="photo-editor-card"><p>Memulihkan foto lokal untuk editor bersama…</p></div>';
-    const selected = frameById(pState.frameId || 'korean');
-    const css = imageFilter(sharedFilter(), sharedAdjustments());
-    const rows = [0,1,2,3].map(index => `<div class="pb-couple-row"><figure class="pb-couple-photo pb-photo-card ${selected[0]}"><img src="${editorData.host[index]?.url || ''}" alt="Foto Pembuat ruang ${index+1}" style="filter:${css}"><figcaption>${photoCaption(selected,index,'PEMBUAT')}</figcaption></figure><figure class="pb-couple-photo pb-photo-card ${selected[0]}"><img src="${editorData.guest[index]?.url || ''}" alt="Foto Tamu ${index+1}" style="filter:${css}"><figcaption>${photoCaption(selected,index,'TAMU')}</figcaption></figure></div>`).join('');
-    const elements = (pState.elements || []).map(element => `<button type="button" class="pb-shared-element ${element.kind==='sticker'?'sticker':''} ${selectedElementId===element.id?'selected':''}" style="left:${clampPosition(element.x)*100}%;top:${clampPosition(element.y)*100}%;transform:translate(-50%,-50%) rotate(${Number(element.rotate||0)}deg) scale(${clampElementScale(element.scale)});color:${esc(element.color||selected[3])}" data-pb="select-element" data-element-id="${esc(element.id)}" data-drag-element="couple" aria-label="Pilih dan geser ${esc(element.text)}">${esc(element.text)}</button>`).join('');
-    return `<div class="pb-couple-strip ${selected[0]}">${renderFrameHeader(selected)}<div class="pb-frame-ornaments ${selected[0]}" aria-hidden="true"><span class="ornament-a">${selected[0]==='comic'?'POW!':selected[0]==='kawaii'?'♡':selected[0]==='wanted'?'★':'✦'}</span><span class="ornament-b">${selected[0]==='comic'?'WOW!':selected[0]==='kawaii'?'✿':selected[0]==='wanted'?'REWARD':'♡'}</span></div><div class="pb-couple-rows">${rows}</div>${renderFrameFooter(selected)}${elements}</div>`;
+    const elements = renderDecorationHitboxes(pState.elements || [], 'couple', selectedElementId);
+    return `<div class="pb-preview-canvas-wrap"><div class="pb-couple-strip pb-preview-canvas-stage" id="couple-strip"><canvas class="pb-preview-canvas" id="couple-preview-canvas" width="1400" height="2600" aria-label="Pratinjau hasil fotobooth berdua"></canvas><div class="pb-preview-decoration-layer">${elements}</div></div></div>`;
   }
   function renderElementTools(type, selected) {
     if (!selected) return '<div class="pb-element-tools muted"><span>Pilih emoji atau teks pada pratinjau untuk mengatur rotasi atau menghapusnya.</span></div>';
@@ -771,6 +802,7 @@ export function mountPhotobooth(root, context) {
     else if (pState.phase === 'editor') root.innerHTML = `<div class="photo-app">${renderSharedEditor()}</div>`;
     else if (pState.phase === 'finalized') root.innerHTML = `<div class="photo-app">${renderFinalized()}</div>`;
     else root.innerHTML = `<div class="photo-app"><section class="panel game-panel"><h2>Sesi Fotobooth berakhir</h2><button class="button button-quiet" data-pb="back">Kembali ke lobi</button></section></div>`;
+    if (['editor','finalized'].includes(pState.phase) && editorData) void paintCouplePreview();
     if (stream && pState.phase === 'capture') void attachCameraToCurrentVideo().catch(error => handleCameraAttachError(error));
   }
   async function addCouplePhoto(blob, index, name) {
@@ -1503,7 +1535,7 @@ export function mountPhotobooth(root, context) {
       }
       if(element.matches('[data-adjust]')) {
         const [prefix,key]=element.dataset.adjust.split('-');
-        if(prefix==='solo'){soloAdjust[key]=Number(element.value);const strip=root.querySelector('#solo-strip');if(strip)strip.innerHTML=renderSoloPreview();}
+        if(prefix==='solo'){soloAdjust[key]=Number(element.value);void paintSoloPreview();}
         else if(prefix==='couple'){await mutate(state=>{if(!['setup','editor'].includes(state.phase))return false;state.filter=state.filter||{};state.filter[key]=Number(element.value);if(state.phase==='setup')state.ready={host:false,guest:false};else state.approvals={host:false,guest:false};});}
       }
     } catch(error) { showToast(error.message,'error'); }

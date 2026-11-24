@@ -1,3 +1,27 @@
+# Build Verification — Diri. Playroom Date v0.22
+
+## Elemental Duo
+- 50 level terdaftar dalam tepat lima dunia, dengan nama level unik.
+- Setiap level memiliki dua simpul elemen, dua serpihan, platform, zona bahaya, checkpoint, titik spawn, dan gerbang.
+- Game didaftarkan pada katalog dan memiliki rute Buat/Gabung sesi tersendiri.
+- Kontrol keyboard dan pointer sentuh tersedia; posisi karakter dikirim berkala ke Firebase RTDB.
+- Progres level dikoordinasikan oleh host setelah kedua pemain menyentuh gerbang.
+- Jumlah jatuh per level disimpan bersama state pemain agar penilaian bintang menggunakan data level berjalan.
+- Firebase Rules menambahkan `elementalduo` pada validasi pilihan game dan activeSession; data Elemental Duo berada di `roomGames/{kode}/{sessionId}/elementalDuo`. Rules v0.22 harus dipublikasikan.
+
+## Pemeriksaan lokal
+- 145/145 unit test lulus (`npm test`).
+- `node --check` lulus untuk seluruh file JavaScript proyek.
+- `firebase-database.rules.json` berhasil diparse sebagai JSON.
+- Tidak ada penambahan dependensi npm.
+
+## Belum dibuktikan pada perangkat nyata
+- Sinkronisasi gerak, tombol, sakelar, pergantian level, dan penyelesaian game melalui Firebase aktif dengan dua perangkat fisik.
+- Kenyamanan tingkat kesulitan dan keterjangkauan semua lompatan pada layar sentuh.
+- Uji browser otomatis visual tidak diselesaikan di lingkungan build ini; verifikasi akhir tetap memerlukan checklist manual dua perangkat.
+
+---
+
 # Build Verification — Diri. Playroom Date v0.21
 
 - Notifikasi Bomb Storm dan Balloon Pop memakai feedback kecil dalam alur halaman, tidak memakai toast fixed yang menutupi arena.

@@ -53,6 +53,13 @@ test('tapping balloons finds the nearest visible unclaimed balloon',()=>{
   assert.notEqual(claimed?.id,0);
 });
 
+test('tap hit radius uses the real pixel scale and remains forgiving on narrow phone canvases',()=>{
+  const seed=7, item=createBalloon(seed,0), elapsed=item.spawnAt+900;
+  const bx=getBalloonX(item,elapsed)*320, by=getBalloonY(item,elapsed)*240;
+  const near=findBalloonAtPoint({seed,elapsedMs:elapsed,x:bx+23,y:by,width:320,height:240});
+  assert.equal(near?.id,0);
+});
+
 test('normal, heart, gold and bomb hits update score and lives correctly',()=>{
   assert.deepEqual(applyBalloonPop({score:0,lives:3,popped:0},{kind:'normal',points:1,lifeLoss:0}),{score:1,lives:3,popped:1,finished:false,points:1,lifeLoss:0});
   assert.equal(applyBalloonPop({score:1,lives:3,popped:1},{kind:'heart',points:5,lifeLoss:0}).score,6);
@@ -105,6 +112,7 @@ test('game UI has touch-ready boards, separate own/opponent lanes and shared rea
   assert.match(game,/Aku siap bermain/);
   assert.match(game,/runTransaction\(statsRef\(role\)/);
   assert.match(css,/touch-action:none/);
+  assert.match(css,/overscroll-behavior:none/);
   assert.match(game,/createImageBitmap/);
 });
 
@@ -121,6 +129,7 @@ test('Balloon Pop updates an atomic per-player stats transaction and only the cu
   assert.match(game,/runTransaction\(statsRef\(role\)/);
   assert.match(game,/event\.target\.closest\('\[data-bp-board\]'\)/);
   assert.match(game,/canvas\.dataset\.bpBoard!==role/);
+  assert.match(game,/setPointerCapture\?\.\(event\.pointerId\)/);
   assert.match(game,/hitIds:\{\.\.\./);
 });
 
