@@ -1,4 +1,4 @@
-# Firebase setup — Diri. Playroom Date v0.9
+# Firebase setup — Diri. Playroom Date v0.14
 
 Project Firebase `diri-playroom-date` dan Web App sudah dibuat oleh pemilik project. Konfigurasi lengkap sudah disimpan di `js/firebase.js`; jangan menggantinya dengan konfigurasi project lama.
 
@@ -20,7 +20,7 @@ Jangan menaruh Admin SDK service-account JSON, private key, atau token administr
 2. Pastikan database yang URL-nya sama dengan `databaseURL` pada `js/firebase.js` sudah ada.
 3. Database project ini menggunakan region `asia-southeast1`.
 
-## 4. WAJIB: publikasikan Firebase Rules v0.9
+## 4. WAJIB: publikasikan Firebase Rules v0.13
 
 Versi v0.9 menambahkan jalur relay foto sementara di Realtime Database ketika WebRTC gagal. Rules lama mungkin belum memiliki validasi untuk jalur tersebut.
 
@@ -62,3 +62,26 @@ Setelah GitHub Pages aktif, buka Authentication → Settings → Authorized doma
 - Firebase Realtime Database relay hanya dipakai saat WebRTC gagal. Foto relay sementara memakai kuota penyimpanan dan unduhan RTDB.
 - Tidak ada sistem transfer online yang dapat menjamin penyelesaian ketika kedua jalur internet dan Firebase benar-benar tidak tersedia. Aplikasi mempertahankan foto lokal dan mencoba lagi setelah koneksi pulih.
 - Baca `SECURITY-NOTES.md` dan `KNOWN-LIMITATIONS.md` sebelum digunakan rutin.
+
+
+## 9. Rules Gambar Bareng v0.13
+
+Build v0.13 menambahkan dua node baru pada `drawTogether`: `rematchRequests` (persetujuan kedua pemain) dan `rematchCleared` (konfirmasi bahwa masing-masing perangkat telah menghapus goresan ronde sebelumnya). Karena itu, publikasikan ulang **seluruh** `firebase-database.rules.json` dari ZIP v0.13. Jangan hanya menambahkan potongan rules dan jangan mengganti aturan dengan akses publik.
+
+## 10. Firebase Rules v0.14 — Tebak Pasangan
+
+Build v0.14 menambahkan game `guesspartner`. Publikasikan ulang **seluruh** `firebase-database.rules.json` dari ZIP v0.14 melalui Firebase Console → Realtime Database → Rules. Rules ini:
+
+- Mengizinkan game ID `guesspartner` pada pilihan game dan sesi aktif.
+- Menyimpan jawaban asli serta tebakan di `privateRooms/{roomCode}/guesspartner/{sessionId}/{uid}/rounds/{roundKey}`.
+- Membatasi baca privat ke UID pemilik sebelum reveal; peserta lain baru dapat membaca setelah fase `reveal`, `round-result`, atau `result-game`.
+- Membatasi tulis jawaban/tebakan sesuai peran yang ditetapkan pada ronde aktif.
+- Memvalidasi teks maksimum 140 karakter, status kunci, rating, lanjut ronde, dan permintaan rematch.
+
+Jangan menempel hanya potongan Rules game ini. Ganti keseluruhan Rules dengan file lengkap dari ZIP supaya Rules Photobooth, transfer relay, dan Gambar Bareng tetap ikut terdaftar. Jangan membuka akses dengan `.read: true` atau `.write: true`.
+
+Rules sudah divalidasi sebagai JSON dan diperiksa statis dalam build, tetapi belum dikompilasi/dipublikasikan pada Firebase Console project aktif. Setelah Publish, uji jawaban privat dengan dua UID nyata sebelum penggunaan rutin.
+
+
+## Catatan v0.15 — Tebak Pasangan
+Pembaruan penilaian otomatis tidak mengubah struktur Firebase Rules. Rules v0.14 yang sudah dipublikasikan tetap digunakan; node `ratings/{roundKey}` tetap ditulis satu kali oleh pemain yang menjadi penjawab setelah reveal.

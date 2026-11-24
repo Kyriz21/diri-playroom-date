@@ -140,3 +140,46 @@
 - Menambahkan palet warna, tiga ukuran kuas, penghapus, urungkan goresan, status selesai, dan hasil akhir PNG berdampingan.
 - Menambahkan aturan Realtime Database khusus `drawTogether`, termasuk pembatasan tulis berdasarkan UID pemilik goresan dan batas jumlah goresan.
 - Menambahkan tes logika, timer, prompt, dan integrasi room game.
+
+
+## v0.13.0 — Rematch dan slider kuas
+- Menambahkan tombol **Main lagi** pada layar hasil. Kedua pemain harus menyetujui rematch untuk membuat ronde baru.
+- Prompt ronde baru dipilih ulang, timer direset menjadi 2 menit, status siap/selesai direset, dan setiap pemain menghapus goresannya sendiri sebelum memberi suara.
+- Suara rematch diikat ke `createdAt` ronde saat ini agar persetujuan lama tidak bisa memicu ronde berikutnya.
+- Mengganti tiga tombol ukuran kuas tetap dengan slider 1–24 px dan label ukuran saat ini.
+- Memperbarui Firebase Rules untuk mengizinkan transisi hasil → persiapan baru hanya setelah dua suara rematch cocok.
+
+## v0.14.0 — Tebak Pasangan (Mini Game 02)
+- Menambahkan **Tebak Pasangan** ke halaman utama dengan jalur Buat Sesi dan Gabung Sesi khusus agar kode game tidak tercampur dengan Photobooth atau Gambar Bareng.
+- Menambahkan enam ronde, timer 60 detik, 40 pertanyaan berbahasa Indonesia, dan kategori Kebiasaan, Favorit, Romantis, serta Tentang Kita.
+- Peran menjawab dan menebak bergantian: host menjawab pada ronde ganjil, guest menjawab pada ronde genap.
+- Jawaban asli dan tebakan disimpan di `privateRooms` per UID. Data privat tidak dapat dibaca pasangan sebelum fase reveal/hasil.
+- Menambahkan reveal setelah kedua pemain mengunci jawaban atau timer habis.
+- Pemain yang menjawab menilai tebakan sebagai Tepat (2), Hampir (1), atau Meleset (0); poin diberikan kepada penebak.
+- Menambahkan status mengunci, lanjut bersama, skor, rangkuman enam ronde, dan rematch dengan persetujuan dua pemain.
+- Menambahkan Firebase Rules khusus untuk game ID, jawaban privat, status jawaban/tebakan, rating, perpindahan ronde, dan rematch.
+- Menambahkan dokumentasi `TEBAK-PASANGAN.md` dan checklist QA.
+- Memastikan catatan ronde pertama menyimpan `matchKey`, agar lolos validasi Rules dan masuk ke rangkuman serta hitungan skor akhir.
+- Memperketat baca jawaban privat ke sesi Tebak Pasangan yang sedang aktif dan membatasi rating agar hanya dapat ditulis sekali.
+- Pengujian lokal: 95/95 unit test lulus dan seluruh file JavaScript lolos `node --check`. Uji Firebase produksi dua perangkat masih diperlukan.
+
+
+## v0.15.0 — Penilaian otomatis Tebak Pasangan
+- Menghapus tombol penilaian manual dari layar reveal.
+- Menilai jawaban berdasarkan kecocokan kata kunci setelah kedua jawaban dibuka.
+- Semua kata kunci cocok: Tepat (2 poin); sebagian cocok: Hampir (1 poin); tidak ada yang cocok: Meleset (0 poin).
+- Normalisasi huruf besar-kecil, tanda baca, spasi, dan pengabaian kata pengisi umum Bahasa Indonesia.
+- Menampilkan kata kunci yang cocok agar hasil penilaian transparan.
+
+## v0.15.0 — Penilaian kata otomatis untuk Tebak Pasangan
+- Mengganti pilihan penilaian manual dengan pencocokan kata otomatis setelah kedua jawaban dibuka.
+- Semua kata kunci bermakna cocok memberi 2 poin; sebagian cocok memberi 1 poin; tidak ada yang cocok memberi 0 poin.
+- Menampilkan kata yang cocok pada kartu reveal, hasil ronde, dan rangkuman akhir.
+- Tidak membutuhkan perubahan Firebase Rules dari v0.14.
+
+## v0.16.0 — Exact phrase scoring for Tebak Pasangan
+- Full score (2) is awarded only when the complete normalized answer phrases are identical; normalization ignores letter case, punctuation, and repeated whitespace, but preserves word order and all extra/missing words.
+- Partial score (1) is awarded only when at least one meaningful answer keyword overlaps but the complete phrase is not identical. Added words such as "goreng", "rebus", or "bakar" therefore cannot turn "mie ayam" into an exact answer.
+- Zero score is awarded when no meaningful keyword overlaps.
+- Reveal text explicitly explains that an overlapping phrase is still only "Hampir" when the complete answer differs.
+- Added regression coverage for exact, extra-word, omitted-word, reordered-word, punctuation, casing, and no-overlap cases.

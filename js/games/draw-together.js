@@ -1,8 +1,7 @@
 import { db, ref, get, set, remove, onValue, runTransaction } from '../firebase.js';
-import { chooseDrawPrompt, getRemainingSeconds, formatDrawTime, sortStrokesByTime, sanitizeStroke } from './draw-together-logic.js';
+import { chooseDrawPrompt, getRemainingSeconds, formatDrawTime, sortStrokesByTime, sanitizeStroke, canStartRematch, canFinishRematch, createNextDrawRound, normalizeBrushWidth, chooseDifferentDrawPrompt } from './draw-together-logic.js?v=0.13.0';
 
 const PALETTE = ['#25232b', '#3778d8', '#ed5b9d', '#9867d5', '#35a77b', '#f49a35', '#f1c433', '#e54f4f'];
-const BRUSHES = [{ value: 3, label: 'Tipis' }, { value: 6, label: 'Sedang' }, { value: 10, label: 'Tebal' }];
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const uidPath = value => String(value).replace(/[.#$\[\]/]/g, '_');
 const makeId = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -21,6 +20,11 @@ export function mountDrawTogether(root, context) {
   let serverOffset = 0;
   let readyBusy = false;
   let finishedBusy = false;
+  let rematchBusy = false;
+  let rematchResetBusy = false;
+  let rematchClearBusy = false;
+  let localRematchRound = null;
+  let localClearedRound = null;
   let timerHandle = 0;
   let unsubscribe = null;
   let resizeObserver = null;
@@ -58,6 +62,17 @@ export function mountDrawTogether(root, context) {
           <button class="button button-primary dt-ready-button" data-dt-action="ready">Aku siap menggambar</button>
           <p class="dt-small-note">Waktu mulai setelah kalian berdua menekan tombol siap. Durasi 2 menit.</p>
         </section>
+        <section class="dt-rematching-card" data-dt-panel="rematching" hidden>
+          <div class="dt-game-icon">✦</div>
+          <span class="dt-kicker">RONDE BARU</span>
+          <h2>Menyiapkan kanvas lagi…</h2>
+          <p data-dt-rematching-status>Kalian berdua sudah setuju bermain lagi. Kami sedang membersihkan kanvas ronde sebelumnya.</p>
+          <div class="dt-ready-people">
+            <div class="dt-ready-person"><span class="dt-avatar">♡</span><strong>${esc(host.name || 'Pembuat ruang')}</strong><small data-dt-cleared="host">Menyiapkan…</small></div>
+            <div class="dt-ready-divider">✦</div>
+            <div class="dt-ready-person"><span class="dt-avatar">✿</span><strong>${esc(guest.name || 'Tamu')}</strong><small data-dt-cleared="guest">Menyiapkan…</small></div>
+          </div>
+        </section>
         <section class="dt-play-area" data-dt-panel="playing" hidden>
           <div class="dt-prompt-bar"><div><span class="dt-kicker">GAMBAR INI</span><strong data-dt-live-prompt></strong></div><div class="dt-timer" data-dt-timer>2:00</div></div>
           <div class="dt-canvases">
@@ -66,7 +81,7 @@ export function mountDrawTogether(root, context) {
           </div>
           <section class="dt-tools">
             <div class="dt-tool-row"><strong>Warna</strong><div class="dt-palette">${PALETTE.map((color,index)=>`<button class="dt-color ${index===0?'selected':''}" data-dt-color="${color}" style="--swatch:${color}" aria-label="Warna ${index+1}" title="Warna ${index+1}"></button>`).join('')}</div></div>
-            <div class="dt-tool-row"><strong>Ukuran kuas</strong><div class="dt-brushes">${BRUSHES.map(brush=>`<button class="dt-brush ${brush.value===6?'selected':''}" data-dt-brush="${brush.value}">${brush.label}</button>`).join('')}<button class="dt-brush" data-dt-tool="eraser">Penghapus</button></div></div>
+            <div class="dt-tool-row dt-brush-row"><strong>Ukuran kuas</strong><div class="dt-brush-control"><input class="dt-brush-slider" data-dt-brush-slider type="range" min="1" max="24" step="1" value="6" aria-label="Ukuran kuas"><output data-dt-brush-value>6 px</output></div><button class="dt-brush" data-dt-tool="eraser">Penghapus</button></div>
             <div class="dt-tool-actions"><button class="button button-quiet" data-dt-action="undo">↶ Urungkan goresan</button><span class="dt-my-status" data-dt-my-status>Silakan mulai menggambar.</span><button class="button button-primary" data-dt-action="finish">Selesai menggambar</button></div>
           </section>
           <p class="dt-small-note">Coretanmu akan muncul di perangkat pasangan. Kalau kamu selesai lebih dulu, pasangan tetap bisa melanjutkan gambar.</p>
@@ -75,12 +90,20 @@ export function mountDrawTogether(root, context) {
           <span class="dt-kicker">HASIL KARYA KALIAN</span><h2>Waktunya melihat hasilnya! ♡</h2>
           <p data-dt-result-prompt></p>
           <div class="dt-result-grid"><div><strong>${esc(host.name || 'Pembuat ruang')}</strong><canvas class="dt-result-canvas" data-dt-result="host"></canvas></div><div><strong>${esc(guest.name || 'Tamu')}</strong><canvas class="dt-result-canvas" data-dt-result="guest"></canvas></div></div>
-          <button class="button button-primary dt-download-button" data-dt-action="download">Unduh gambar berdua</button>
-          <p class="dt-small-note">Gambar digabung menjadi satu file PNG yang bisa kalian simpan.</p>
+          <div class="dt-rematch-status" role="status" aria-live="polite">
+            <div><strong>${esc(host.name || 'Pembuat ruang')}</strong><span data-dt-rematch="host">Belum memilih</span></div>
+            <div><strong>${esc(guest.name || 'Tamu')}</strong><span data-dt-rematch="guest">Belum memilih</span></div>
+          </div>
+          <div class="dt-result-actions">
+            <button class="button button-primary dt-rematch-button" data-dt-action="rematch">Main lagi</button>
+            <button class="button button-quiet" data-dt-action="download">Unduh gambar berdua</button>
+          </div>
+          <p class="dt-small-note" data-dt-rematch-note>Kalian berdua perlu memilih Main lagi untuk memulai ronde baru.</p>
         </section>
       </section>`;
     attachCanvasEvents();
     root.addEventListener('click', clickHandler);
+    root.addEventListener('input', inputHandler);
     window.addEventListener('resize', onResize, { passive: true });
     if ('ResizeObserver' in window) {
       resizeObserver = new ResizeObserver(() => resizeCanvases());
@@ -235,6 +258,13 @@ export function mountDrawTogether(root, context) {
     if (finishButton) { finishButton.disabled = finished || !data?.meta || data.meta.phase !== 'playing'; finishButton.textContent = finished ? 'Gambar selesai ✓' : 'Selesai menggambar'; }
     const undo = root.querySelector('[data-dt-action="undo"]');
     if (undo) undo.disabled = finished || !Object.keys(data?.strokes?.[myUid] || {}).length;
+    const rematchButton = root.querySelector('[data-dt-action="rematch"]');
+    if (rematchButton) {
+      const roundKey = Number(data?.meta?.createdAt);
+      const requested = Number(data?.rematchRequests?.[role]) === roundKey || localRematchRound === roundKey;
+      rematchButton.disabled = requested || rematchBusy || data?.meta?.phase !== 'result';
+      rematchButton.textContent = requested ? 'Menunggu pasangan…' : rematchBusy ? 'Mengirim permintaan…' : 'Main lagi';
+    }
     const canvas = root.querySelector('[data-dt-canvas="mine"]');
     if (canvas) canvas.classList.toggle('is-locked', finished || data?.meta?.phase !== 'playing');
   }
@@ -252,12 +282,32 @@ export function mountDrawTogether(root, context) {
     root.querySelector('[data-dt-result-prompt]').textContent = `Instruksi: ${meta.prompt}`;
     const phase = meta.phase || 'ready';
     root.querySelector('[data-dt-panel="waiting"]').hidden = phase !== 'ready';
-    root.querySelector('[data-dt-panel="playing"]').hidden = phase === 'ready';
+    root.querySelector('[data-dt-panel="playing"]').hidden = phase !== 'playing';
     root.querySelector('[data-dt-panel="result"]').hidden = phase !== 'result';
+    root.querySelector('[data-dt-panel="rematching"]').hidden = phase !== 'rematching';
+    for (const playerRole of ['host', 'guest']) {
+      const cleared = root.querySelector(`[data-dt-cleared="${playerRole}"]`);
+      const locallyCleared = playerRole === role && localClearedRound === Number(meta.createdAt);
+      if (cleared) cleared.textContent = (Number(data.rematchCleared?.[playerRole]) === Number(meta.createdAt) || locallyCleared) ? 'Siap ✓' : 'Menyiapkan…';
+    }
+    const rematchingStatus = root.querySelector('[data-dt-rematching-status]');
+    if (rematchingStatus) rematchingStatus.textContent = 'Kalian berdua sudah setuju. Menyiapkan ulang kanvas dan instruksi…';
     root.querySelector('[data-dt-ready="host"]').textContent = data.ready?.host ? 'Siap menggambar ✓' : 'Belum siap';
     root.querySelector('[data-dt-ready="guest"]').textContent = data.ready?.guest ? 'Siap menggambar ✓' : 'Belum siap';
     const opponentStatus = root.querySelector('[data-dt-opponent-status]');
     if (opponentStatus) opponentStatus.textContent = data.finished?.[opponentRole] ? 'Selesai ✓' : 'Menggambar';
+    const currentRoundKey = Number(meta.createdAt);
+    for (const playerRole of ['host', 'guest']) {
+      const status = root.querySelector(`[data-dt-rematch="${playerRole}"]`);
+      const locallyRequested = playerRole === role && localRematchRound === currentRoundKey;
+      if (status) status.textContent = (Number(data.rematchRequests?.[playerRole]) === currentRoundKey || locallyRequested) ? 'Siap main lagi ✓' : 'Belum memilih';
+    }
+    const rematchNote = root.querySelector('[data-dt-rematch-note]');
+    if (rematchNote) {
+      const mineAsked = Number(data.rematchRequests?.[role]) === currentRoundKey || localRematchRound === currentRoundKey;
+      const partnerAsked = Number(data.rematchRequests?.[opponentRole]) === currentRoundKey;
+      rematchNote.textContent = mineAsked && partnerAsked ? 'Menyiapkan ronde baru…' : mineAsked ? 'Permintaan terkirim. Menunggu pasangan memilih Main lagi.' : partnerAsked ? 'Pasangan ingin bermain lagi. Pilih Main lagi untuk melanjutkan.' : 'Kalian berdua perlu memilih Main lagi untuk memulai ronde baru.';
+    }
     const myStatus = root.querySelector('[data-dt-my-status]');
     if (myStatus) myStatus.textContent = data.finished?.[role] ? 'Kamu sudah selesai. Menunggu pasangan…' : 'Coretan tersinkron langsung.';
     const time = getRemainingSeconds(meta.startedAt, meta.durationSeconds, Date.now() + serverOffset);
@@ -277,6 +327,83 @@ export function mountDrawTogether(root, context) {
       startedAt: 0,
       phase: 'ready'
     }), { applyLocally: false });
+  }
+
+  async function requestRematch() {
+    const roundKey = Number(data?.meta?.createdAt);
+    if (rematchBusy || data?.meta?.phase !== 'result' || !Number.isFinite(roundKey)) return;
+    if (Number(data?.rematchRequests?.[role]) === roundKey || localRematchRound === roundKey) return;
+    rematchBusy = true;
+    updateButtons();
+    try {
+      // Keep the completed drawings intact until both players agree to rematch.
+      await set(ref(db, `${basePath}/rematchRequests/${role}`), roundKey);
+      localRematchRound = roundKey;
+      toast('Permintaan main lagi terkirim. Menunggu pasangan…', 'success');
+      updateButtons();
+    } catch (error) {
+      toast(`Belum bisa meminta main lagi: ${error.message}`, 'error');
+    } finally {
+      rematchBusy = false;
+      updateButtons();
+    }
+  }
+
+  async function beginRematchReset() {
+    if (role !== 'host' || rematchResetBusy || data?.meta?.phase !== 'result') return;
+    const roundKey = Number(data.meta.createdAt);
+    if (!canStartRematch(data.meta, data.rematchRequests)) return;
+    rematchResetBusy = true;
+    try {
+      await runTransaction(metaRef, current => {
+        if (!current || current.phase !== 'result' || Number(current.createdAt) !== roundKey) return;
+        return { ...current, phase: 'rematching' };
+      }, { applyLocally: false });
+    } catch (error) {
+      toast(`Persiapan main lagi gagal: ${error.message}`, 'error');
+    } finally {
+      rematchResetBusy = false;
+    }
+  }
+
+  async function clearOwnStrokesForRematch() {
+    if (rematchClearBusy || data?.meta?.phase !== 'rematching') return;
+    const roundKey = Number(data.meta.createdAt);
+    if (Number(data?.rematchCleared?.[role]) === roundKey || localClearedRound === roundKey) return;
+    rematchClearBusy = true;
+    try {
+      await writeQueue;
+      const mineSnapshot = await get(ref(db, myStrokesPath));
+      const mine = mineSnapshot.val() || {};
+      await Promise.all(Object.keys(mine).map(strokeId => remove(ref(db, `${myStrokesPath}/${strokeId}`))));
+      await set(ref(db, `${basePath}/ready/${role}`), false);
+      await set(ref(db, `${basePath}/finished/${role}`), false);
+      await set(ref(db, `${basePath}/rematchCleared/${role}`), roundKey);
+      localClearedRound = roundKey;
+    } catch (error) {
+      toast(`Kanvas belum berhasil disiapkan ulang: ${error.message}`, 'error');
+    } finally {
+      rematchClearBusy = false;
+    }
+  }
+
+  async function finishRematchReset() {
+    if (role !== 'host' || rematchResetBusy || data?.meta?.phase !== 'rematching') return;
+    const roundKey = Number(data.meta.createdAt);
+    if (!canFinishRematch(data.meta, data.rematchCleared)) return;
+    rematchResetBusy = true;
+    try {
+      const nextMeta = createNextDrawRound(data.meta, chooseDifferentDrawPrompt(data.meta.prompt), Date.now() + serverOffset);
+      const result = await runTransaction(metaRef, current => {
+        if (!current || current.phase !== 'rematching' || Number(current.createdAt) !== roundKey) return;
+        return nextMeta;
+      }, { applyLocally: false });
+      if (result.committed) toast('Ronde baru siap! Pilih “Aku siap menggambar” untuk mulai.', 'success');
+    } catch (error) {
+      toast(`Ronde baru belum bisa dimulai: ${error.message}`, 'error');
+    } finally {
+      rematchResetBusy = false;
+    }
   }
 
   async function markReady() {
@@ -337,18 +464,12 @@ export function mountDrawTogether(root, context) {
   function clickHandler(event) {
     const action = event.target.closest('[data-dt-action]');
     const colorButton = event.target.closest('[data-dt-color]');
-    const brushButton = event.target.closest('[data-dt-brush]');
     const toolButton = event.target.closest('[data-dt-tool]');
     if (colorButton) {
       selectedColor = colorButton.dataset.dtColor;
       activeTool = 'pen';
       root.querySelectorAll('[data-dt-color]').forEach(button=>button.classList.toggle('selected',button===colorButton));
       root.querySelectorAll('[data-dt-tool]').forEach(button=>button.classList.remove('selected'));
-      return;
-    }
-    if (brushButton) {
-      brushWidth = Number(brushButton.dataset.dtBrush) || 6;
-      root.querySelectorAll('[data-dt-brush]').forEach(button=>button.classList.toggle('selected',button===brushButton));
       return;
     }
     if (toolButton) {
@@ -365,6 +486,16 @@ export function mountDrawTogether(root, context) {
     if (name === 'undo') void undoStroke();
     if (name === 'back') onBack?.();
     if (name === 'download') downloadResult();
+    if (name === 'rematch') void requestRematch();
+  }
+
+  function inputHandler(event) {
+    const slider = event.target.closest('[data-dt-brush-slider]');
+    if (!slider) return;
+    brushWidth = normalizeBrushWidth(slider.value);
+    const output = root.querySelector('[data-dt-brush-value]');
+    if (output) output.textContent = `${brushWidth} px`;
+    slider.style.setProperty('--brush-progress', `${((brushWidth - 1) / 23) * 100}%`);
   }
 
   function drawResultPanel(ctx, uid, x, y, width, height) {
@@ -406,6 +537,11 @@ export function mountDrawTogether(root, context) {
     unsubscribe = onValue(drawRef, snapshot => {
       data = snapshot.val() || {};
       if (data.meta?.phase === 'ready') void tryStart();
+      if (data.meta?.phase === 'result' && canStartRematch(data.meta, data.rematchRequests)) void beginRematchReset();
+      if (data.meta?.phase === 'rematching') {
+        void clearOwnStrokesForRematch();
+        if (canFinishRematch(data.meta, data.rematchCleared)) void finishRematchReset();
+      }
       if (data.meta?.phase === 'playing' && data.finished?.host && data.finished?.guest) void completeRound();
       const phase = data.meta?.phase || 'loading';
       if (phase !== lastRenderedPhase) {
@@ -428,6 +564,7 @@ export function mountDrawTogether(root, context) {
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('resize', onResize);
       root.removeEventListener('click', clickHandler);
+      root.removeEventListener('input', inputHandler);
     }
   };
 }

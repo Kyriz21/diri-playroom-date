@@ -1,0 +1,602 @@
+
+> diri-playroom-date@0.15.0 test
+> node --test
+
+TAP version 13
+# Subtest: Gambar Bareng is registered as a first-class activity in the room catalogue
+ok 1 - Gambar Bareng is registered as a first-class activity in the room catalogue
+  ---
+  duration_ms: 2.487794
+  type: 'test'
+  ...
+# Subtest: the landing page has dedicated create and join actions for Gambar Bareng
+ok 2 - the landing page has dedicated create and join actions for Gambar Bareng
+  ---
+  duration_ms: 0.616056
+  type: 'test'
+  ...
+# Subtest: room service creates the selected game and makes the guest adopt the host activity
+ok 3 - room service creates the selected game and makes the guest adopt the host activity
+  ---
+  duration_ms: 0.272419
+  type: 'test'
+  ...
+# Subtest: Firebase rules allow the game ID and isolate drawing writes by the signed-in player UID
+ok 4 - Firebase rules allow the game ID and isolate drawing writes by the signed-in player UID
+  ---
+  duration_ms: 0.577483
+  type: 'test'
+  ...
+# Subtest: Gambar Bareng includes a rematch action and continuous brush-size slider
+ok 5 - Gambar Bareng includes a rematch action and continuous brush-size slider
+  ---
+  duration_ms: 0.58785
+  type: 'test'
+  ...
+# Subtest: brush slider listens to input and displays the selected pixel width
+ok 6 - brush slider listens to input and displays the selected pixel width
+  ---
+  duration_ms: 0.369513
+  type: 'test'
+  ...
+# Subtest: rematch clears local player strokes and requires a round-scoped vote from both roles
+ok 7 - rematch clears local player strokes and requires a round-scoped vote from both roles
+  ---
+  duration_ms: 1.519037
+  type: 'test'
+  ...
+# Subtest: rematch uses a visible reset phase so finished drawings are not deleted before both players accept
+ok 8 - rematch uses a visible reset phase so finished drawings are not deleted before both players accept
+  ---
+  duration_ms: 0.325649
+  type: 'test'
+  ...
+# Subtest: prompt bank contains varied prompts and seeded selection is stable
+ok 9 - prompt bank contains varied prompts and seeded selection is stable
+  ---
+  duration_ms: 2.497302
+  type: 'test'
+  ...
+# Subtest: drawing coordinates are normalized and clamped
+ok 10 - drawing coordinates are normalized and clamped
+  ---
+  duration_ms: 1.001675
+  type: 'test'
+  ...
+# Subtest: stroke input is sanitized and bounded
+ok 11 - stroke input is sanitized and bounded
+  ---
+  duration_ms: 0.316237
+  type: 'test'
+  ...
+# Subtest: shared timer calculates remaining time without going negative
+ok 12 - shared timer calculates remaining time without going negative
+  ---
+  duration_ms: 0.287849
+  type: 'test'
+  ...
+# Subtest: strokes are sorted chronologically and retain player ownership
+ok 13 - strokes are sorted chronologically and retain player ownership
+  ---
+  duration_ms: 0.596213
+  type: 'test'
+  ...
+# Subtest: rematch requires both players to vote for the current round only
+ok 14 - rematch requires both players to vote for the current round only
+  ---
+  duration_ms: 0.279644
+  type: 'test'
+  ...
+# Subtest: next rematch round gets a fresh prompt, timer, and round timestamp
+ok 15 - next rematch round gets a fresh prompt, timer, and round timestamp
+  ---
+  duration_ms: 0.296464
+  type: 'test'
+  ...
+# Subtest: brush slider is clamped to supported widths 1 through 24
+ok 16 - brush slider is clamped to supported widths 1 through 24
+  ---
+  duration_ms: 0.177833
+  type: 'test'
+  ...
+# Subtest: rematch prompt picker avoids repeating the previous prompt
+ok 17 - rematch prompt picker avoids repeating the previous prompt
+  ---
+  duration_ms: 0.56932
+  type: 'test'
+  ...
+# Subtest: rematch cleanup requires both players to confirm their own canvas is cleared
+ok 18 - rematch cleanup requires both players to confirm their own canvas is cleared
+  ---
+  duration_ms: 0.51487
+  type: 'test'
+  ...
+# Subtest: shared editor exposes filter presets and adjustment sliders
+ok 19 - shared editor exposes filter presets and adjustment sliders
+  ---
+  duration_ms: 0.882472
+  type: 'test'
+  ...
+# Subtest: solo and shared decorations preserve rotation in preview and export
+ok 20 - solo and shared decorations preserve rotation in preview and export
+  ---
+  duration_ms: 0.158615
+  type: 'test'
+  ...
+# Subtest: delete control is separate from the sticker surface
+ok 21 - delete control is separate from the sticker surface
+  ---
+  duration_ms: 0.29363
+  type: 'test'
+  ...
+# Subtest: camera stream is only reattached while capture screen is active
+ok 22 - camera stream is only reattached while capture screen is active
+  ---
+  duration_ms: 0.170279
+  type: 'test'
+  ...
+# Subtest: Tic Tac Toe detects all row, column and diagonal wins
+ok 23 - Tic Tac Toe detects all row, column and diagonal wins
+  ---
+  duration_ms: 2.261164
+  type: 'test'
+  ...
+# Subtest: Connect Four finds horizontal, vertical and both diagonal wins
+ok 24 - Connect Four finds horizontal, vertical and both diagonal wins
+  ---
+  duration_ms: 1.348303
+  type: 'test'
+  ...
+# Subtest: Connect Four does not connect across board edges
+ok 25 - Connect Four does not connect across board edges
+  ---
+  duration_ms: 0.195278
+  type: 'test'
+  ...
+# Subtest: answer normalization ignores case, accents and punctuation but not meaning
+ok 26 - answer normalization ignores case, accents and punctuation but not meaning
+  ---
+  duration_ms: 2.160577
+  type: 'test'
+  ...
+# Subtest: compatibility percentages and streaks stay within valid bounds
+ok 27 - compatibility percentages and streaks stay within valid bounds
+  ---
+  duration_ms: 0.240499
+  type: 'test'
+  ...
+# Subtest: Photobooth finds the first empty slot and rejects sparse photo arrays
+ok 28 - Photobooth finds the first empty slot and rejects sparse photo arrays
+  ---
+  duration_ms: 0.26939
+  type: 'test'
+  ...
+# Subtest: Memory custom deck requires four-or-more matching ordered hashes
+ok 29 - Memory custom deck requires four-or-more matching ordered hashes
+  ---
+  duration_ms: 0.189374
+  type: 'test'
+  ...
+# Subtest: Forbidden words are rejected as whole words after punctuation normalization
+ok 30 - Forbidden words are rejected as whole words after punctuation normalization
+  ---
+  duration_ms: 0.373418
+  type: 'test'
+  ...
+# Subtest: Connect Four drops tokens to the lowest empty slot and rejects full columns
+ok 31 - Connect Four drops tokens to the lowest empty slot and rejects full columns
+  ---
+  duration_ms: 0.46172
+  type: 'test'
+  ...
+# Subtest: Memory keeps the player turn on a match and passes it after a miss
+ok 32 - Memory keeps the player turn on a match and passes it after a miss
+  ---
+  duration_ms: 0.526772
+  type: 'test'
+  ...
+# Subtest: rotation normalizes negative and overflow angles into 0–359 degrees
+ok 33 - rotation normalizes negative and overflow angles into 0–359 degrees
+  ---
+  duration_ms: 0.541111
+  type: 'test'
+  ...
+# Subtest: two-finger rotation uses the shortest direction across 0/360 degrees
+ok 34 - two-finger rotation uses the shortest direction across 0/360 degrees
+  ---
+  duration_ms: 0.120902
+  type: 'test'
+  ...
+# Subtest: bank contains varied and unique Indonesian prompts
+ok 35 - bank contains varied and unique Indonesian prompts
+  ---
+  duration_ms: 0.957054
+  type: 'test'
+  ...
+# Subtest: answerer role alternates for all six rounds
+ok 36 - answerer role alternates for all six rounds
+  ---
+  duration_ms: 0.743596
+  type: 'test'
+  ...
+# Subtest: prompt selection avoids repeating the previous prompt when possible
+ok 37 - prompt selection avoids repeating the previous prompt when possible
+  ---
+  duration_ms: 0.153537
+  type: 'test'
+  ...
+# Subtest: player text is trimmed, whitespace-normalized and length-limited
+ok 38 - player text is trimmed, whitespace-normalized and length-limited
+  ---
+  duration_ms: 0.192263
+  type: 'test'
+  ...
+# Subtest: automatic word matching scores exact, partial, and no keyword matches
+ok 39 - automatic word matching scores exact, partial, and no keyword matches
+  ---
+  duration_ms: 1.129772
+  type: 'test'
+  ...
+# Subtest: automatic word matching normalizes case, punctuation, and filler words
+ok 40 - automatic word matching normalizes case, punctuation, and filler words
+  ---
+  duration_ms: 0.221165
+  type: 'test'
+  ...
+# Subtest: empty or punctuation-only answers never award points
+ok 41 - empty or punctuation-only answers never award points
+  ---
+  duration_ms: 0.152886
+  type: 'test'
+  ...
+# Subtest: rating points and score totals are assigned to the guesser
+ok 42 - rating points and score totals are assigned to the guesser
+  ---
+  duration_ms: 0.131493
+  type: 'test'
+  ...
+# Subtest: timer formatting is deterministic and never negative
+ok 43 - timer formatting is deterministic and never negative
+  ---
+  duration_ms: 0.48571
+  type: 'test'
+  ...
+# Subtest: both lock condition requires answerer and guesser for the active round key
+ok 44 - both lock condition requires answerer and guesser for the active round key
+  ---
+  duration_ms: 0.329965
+  type: 'test'
+  ...
+# Subtest: next round flips answerer and preserves match identity
+ok 45 - next round flips answerer and preserves match identity
+  ---
+  duration_ms: 0.188103
+  type: 'test'
+  ...
+# Subtest: rematch starts a new match and resets the round roles
+ok 46 - rematch starts a new match and resets the round roles
+  ---
+  duration_ms: 0.163766
+  type: 'test'
+  ...
+# Subtest: game is registered, exposed on the landing page and routed to its module
+ok 47 - game is registered, exposed on the landing page and routed to its module
+  ---
+  duration_ms: 0.451339
+  type: 'test'
+  ...
+# Subtest: guess partner answers are written to privateRooms, not public game data
+ok 48 - guess partner answers are written to privateRooms, not public game data
+  ---
+  duration_ms: 1.067177
+  type: 'test'
+  ...
+# Subtest: Firebase rules register guesspartner and keep private answers hidden until reveal
+ok 49 - Firebase rules register guesspartner and keep private answers hidden until reveal
+  ---
+  duration_ms: 0.328157
+  type: 'test'
+  ...
+# Subtest: initial round history includes the matchKey required by Firebase Rules and final scoring
+ok 50 - initial round history includes the matchKey required by Firebase Rules and final scoring
+  ---
+  duration_ms: 0.346139
+  type: 'test'
+  ...
+# Subtest: katalog Photobooth memuat 18 desain tematik dengan ID unik
+ok 51 - katalog Photobooth memuat 18 desain tematik dengan ID unik
+  ---
+  duration_ms: 1.398402
+  type: 'test'
+  ...
+# Subtest: katalog menyertakan Dunia Mainan dan Polaroid Sosial sebagai konsep desain baru
+ok 52 - katalog menyertakan Dunia Mainan dan Polaroid Sosial sebagai konsep desain baru
+  ---
+  duration_ms: 8.430728
+  type: 'test'
+  ...
+# Subtest: frameById memiliki bingkai cadangan untuk ID yang tidak dikenal
+ok 53 - frameById memiliki bingkai cadangan untuk ID yang tidak dikenal
+  ---
+  duration_ms: 0.261519
+  type: 'test'
+  ...
+# Subtest: posisi hiasan dibatasi dalam rentang aman ternormalisasi
+ok 54 - posisi hiasan dibatasi dalam rentang aman ternormalisasi
+  ---
+  duration_ms: 0.211703
+  type: 'test'
+  ...
+# Subtest: semua desain dapat menggambar latar dan bingkai foto tanpa melempar galat
+ok 55 - semua desain dapat menggambar latar dan bingkai foto tanpa melempar galat
+  ---
+  duration_ms: 5.062082
+  type: 'test'
+  ...
+# Subtest: setiap bingkai mempunyai pratinjau mini dan gaya hasil yang berbeda
+ok 56 - setiap bingkai mempunyai pratinjau mini dan gaya hasil yang berbeda
+  ---
+  duration_ms: 4.614214
+  type: 'test'
+  ...
+# Subtest: Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh
+ok 57 - Photobooth memasang penanganan Pointer Event untuk mouse dan layar sentuh
+  ---
+  duration_ms: 2.410618
+  type: 'test'
+  ...
+# Subtest: tema Polaroid Sosial mengekspor kartu foto miring seperti pratinjau
+ok 58 - tema Polaroid Sosial mengekspor kartu foto miring seperti pratinjau
+  ---
+  duration_ms: 1.187938
+  type: 'test'
+  ...
+# Subtest: hasil ekspor memakai ornamen tema yang sama dengan pratinjau
+ok 59 - hasil ekspor memakai ornamen tema yang sama dengan pratinjau
+  ---
+  duration_ms: 2.035591
+  type: 'test'
+  ...
+# Subtest: editor tidak lagi merender toolbar panah atau A+/A− untuk manipulasi elemen
+ok 60 - editor tidak lagi merender toolbar panah atau A+/A− untuk manipulasi elemen
+  ---
+  duration_ms: 3.137937
+  type: 'test'
+  ...
+# Subtest: editor mendukung pinch-resize, rotasi dua jari, dan roda mouse tanpa pegangan visual
+ok 61 - editor mendukung pinch-resize, rotasi dua jari, dan roda mouse tanpa pegangan visual
+  ---
+  duration_ms: 2.189618
+  type: 'test'
+  ...
+# Subtest: kamera mencoba ulang elemen video terbaru saat play terinterupsi oleh pembaruan DOM
+ok 62 - kamera mencoba ulang elemen video terbaru saat play terinterupsi oleh pembaruan DOM
+  ---
+  duration_ms: 2.623692
+  type: 'test'
+  ...
+# Subtest: bingkai foto tidak boleh mengecat bidang foto setelah gambar ditempatkan
+ok 63 - bingkai foto tidak boleh mengecat bidang foto setelah gambar ditempatkan
+  ---
+  duration_ms: 0.674757
+  type: 'test'
+  ...
+# Subtest: mode pribadi mengikuti urutan pilih bingkai, ambil foto, lalu editor
+ok 64 - mode pribadi mengikuti urutan pilih bingkai, ambil foto, lalu editor
+  ---
+  duration_ms: 2.177695
+  type: 'test'
+  ...
+# Subtest: mode berdua menyediakan bingkai sebelum pengambilan foto dan editor emoji setelahnya
+ok 65 - mode berdua menyediakan bingkai sebelum pengambilan foto dan editor emoji setelahnya
+  ---
+  duration_ms: 1.829788
+  type: 'test'
+  ...
+# Subtest: ekspor harus memuat sumber foto pribadi dan pasangan sebelum menggambar ke kanvas
+ok 66 - ekspor harus memuat sumber foto pribadi dan pasangan sebelum menggambar ke kanvas
+  ---
+  duration_ms: 2.017822
+  type: 'test'
+  ...
+# Subtest: ekspor menolak file frame kosong jika jumlah foto yang benar-benar digambar tidak lengkap
+ok 67 - ekspor menolak file frame kosong jika jumlah foto yang benar-benar digambar tidak lengkap
+  ---
+  duration_ms: 4.836968
+  type: 'test'
+  ...
+# Subtest: mode berdua menggunakan kamera untuk pengambilan foto standar, bukan unggah empat foto
+ok 68 - mode berdua menggunakan kamera untuk pengambilan foto standar, bukan unggah empat foto
+  ---
+  duration_ms: 1.20315
+  type: 'test'
+  ...
+# Subtest: canvas regression test memeriksa foto sintetis sebelum dan sesudah bingkai
+ok 69 - canvas regression test memeriksa foto sintetis sebelum dan sesudah bingkai
+  ---
+  duration_ms: 0.628129
+  type: 'test'
+  ...
+# Subtest: editor Foto Sendiri merender thumbnail dari sumber foto yang dinormalisasi
+ok 70 - editor Foto Sendiri merender thumbnail dari sumber foto yang dinormalisasi
+  ---
+  duration_ms: 1.211483
+  type: 'test'
+  ...
+# Subtest: pengambilan kamera menunggu frame video terdekode sebelum menyimpan foto
+ok 71 - pengambilan kamera menunggu frame video terdekode sebelum menyimpan foto
+  ---
+  duration_ms: 2.011148
+  type: 'test'
+  ...
+# Subtest: Diri. Playroom Date waits until the invited player has joined before auto-start
+ok 72 - Diri. Playroom Date waits until the invited player has joined before auto-start
+  ---
+  duration_ms: 0.677473
+  type: 'test'
+  ...
+# Subtest: Foto Sendiri entry does not statically load Firebase
+ok 73 - Foto Sendiri entry does not statically load Firebase
+  ---
+  duration_ms: 4.931916
+  type: 'test'
+  ...
+# Subtest: new landing has three distinct Photobooth entry actions
+ok 74 - new landing has three distinct Photobooth entry actions
+  ---
+  duration_ms: 0.850228
+  type: 'test'
+  ...
+# Subtest: Firebase Web App config is connected to the new Diri Playroom Date project
+ok 75 - Firebase Web App config is connected to the new Diri Playroom Date project
+  ---
+  duration_ms: 0.911716
+  type: 'test'
+  ...
+# Subtest: Foto Sendiri requires four camera captures before opening the editor
+ok 76 - Foto Sendiri requires four camera captures before opening the editor
+  ---
+  duration_ms: 2.070964
+  type: 'test'
+  ...
+# Subtest: foto relay mengubah JPEG data URL menjadi Blob
+ok 77 - foto relay mengubah JPEG data URL menjadi Blob
+  ---
+  duration_ms: 1.582624
+  type: 'test'
+  ...
+# Subtest: foto relay menolak URL non-JPEG dan data rusak
+ok 78 - foto relay menolak URL non-JPEG dan data rusak
+  ---
+  duration_ms: 0.592432
+  type: 'test'
+  ...
+# Subtest: payload relay wajib cocok dengan peran, nomor slot, ukuran dan checksum
+ok 79 - payload relay wajib cocok dengan peran, nomor slot, ukuran dan checksum
+  ---
+  duration_ms: 0.581461
+  type: 'test'
+  ...
+# Subtest: payload relay menolak foto melebihi batas ukuran Spark-friendly
+ok 80 - payload relay menolak foto melebihi batas ukuran Spark-friendly
+  ---
+  duration_ms: 0.572422
+  type: 'test'
+  ...
+# Subtest: kegagalan WebRTC otomatis berpindah ke Firebase relay, bukan layar pilih delapan file
+ok 81 - kegagalan WebRTC otomatis berpindah ke Firebase relay, bukan layar pilih delapan file
+  ---
+  duration_ms: 1.099432
+  type: 'test'
+  ...
+# Subtest: transfer Firebase mengirim empat foto, menerima empat foto dan menunggu dua tanda terima
+ok 82 - transfer Firebase mengirim empat foto, menerima empat foto dan menunggu dua tanda terima
+  ---
+  duration_ms: 0.199758
+  type: 'test'
+  ...
+# Subtest: relay memverifikasi ukuran dan SHA-256 sebelum foto dipakai
+ok 83 - relay memverifikasi ukuran dan SHA-256 sebelum foto dipakai
+  ---
+  duration_ms: 0.176019
+  type: 'test'
+  ...
+# Subtest: transfer langsung WebRTC meminta tanda terima per foto
+ok 84 - transfer langsung WebRTC meminta tanda terima per foto
+  ---
+  duration_ms: 0.211116
+  type: 'test'
+  ...
+# Subtest: jalur Firebase relay dibatasi untuk sesi dan memakai validasi ukuran foto
+ok 85 - jalur Firebase relay dibatasi untuk sesi dan memakai validasi ukuran foto
+  ---
+  duration_ms: 0.269024
+  type: 'test'
+  ...
+# Subtest: transfer memiliki ID unik per percobaan untuk mencegah foto lama tercampur
+ok 86 - transfer memiliki ID unik per percobaan untuk mencegah foto lama tercampur
+  ---
+  duration_ms: 0.137524
+  type: 'test'
+  ...
+# Subtest: client dapat mencoba ulang otomatis setelah koneksi internet pulih
+ok 87 - client dapat mencoba ulang otomatis setelah koneksi internet pulih
+  ---
+  duration_ms: 0.118345
+  type: 'test'
+  ...
+# Subtest: relay memantau koneksi Firebase dan otomatis melanjutkan saat SDK tersambung kembali
+ok 88 - relay memantau koneksi Firebase dan otomatis melanjutkan saat SDK tersambung kembali
+  ---
+  duration_ms: 0.104582
+  type: 'test'
+  ...
+# Subtest: transfer langsung mencocokkan checksum ACK dengan hash foto pengirim
+ok 89 - transfer langsung mencocokkan checksum ACK dengan hash foto pengirim
+  ---
+  duration_ms: 0.228845
+  type: 'test'
+  ...
+# Subtest: kesalahan permission Firebase memberi instruksi memperbarui Rules
+ok 90 - kesalahan permission Firebase memberi instruksi memperbarui Rules
+  ---
+  duration_ms: 0.365557
+  type: 'test'
+  ...
+# Subtest: relay photo path has role-scoped writes and permits whole-node deletion only after both ACKs
+ok 91 - relay photo path has role-scoped writes and permits whole-node deletion only after both ACKs
+  ---
+  duration_ms: 0.128379
+  type: 'test'
+  ...
+# Subtest: normalizes room codes to uppercase alphanumeric six characters
+ok 92 - normalizes room codes to uppercase alphanumeric six characters
+  ---
+  duration_ms: 1.600993
+  type: 'test'
+  ...
+# Subtest: generates a six-character code from the ambiguity-safe alphabet
+ok 93 - generates a six-character code from the ambiguity-safe alphabet
+  ---
+  duration_ms: 0.275222
+  type: 'test'
+  ...
+# Subtest: resolves host and guest roles by UID only
+ok 94 - resolves host and guest roles by UID only
+  ---
+  duration_ms: 0.119576
+  type: 'test'
+  ...
+# Subtest: expires a room at the 24-hour inactivity boundary
+ok 95 - expires a room at the 24-hour inactivity boundary
+  ---
+  duration_ms: 0.100669
+  type: 'test'
+  ...
+# Subtest: requires matching selections and both Ready flags before Start
+ok 96 - requires matching selections and both Ready flags before Start
+  ---
+  duration_ms: 0.254634
+  type: 'test'
+  ...
+# Subtest: host can clear guest only after the offline grace period
+ok 97 - host can clear guest only after the offline grace period
+  ---
+  duration_ms: 0.135865
+  type: 'test'
+  ...
+# Subtest: formats a remaining duration as minutes and seconds
+ok 98 - formats a remaining duration as minutes and seconds
+  ---
+  duration_ms: 0.137036
+  type: 'test'
+  ...
+1..98
+# tests 98
+# suites 0
+# pass 98
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 291.575901

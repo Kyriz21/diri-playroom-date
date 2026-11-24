@@ -95,7 +95,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = gameId === 'drawtogether' ? 'Gambar Bareng' : 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -252,13 +252,18 @@ function renderLanding() {
       <span class="date-kicker">MINI GAME PERTAMA</span>
       <div><h2>Gambar Bareng ✎</h2><p>Dapatkan instruksi yang sama, gambar dari dua tempat, dan lihat coretan satu sama lain secara langsung.</p></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-draw-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-draw-join">Gabung sesi</button></div>
+    </section>
+    <section class="date-next-preview date-game-preview gp-landing-preview">
+      <span class="date-kicker">MINI GAME KEDUA · BARU</span>
+      <div><h2>Tebak Pasangan ♡</h2><p>Satu orang menjawab pertanyaan tentang dirinya, pasangannya menebak. Buka jawaban bersama dan lihat seberapa cocok tebakan kalian.</p></div>
+      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-guess-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-guess-join">Gabung sesi</button></div>
     </section>`;
 }
 
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
-  const activityName = room.lobby?.selections?.host === 'drawtogether' ? 'Gambar Bareng' : 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
@@ -284,10 +289,14 @@ function renderActiveSession(room, current) {
   disposeMountedGame();
   state.loadingGameKey = key;
   const isDrawTogether = session.gameId === 'drawtogether';
-  appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${isDrawTogether ? 'Gambar Bareng' : 'Photobooth'}…</p></section>`;
+  const isGuessPartner = session.gameId === 'guesspartner';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : 'Photobooth';
+  appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isDrawTogether
-    ? import('./games/draw-together.js').then(module => ({ mount: module.mountDrawTogether }))
-    : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
+    ? import('./games/draw-together.js?v=0.13.0').then(module => ({ mount: module.mountDrawTogether }))
+    : isGuessPartner
+      ? import('./games/guess-partner.js?v=0.16.0').then(module => ({ mount: module.mountGuessPartner }))
+      : import('./photobooth/photobooth.js').then(module => ({ mount: module.mountPhotobooth }));
   void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;
     const instance = mount(appRoot, {
@@ -300,7 +309,7 @@ function renderActiveSession(room, current) {
       toast: showToast,
       onBack: async () => {
         if (current.role !== 'host') { showToast('Pembuat ruang yang dapat mengembalikan sesi ke lobi.'); return; }
-        const accepted = window.confirm(`Kembali ke lobi dan mengakhiri ${isDrawTogether ? 'Gambar Bareng' : 'Photobooth'}?`);
+        const accepted = window.confirm(`Kembali ke lobi dan mengakhiri ${activityName}?`);
         if (!accepted) return;
         await backend.rooms.returnToLobby({ code: current.code, uid: state.player.uid });
       }
@@ -432,6 +441,8 @@ async function runAction(action, element) {
   if (action === 'open-join') return openDialog('join', 'photobooth');
   if (action === 'open-draw-create') return openDialog('create', 'drawtogether');
   if (action === 'open-draw-join') return openDialog('join', 'drawtogether');
+  if (action === 'open-guess-create') return openDialog('create', 'guesspartner');
+  if (action === 'open-guess-join') return openDialog('join', 'guesspartner');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

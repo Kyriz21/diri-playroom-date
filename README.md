@@ -1,6 +1,6 @@
-# Diri. Playroom Date — Reliable Photo Transfer v0.10
+# Diri. Playroom Date v0.14 — Photobooth, Gambar Bareng & Tebak Pasangan
 
-Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; mini-games dan aktivitas lain akan ditambahkan setelah Photobooth stabil.
+Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini dua mini-game pertama juga tersedia: Gambar Bareng dan Tebak Pasangan.
 
 ## Keputusan produk
 
@@ -10,7 +10,7 @@ Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur 
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games:** delapan modul dari build sebelumnya tetap dipertahankan di source sebagai referensi, tetapi belum ditampilkan di menu utama. Akan dibuka setelah tahap Photobooth selesai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live) dan Tebak Pasangan (menjawab/menebak secara bergantian). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 
@@ -34,6 +34,21 @@ Perubahan utama v0.1 adalah alur masuk yang baru. Firebase dimuat secara dinamis
 - Frame memiliki komposisi tematik: Koran, Poster Buronan, Komik Pop Art, Kawaii, Korean Four-Cut, Film Analog, Polaroid, Kartu Pos, Botani, Majalah, Y2K, Arkade, Surat Cinta, Ulang Tahun, dan Doodle.
 - Foto mendapatkan caption dan gaya kartu sesuai tema. Pratinjau browser serta renderer ekspor menggunakan identitas tema yang sama.
 - Jarak baris pada hasil ekspor diperlebar untuk memberi ruang bagi label foto.
+
+
+## Mini-game 01 — Gambar Bareng
+
+- Dua pemain mendapatkan instruksi gambar yang sama dan menggambar secara bersamaan.
+- Coretan tersinkron melalui Firebase Realtime Database; tersedia warna, penghapus, undo, slider ukuran kuas, timer, hasil akhir, dan rematch bersama.
+- Baca `DRAW-TOGETHER.md` dan checklist di `REVIEW-BUILD-QA.md`.
+
+## Mini-game 02 — Tebak Pasangan
+
+- Permainan enam ronde dengan 40 pertanyaan berbahasa Indonesia dan timer 60 detik per ronde.
+- Peran menjawab dan menebak bergantian. Jawaban asli dan tebakan disimpan privat per UID dan baru dibuka ketika fase reveal.
+- Penilaian otomatis berbasis kata kunci: semua kata kunci jawaban cocok = Tepat (2), sebagian cocok = Hampir (1), tidak ada yang cocok = Meleset (0). Poin diberikan kepada penebak.
+- Kedua pemain dapat melanjutkan ronde dan melakukan rematch setelah menyelesaikan enam ronde.
+- Baca `TEBAK-PASANGAN.md` untuk struktur data, aturan, dan pengujian.
 
 ## Teknologi dan batasan biaya
 
@@ -141,3 +156,18 @@ Gambar Bareng adalah game dua pemain dengan satu prompt yang sama. Buat sesi dar
 Setiap perangkat menampilkan kanvas sendiri dan kanvas pasangan. Coretan disinkronkan langsung menggunakan Firebase Realtime Database. Tersedia palet warna, ukuran kuas, penghapus, undo, tombol selesai, dan unduhan hasil gabungan PNG.
 
 **Penting saat memperbarui:** publikasikan `firebase-database.rules.json` yang disertakan pada Firebase Console → Realtime Database → Rules. Rules versi ini menambahkan node `roomGames/{kode}/{sessionId}/drawTogether` dengan izin menulis yang dibatasi per UID. Tanpa Rules baru, game dapat menampilkan `permission_denied` ketika mencoba menyimpan coretan.
+
+
+## Game pertama: Gambar Bareng v0.13
+- Rematch dua pihak: setiap pemain mengirim persetujuan yang terikat pada ronde saat ini.
+- Tahap `rematching` menjaga gambar yang sudah selesai tetap utuh sampai kedua pemain menyetujui, lalu setiap perangkat membersihkan goresannya sendiri dan memberi konfirmasi.
+- Host hanya membuka ronde baru setelah kedua konfirmasi pembersihan diterima. Prompt baru dipilih, timer direset, dan status Siap dikosongkan.
+- Slider ukuran kuas 1–24 px menggantikan tombol ukuran tetap.
+- Setelah update source, publikasikan ulang `firebase-database.rules.json` v0.13 karena izin rematch baru ditambahkan.
+
+
+## Update v0.14 — Rules dan pengujian Tebak Pasangan
+
+Saat memasang v0.14, publikasikan ulang seluruh `firebase-database.rules.json` di Firebase Console. Rules v0.14 menambahkan `guesspartner` dan akses jawaban privat yang baru terbuka saat reveal/hasil. Jangan mengganti Rules dengan akses publik. Konfigurasi Firebase pada `js/firebase.js` tetap dipertahankan.
+
+Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `node --check`, dan Rules valid sebagai JSON. Belum dilakukan uji end-to-end pada project Firebase aktif dengan dua perangkat; selesaikan checklist Tebak Pasangan sebelum pemakaian rutin.

@@ -204,7 +204,7 @@ Enam permainan memiliki tahap pengaturan: **Kuis Cinta, Pilih Salah Satu, Jujur 
 - [ ] Tombol mudah disentuh dan papan tidak terpotong.
 - [ ] Papan, formulir, dan galeri tidak menyebabkan gulir horizontal.
 - [ ] Tombol kembali, keluar, setujui, kirim jawaban, dan lewati berfungsi.
-- [ ] Delapan permainan membuka permainan yang benar.
+- [ ] Dua mini-game aktif (Gambar Bareng dan Tebak Pasangan) membuka permainan yang benar.
 - [ ] Muat ulang tidak menghapus sesi yang seharusnya bisa dipulihkan.
 - [ ] Listener, kamera, dan koneksi antarpiranti dibersihkan ketika meninggalkan sesi.
 
@@ -241,3 +241,22 @@ Temuan:
 - [ ] Confirm no arrow handle or white resize bubble appears on the photo.
 - [ ] Delete the selected item only using the separate editor-panel button.
 - [ ] Verify exported PNG/JPEG retains the element size and rotation.
+
+## M. Tebak Pasangan (v0.14)
+
+- [ ] Buat sesi Tebak Pasangan dari perangkat host; pastikan catatan ronde pertama berhasil dibuat dan memuat matchKey.
+- [ ] Gabung menggunakan kode dari perangkat guest; pastikan game yang terbuka adalah Tebak Pasangan.
+- [ ] Kedua perangkat menerima nomor ronde, prompt, peran, dan timer yang sama.
+- [ ] Ronde 1: host menjawab, guest menebak.
+- [ ] Ronde 2: guest menjawab, host menebak.
+- [ ] Jawaban asli tidak terlihat oleh pasangan sebelum kedua pihak mengunci dan fase reveal.
+- [ ] Setelah reveal, kedua perangkat melihat jawaban asli dan tebakan yang benar.
+- [ ] Hanya pemain yang menjawab dapat memberi penilaian.
+- [ ] Uji Tepat (2 poin), Hampir (1 poin), dan Meleset (0 poin); pastikan poin diberikan kepada penebak.
+- [ ] Kedua pemain dapat menekan Lanjutkan; status keduanya tersinkron.
+- [ ] Uji batas waktu 60 detik dan perpindahan ke reveal.
+- [ ] Uji timeout penilaian 20 detik dan lanjut otomatis 12 detik.
+- [ ] Selesaikan enam ronde; skor dan rangkuman harus benar pada kedua perangkat.
+- [ ] Main lagi hanya dimulai setelah host dan guest sama-sama menyetujui.
+- [ ] Muat ulang masing-masing perangkat saat fase playing, reveal, round-result, dan result-game; pastikan status dipulihkan.
+- [ ] Pastikan Firebase Rules v0.14 telah dipublikasikan dan tidak ada `PERMISSION_DENIED`.

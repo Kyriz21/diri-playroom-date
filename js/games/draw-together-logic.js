@@ -79,3 +79,51 @@ export function sortStrokesByTime(strokesByUid = {}) {
       .filter(stroke => stroke.points?.length)
   ).sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
 }
+
+
+/** True only when both players request another round for the current result. */
+export function canStartRematch(meta, requests = {}) {
+  if (!meta || meta.phase !== 'result' || !Number.isFinite(Number(meta.createdAt))) return false;
+  const roundKey = Number(meta.createdAt);
+  return Number(requests.host) === roundKey && Number(requests.guest) === roundKey;
+}
+
+/** Build fresh round metadata without carrying timer or prompt state forward. */
+export function createNextDrawRound(current, prompt, now = Date.now()) {
+  return {
+    prompt: String(prompt || '').slice(0, 100),
+    durationSeconds: 120,
+    createdAt: Math.max(Number(current?.createdAt) + 1 || 0, Number(now) || Date.now()),
+    startedAt: 0,
+    phase: 'ready'
+  };
+}
+
+/** Clamp brush width to the same range enforced by Firebase Rules. */
+export function normalizeBrushWidth(value) {
+  const width = Number(value);
+  return Math.max(1, Math.min(24, Number.isFinite(width) ? Math.round(width) : 6));
+}
+
+
+export function chooseDifferentDrawPrompt(previousPrompt, random = Math.random) {
+  if (DRAW_PROMPTS.length <= 1) return DRAW_PROMPTS[0] || '';
+  let next = chooseDrawPrompt(random);
+  let attempts = 0;
+  while (next === previousPrompt && attempts < 8) {
+    next = chooseDrawPrompt(random);
+    attempts += 1;
+  }
+  if (next === previousPrompt) {
+    const currentIndex = DRAW_PROMPTS.indexOf(previousPrompt);
+    next = DRAW_PROMPTS[(Math.max(0, currentIndex) + 1) % DRAW_PROMPTS.length];
+  }
+  return next;
+}
+
+
+export function canFinishRematch(meta, cleared = {}) {
+  if (!meta || meta.phase !== 'rematching' || !Number.isFinite(Number(meta.createdAt))) return false;
+  const roundKey = Number(meta.createdAt);
+  return Number(cleared.host) === roundKey && Number(cleared.guest) === roundKey;
+}

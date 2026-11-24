@@ -7,7 +7,12 @@ import {
   sanitizeStroke,
   getRemainingSeconds,
   formatDrawTime,
-  sortStrokesByTime
+  sortStrokesByTime,
+  canStartRematch,
+  canFinishRematch,
+  createNextDrawRound,
+  normalizeBrushWidth,
+  chooseDifferentDrawPrompt
 } from '../js/games/draw-together-logic.js';
 
 test('prompt bank contains varied prompts and seeded selection is stable', () => {
@@ -45,4 +50,41 @@ test('strokes are sorted chronologically and retain player ownership', () => {
     uidB: { other: { color: '#00ff00', width: 6, points: [{ x: 0.5, y: 0.5 }], createdAt: 15 } }
   });
   assert.deepEqual(sorted.map(stroke => `${stroke.uid}:${stroke.id}`), ['uidA:first', 'uidB:other', 'uidA:later']);
+});
+
+
+test('rematch requires both players to vote for the current round only', () => {
+  const meta = { phase: 'result', createdAt: 12345 };
+  assert.equal(canStartRematch(meta, { host: 12345, guest: 12345 }), true);
+  assert.equal(canStartRematch(meta, { host: 12345 }), false);
+  assert.equal(canStartRematch(meta, { host: 12345, guest: 12344 }), false);
+  assert.equal(canStartRematch({ ...meta, phase: 'playing' }, { host: 12345, guest: 12345 }), false);
+});
+
+test('next rematch round gets a fresh prompt, timer, and round timestamp', () => {
+  const next = createNextDrawRound({ phase: 'result', createdAt: 1000 }, 'Kucing lucu', 2000);
+  assert.deepEqual(next, { prompt: 'Kucing lucu', durationSeconds: 120, createdAt: 2000, startedAt: 0, phase: 'ready' });
+  assert.ok(createNextDrawRound({ createdAt: 2000 }, 'Bunga', 1500).createdAt > 2000);
+});
+
+test('brush slider is clamped to supported widths 1 through 24', () => {
+  assert.equal(normalizeBrushWidth(1), 1);
+  assert.equal(normalizeBrushWidth(16.6), 17);
+  assert.equal(normalizeBrushWidth(99), 24);
+  assert.equal(normalizeBrushWidth(-3), 1);
+  assert.equal(normalizeBrushWidth('bad'), 6);
+});
+
+
+test('rematch prompt picker avoids repeating the previous prompt', () => {
+  const previous = DRAW_PROMPTS[0];
+  assert.notEqual(chooseDifferentDrawPrompt(previous, () => 0), previous);
+});
+
+
+test('rematch cleanup requires both players to confirm their own canvas is cleared', () => {
+  const meta = { phase: 'rematching', createdAt: 4321 };
+  assert.equal(canFinishRematch(meta, { host: 4321, guest: 4321 }), true);
+  assert.equal(canFinishRematch(meta, { host: 4321 }), false);
+  assert.equal(canFinishRematch({ ...meta, phase: 'result' }, { host: 4321, guest: 4321 }), false);
 });
