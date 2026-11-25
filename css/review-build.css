@@ -566,7 +566,8 @@
 .pb-preview-canvas-stage.pb-couple-strip{aspect-ratio:1400/2600}
 .pb-preview-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill}
 .pb-preview-decoration-layer{position:absolute;inset:0;z-index:20;pointer-events:none;container-type:inline-size}
-.pb-preview-hitbox{position:absolute;z-index:1;display:grid;place-items:center;min-width:32px;min-height:32px;max-width:85%;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:inherit!important;-webkit-text-stroke:.075em rgba(255,255,255,.82);font:700 7cqw/1.1 "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",Georgia,sans-serif!important;text-align:center;white-space:pre;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;text-shadow:0 2px 0 rgba(255,255,255,.9),0 4px 8px rgba(40,20,30,.16)}
-.pb-preview-hitbox.sticker{font-size:10cqw!important}
+.pb-preview-hitbox{position:absolute;z-index:1;display:grid;place-items:center;min-width:44px;min-height:44px;max-width:85%;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:transparent!important;-webkit-text-fill-color:transparent!important;-webkit-text-stroke:0 transparent!important;font:0/0 sans-serif!important;letter-spacing:0!important;text-align:center;white-space:pre;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;text-shadow:none!important}
+/* Visual decoration is painted by the shared canvas renderer; this layer is hit-testing only. */
+.pb-preview-hitbox.sticker{font-size:0!important}
 .pb-preview-hitbox.selected{outline:1.5px dashed rgba(199,125,165,.9)!important;outline-offset:5px;background:transparent!important}
 .pb-preview-hitbox.dragging{cursor:grabbing}

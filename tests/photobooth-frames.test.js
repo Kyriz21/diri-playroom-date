@@ -247,3 +247,16 @@ test('photobooth editor preview and downloaded image share one canvas painter',a
   assert.match(source,/id=\"couple-preview-canvas\"/);
   assert.match(source,/await drawStripCanvas\(canvas, photos, frameId/);
 });
+
+
+test('pratinjau dan ekspor memakai renderer Canvas yang sama untuk hiasan', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../js/photobooth/photobooth.js', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../css/review-build.css', import.meta.url), 'utf8');
+  assert.match(source, /async function drawStripCanvas\(canvas, photos, frameId, filter, values, elements, couple=false\)/);
+  assert.match(source, /\(elements \|\| \[\]\)\.forEach\(element => \{/);
+  assert.match(source, /await drawStripCanvas\(canvas, photos, frameId, filter, values, elements, couple\)/);
+  assert.doesNotMatch(source, /drawDecorations/);
+  assert.match(css, /\.pb-preview-hitbox\{[^}]*color:transparent!important/s);
+  assert.match(css, /Visual decoration is painted by the shared canvas renderer/);
+});

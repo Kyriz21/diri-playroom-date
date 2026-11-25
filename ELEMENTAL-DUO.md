@@ -1,4 +1,4 @@
-# Elemental Duo — Panduan Game
+# Elemental Duo — Panduan Game (build v0.29.0)
 
 **Elemental Duo** adalah platform-puzzle kooperatif untuk dua pemain. Pola permainan menekankan kerja sama dua karakter elemen: melewati jalur platform, menghindari bahaya yang berlawanan, mengumpulkan permata milik karakter sendiri, mengaktifkan pijakan, lalu mencapai pintu masing-masing.
 
@@ -64,3 +64,52 @@ Game menyimpan status pemain, posisi, kesiapan, status pijakan, permata, dan has
 
 ## HUD v0.24.2
 Teks objektif dan notifikasi tidak ditampilkan di atas kanvas permainan. Objektif dibaca melalui HUD pijakan/status pemain dan deskripsi level; pesan sementara muncul di strip status di luar arena. Firebase Rules tidak berubah.
+
+
+## Mode tampilan mobile v0.24.4
+- **Potret:** mode halaman biasa dengan arena lebih tinggi dan kontrol sentuh besar.
+- **Layar penuh:** meminta fullscreen serta penguncian orientasi landscape. Bila browser tidak mendukung orientation lock, pemain diminta memutar perangkat secara manual. Kontrol sentuh mengambang pada kedua sudut bawah agar arena lebih tinggi.
+- Kamera mengikuti karakter lokal pada masing-masing perangkat. Jika kedua roh berdekatan, framing memberi sedikit ruang untuk melihat pasangan; jika berjauhan, fokus tetap pada karakter yang dikendalikan.
+
+
+## Implementasi Dunia 1 — v0.25.0
+
+Hutan Berbisik level 01–10 telah diganti dari layout generik menjadi 10 blueprint khusus. Setiap blueprint menyimpan nama, tujuan, tingkat kesulitan, fitur, platform, bahaya, pijakan, permata, dan checkpoint.
+
+- Level 01–03: Mudah — kontrol dasar, perbedaan bahaya elemen, dan permata.
+- Level 04–06: Normal — rute terpisah, pijakan tinggi, dan jamur pantul.
+- Level 07–10: Menengah — menara vertikal, platform bergerak/berkala, jembatan bergerak, dan ujian gabungan.
+- Platform bergerak dan bahaya bergerak dihitung dari waktu mulai level yang disejajarkan dengan offset waktu Firebase (`/.info/serverTimeOffset`), sehingga kedua perangkat memakai fase yang sama meskipun jam HP berbeda. Platform berkala punya periode aktif dan jeda.
+- Karakter yang mendarat di platform bergerak ikut terbawa sesuai perubahan posisi platform.
+- Pijakan otomatis mendeteksi karakter ketika berdiri di lantai maupun platform. Pijakan tidak diletakkan di balik gerbang atau pada zona bahaya yang mematikan karakter pemiliknya.
+- Permukaan jamur (`kind: bounce`) memberikan impuls pantulan saat karakter mendarat.
+
+Catatan historis v0.25.0: pada build pertama Dunia 1, level 11–50 masih memakai generator lama. Status terkini telah berubah; seluruh level 01–50 kini mempunyai blueprint khusus hingga Dunia 5 pada v0.29.0.
+
+Lihat `ELEMENTAL-WORLD-1.md` untuk tabel level dan `REVIEW-BUILD-QA.md` untuk checklist pengujian.
+
+
+## Implementasi Dunia 2 — v0.26.0
+
+Kedalaman Kristal level 11–20 telah menerima blueprint khusus. Mekanik aktif mencakup permukaan es yang mengurangi gesekan, zona arus yang memberi dorongan, arus berdenyut/berbalik arah, lift vertikal, jembatan kristal berkala, dan hazard aktif/nonaktif. Semua fase mekanik memakai jam Firebase bersama dari `/.info/serverTimeOffset`. Hazard yang padam diabaikan oleh renderer dan collision. Tiap pressure plate tetap ditempatkan sebelum gerbang dan tidak bergantung pada platform timed atau lift vertikal. Lihat `ELEMENTAL-WORLD-2.md` untuk blueprint 10 level.
+
+Catatan historis v0.26.0: pada saat Dunia 2 diterbitkan, level 21–50 belum mendapat blueprint khusus. Implementasi terbaru kini mencakup seluruh level 01–50 pada v0.29.0.
+
+
+## Implementasi Dunia 3 — v0.27.0
+
+Kerajaan Bara level 21–30 telah menerima blueprint khusus. Mekanik aktif mencakup lava berdenyut/bergerak, semburan uap yang berbahaya bagi kedua pemain, katup interaktif yang mematikan hazard terkait, syarat katup untuk gerbang, dan urutan pijakan Nira lalu Bara pada level 26 serta 30. Katup dan urutan disimpan di bawah `levels/{level}` pada node Elemental Duo yang sama. Fase lava, uap, dan platform memakai jam level bersama. Firebase Rules tidak berubah. Lihat `ELEMENTAL-WORLD-3.md` untuk blueprint rinci.
+
+
+## Implementasi Dunia 4 — v0.28.0
+
+Reruntuhan Langit (level 31–40) memiliki zona angin dengan gaya horizontal/vertikal, updraft, crosswind, fase hembusan berdenyut, dan pembalikan arah berkala. Tuas angin dapat diaktifkan melalui tombol AKSI saat pemain berada di dekatnya; tuas elemen hanya dapat diaktifkan oleh karakter yang sesuai. Aktivasi tuas disinkronkan melalui Firebase dan dapat menjadi syarat pembukaan gerbang. Platform `cloud` menggunakan collision platform normal dan dapat bergerak seperti platform lainnya. Lihat `ELEMENTAL-WORLD-4.md` untuk rincian setiap level.
+
+
+## Implementasi Dunia 5 — v0.29.0
+
+Jantung Kuno (level 41–50) kini memakai 10 blueprint khusus. Dunia final menyatukan mekanik elemen dari Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, dan Reruntuhan Langit: permukaan es, arus berbalik, angin, lava, air, uap, platform bergerak, katup dan tuas khusus elemen.
+
+Level 42, 46, 49, dan 50 memiliki katup wajib; level 43, 48, 49, dan 50 memiliki tuas angin wajib. Level 44, 49, dan 50 meminta Nira mengaktifkan pijakan lebih dahulu, lalu Bara. Level 50, Penyatuan Elemen, menggabungkan seluruh mekanik dan menjadi final petualangan.
+
+Semua state interaksi disimpan di bawah `levels/{level}` dan memakai jam level bersama Firebase untuk fase hazard/platform/arus/angin. Firebase Rules tidak berubah. Lihat `ELEMENTAL-WORLD-5.md` dan checklist bagian K di `REVIEW-BUILD-QA.md`.

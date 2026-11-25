@@ -45,3 +45,11 @@
 - Webcam di PC memerlukan browser yang mendukung `navigator.mediaDevices.getUserMedia`, halaman HTTPS, kamera yang tidak sedang dipakai aplikasi lain, serta izin kamera. Tombol galeri tetap tersedia sebagai pilihan terpisah. Webcam perangkat fisik belum diuji dari lingkungan build.
 - Notifikasi arcade kini berada di alur halaman dan tidak menutupi area permainan; pesan dapat mendorong konten halaman sedikit ke bawah saat tampil.
 - Balloon Pop mengakhiri ronde saat snapshot statistik menunjukkan salah satu pemain memiliki 0 nyawa. Waktu hasil yang muncul pada perangkat kedua tetap bergantung pada sinkronisasi Firebase.
+
+
+## Elemental Duo build v0.29.0
+- Blueprint khusus sekarang mencakup seluruh level 01–50 pada lima dunia. Ini belum membuktikan semua rute terasa seimbang atau menyenangkan; playtest dua perangkat tetap diperlukan.
+- Gameplay end-to-end dengan Firebase aktif pada dua HP belum dilakukan dari lingkungan build ini, termasuk transisi level 40–41, interaksi empat segel level 49–50, reconnect, dan sinkronisasi fase mekanik.
+- Kontrol katup dan tuas menggunakan tombol AKSI/E/Enter ketika karakter berada dekat objek. Ketepatan jangkauan dan kenyamanan sentuh perlu diuji pada perangkat fisik.
+- Tes unit dan pemeriksaan sintaks tidak membuktikan frame rate, respons kamera, orientasi fullscreen, atau collision terasa benar di semua browser/perangkat.
+- Fase hazard/platform/arus/angin memakai jam level bersama Firebase; bila inisialisasi koneksi/time offset gagal, permainan menunggu kesiapan jam bersama sebelum menjalankan simulasi lokal.

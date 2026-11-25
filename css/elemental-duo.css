@@ -109,3 +109,58 @@
 .ed-game-panel:fullscreen .ed-live-notice{margin-bottom:3px;padding:5px 8px;font-size:9px}
 
 @media(max-width:640px){.ed-bottom-tip{display:none}}
+
+
+/* v0.24.4 — dual mobile display modes and active-player camera */
+.ed-display-modes{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid #eee5ef;border-radius:12px;background:#f8f3fa}
+.ed-mode-button{display:flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:5px 9px;border:1px solid transparent;border-radius:9px;background:transparent;color:#9b8aa4;font:800 9px system-ui;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.ed-mode-button span{font-size:14px;line-height:1}
+.ed-mode-button.is-active{border-color:#e8dce9;background:#fff;color:#806a92;box-shadow:0 2px 7px rgba(65,48,82,.07)}
+.ed-rotate-prompt{display:none}
+.ed-rotate-prompt[hidden]{display:none!important}
+.ed-game-panel[data-display-mode="portrait"] .ed-rotate-prompt{display:none}
+.ed-game-panel:fullscreen,.ed-game-panel.ed-fullpage-fallback{box-sizing:border-box;width:100vw;height:100dvh;max-width:none;margin:0;padding:max(7px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));border:0;border-radius:0;display:flex;flex-direction:column;gap:5px;background:linear-gradient(145deg,#fff,#f7f1fb);overflow:hidden;z-index:99999}
+.ed-game-panel:fullscreen .ed-game-topline,.ed-game-panel.ed-fullpage-fallback .ed-game-topline{flex:0 0 auto}
+.ed-game-panel:fullscreen .ed-game-topline h2,.ed-game-panel.ed-fullpage-fallback .ed-game-topline h2{font-size:clamp(16px,2.2vh,24px)}
+.ed-game-panel:fullscreen .ed-game-topline p,.ed-game-panel.ed-fullpage-fallback .ed-game-topline p{display:none}
+.ed-game-panel:fullscreen .ed-progress-track,.ed-game-panel.ed-fullpage-fallback .ed-progress-track{flex:0 0 3px;margin:2px 0}
+.ed-game-panel:fullscreen .ed-hud-row,.ed-game-panel.ed-fullpage-fallback .ed-hud-row{flex:0 0 auto;margin:0}
+.ed-game-panel:fullscreen .ed-live-notice,.ed-game-panel.ed-fullpage-fallback .ed-live-notice{flex:0 0 auto;margin:0;padding:4px 8px;font-size:8px}
+.ed-game-panel:fullscreen .ed-canvas-wrap,.ed-game-panel.ed-fullpage-fallback .ed-canvas-wrap{flex:1 1 auto;min-height:0;height:auto;display:flex;align-items:stretch}
+.ed-game-panel:fullscreen .ed-canvas,.ed-game-panel.ed-fullpage-fallback .ed-canvas{width:100%;height:100%;aspect-ratio:auto}
+.ed-game-panel:fullscreen .ed-touch-controls,.ed-game-panel.ed-fullpage-fallback .ed-touch-controls{flex:0 0 auto;margin:3px 0 0}
+.ed-game-panel:fullscreen .ed-touch-controls button,.ed-game-panel.ed-fullpage-fallback .ed-touch-controls button{min-width:58px;min-height:50px}
+.ed-game-panel:fullscreen .ed-instruction-row,.ed-game-panel:fullscreen .ed-bottom-tip,.ed-game-panel.ed-fullpage-fallback .ed-instruction-row,.ed-game-panel.ed-fullpage-fallback .ed-bottom-tip{display:none}
+.ed-game-panel:fullscreen .ed-mode-button,.ed-game-panel.ed-fullpage-fallback .ed-mode-button{min-height:30px;padding:4px 8px}
+.ed-game-panel:fullscreen .ed-rotate-prompt:not([hidden]),.ed-game-panel.ed-fullpage-fallback .ed-rotate-prompt:not([hidden]){position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:rgba(249,246,251,.97);text-align:center}
+.ed-rotate-icon{font-size:56px;color:#977eb0;line-height:1}
+.ed-rotate-prompt strong{color:#57475f;font-size:19px}
+.ed-rotate-prompt span{max-width:300px;color:#92839a;font-size:12px;line-height:1.5}
+.ed-rotate-prompt button{min-height:42px;padding:8px 15px;border:1px solid #e6dce9;border-radius:12px;background:#fff;color:#8a7398;font-weight:800}
+@media(max-width:640px){
+  .ed-game-tools{gap:5px}
+  .ed-display-modes{gap:2px;padding:2px;border-radius:10px}
+  .ed-mode-button{min-height:34px;padding:5px 7px;font-size:8px}
+  .ed-mode-button span{font-size:13px}
+  .ed-game-panel[data-display-mode="portrait"] .ed-canvas-wrap{height:clamp(340px,52dvh,480px);min-height:320px}
+  .ed-game-panel[data-display-mode="portrait"] .ed-canvas{width:100%;height:100%;aspect-ratio:auto}
+  .ed-game-panel[data-display-mode="portrait"] .ed-touch-controls{margin:8px 0 5px}
+}
+@media(max-width:390px){
+  .ed-game-tools{gap:4px}
+  .ed-mode-button{gap:3px;padding:5px 5px;font-size:7px}
+  .ed-level-count{padding:4px 6px}
+  .ed-level-count strong{font-size:18px}
+}
+@media(orientation:landscape) and (max-height:540px){
+  .ed-game-panel[data-display-mode="portrait"] .ed-canvas-wrap{height:min(52dvh,340px);min-height:190px}
+}
+
+/* Landscape full-page mode: reserve the canvas for the game and float the touch pad at the edges. */
+.ed-game-panel:fullscreen{position:relative}
+.ed-game-panel.ed-fullpage-fallback{position:fixed;inset:0}
+.ed-game-panel:fullscreen .ed-touch-controls,.ed-game-panel.ed-fullpage-fallback .ed-touch-controls{position:absolute;left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));z-index:8;display:block;margin:0;min-height:50px;pointer-events:none}
+.ed-game-panel:fullscreen .ed-move-controls,.ed-game-panel.ed-fullpage-fallback .ed-move-controls{position:absolute;left:0;bottom:0;pointer-events:none}
+.ed-game-panel:fullscreen .ed-action-controls,.ed-game-panel.ed-fullpage-fallback .ed-action-controls{position:absolute;right:0;bottom:0;pointer-events:none}
+.ed-game-panel:fullscreen .ed-touch-controls button,.ed-game-panel.ed-fullpage-fallback .ed-touch-controls button{min-width:50px;min-height:46px;padding:5px 9px;background:rgba(255,255,255,.9);backdrop-filter:blur(5px);pointer-events:auto}
+.ed-game-panel:fullscreen .ed-action-controls button,.ed-game-panel.ed-fullpage-fallback .ed-action-controls button{min-width:75px;min-height:46px}

@@ -311,7 +311,7 @@ function renderActiveSession(room, current) {
   const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isElementalDuo
-    ? import('./games/elemental-duo.js?v=0.24.2').then(module => ({ mount: module.mountElementalDuo }))
+    ? import('./games/elemental-duo.js?v=0.29.0').then(module => ({ mount: module.mountElementalDuo }))
     : isBalloonPop
     ? import('./games/balloon-pop.js?v=0.23.0').then(module => ({ mount: module.mountBalloonPop }))
     : isDrawTogether
@@ -320,7 +320,7 @@ function renderActiveSession(room, current) {
       ? import('./games/guess-partner.js?v=0.23.0').then(module => ({ mount: module.mountGuessPartner }))
       : isBombStorm
         ? import('./games/bomb-storm.js?v=0.23.0').then(module => ({ mount: module.mountBombStorm }))
-        : import('./photobooth/photobooth.js?v=0.23.0').then(module => ({ mount: module.mountPhotobooth }));
+        : import('./photobooth/photobooth.js?v=0.24.3').then(module => ({ mount: module.mountPhotobooth }));
   void modulePromise.then(({ mount }) => {
     if (state.currentRoom?.code !== current.code || state.currentRoom?.room?.lobby?.activeSession?.sessionId !== session.sessionId) return null;
     const instance = mount(appRoot, {
@@ -373,7 +373,7 @@ async function openSoloPhotobooth() {
   disposeMountedGame();
   appRoot.innerHTML = '<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan Photobooth pribadi…</p></section>';
   try {
-    const { mountPhotobooth } = await import('./photobooth/photobooth.js?v=0.23.0');
+    const { mountPhotobooth } = await import('./photobooth/photobooth.js?v=0.24.3');
     const instance = mountPhotobooth(appRoot, {
       standalone: true,
       toast: showToast,

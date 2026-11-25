@@ -568,7 +568,7 @@ export function mountPhotobooth(root, context) {
     const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.style.display='none';document.body.append(anchor);anchor.click();
     setTimeout(()=>{anchor.remove();URL.revokeObjectURL(url);},10000);
   }
-  async function drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple=false, drawDecorations=true) {
+  async function drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple=false) {
     if (!Array.isArray(photos) || (couple ? !(photos[0]?.length === 4 && photos[1]?.length === 4 && [...photos[0], ...photos[1]].every(Boolean)) : !hasCompletePhotoSet(photos, 4))) {
       throw new Error('Empat foto belum lengkap. Ambil atau pulihkan semua foto sebelum mengunduh.');
     }
@@ -639,7 +639,7 @@ export function mountPhotobooth(root, context) {
     // over the photos in the exported image, keeping preview and print consistent.
     drawFrameOverlay(ctx, selected, canvas.width, canvas.height, couple);
     // Decorations use normalized coordinates in both the preview and exported image.
-    (drawDecorations ? (elements || []) : []).forEach(element => {
+    (elements || []).forEach(element => {
       ctx.save();
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const baseSize = element.kind === 'sticker' ? 0.1 : 0.07;
@@ -663,7 +663,7 @@ export function mountPhotobooth(root, context) {
     const previous = previewPaintQueues.get(canvas) || Promise.resolve();
     const next = previous.catch(() => {}).then(async () => {
       if (!canvas.isConnected || !root.contains(canvas)) return;
-      try { await drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple, false); }
+      try { await drawStripCanvas(canvas, photos, frameId, filter, values, elements, couple); }
       catch (error) { console.warn('Photobooth preview:', error); }
     });
     previewPaintQueues.set(canvas, next);

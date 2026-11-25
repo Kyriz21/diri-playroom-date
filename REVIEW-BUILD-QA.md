@@ -386,3 +386,97 @@ Temuan:
 - [ ] Jika tab host ditutup tepat setelah kedua pemain tiba, buka kembali sesi dan pastikan kunci transisi yang tertinggal dapat dipulihkan.
 
 **Pemasangan v0.24.1:** unggah seluruh isi folder proyek dan timpa berkas lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, dan `js/games/elemental-duo-logic.js` terbaru ikut terunggah agar cache key v0.24.1 digunakan. Firebase Rules tidak berubah.
+
+
+## G. Elemental Duo — Hutan Berbisik (level 01–10, v0.25.0)
+
+- [ ] Dua perangkat masuk ke room yang sama dan memilih Elemental Duo.
+- [ ] Level 01: Bara dan Nira dapat bergerak, melompat, menghindari hazard elemen, mengaktifkan pijakan, lalu masuk ke pintu masing-masing.
+- [ ] Level 02–04: platform bertingkat, dua jalur, serta pijakan tinggi dapat dicapai oleh karakter yang sesuai.
+- [ ] Level 05: kedua pemain dapat menginjak pijakan elevated dari platform; gerbang terbuka setelah keduanya aktif.
+- [ ] Level 06: jamur pantul memberi lompatan otomatis dan pemain tetap dapat mengarahkan karakter saat di udara.
+- [ ] Level 07: rangkaian menara dapat dinaiki tanpa lompatan mustahil.
+- [ ] Level 08: platform bergerak mengikuti lintasan dan platform berkala menghilang/muncul; kedua perangkat melihat fase gerak yang konsisten meskipun jam HP sengaja dibuat berbeda.
+- [ ] Level 09: jembatan bergerak membawa karakter yang sedang berdiri di atasnya; uji dari kedua perangkat.
+- [ ] Level 10: kombinasi hazard bergerak, jamur, platform bergerak/berkala, dan dua pijakan dapat diselesaikan.
+- [ ] Jatuh/hazard mengembalikan karakter ke spawn/checkpoint dan tidak menghapus progres pasangan.
+- [ ] Setelah kedua pemain mencapai pintu, transisi ke level berikutnya tetap berjalan.
+- [ ] Mode Potret dan Layar Penuh tetap bekerja pada HP.
+
+Tes otomatis tidak menggantikan checklist dua perangkat di atas.
+
+
+## H. Elemental Duo — Kedalaman Kristal (level 11–20, v0.26.0)
+
+- [ ] Selesaikan level 10 Hutan Berbisik bersama pasangan dan pastikan level 11 terbuka sebagai Retakan Pertama.
+- [ ] Level 11: berdiri di atas platform/zona es, lepaskan tombol arah, dan pastikan karakter meluncur lebih lama daripada di batu.
+- [ ] Level 12: masuk ke arus biru dan pastikan dorongan terasa; lawan arus dengan tombol arah.
+- [ ] Level 13: seberangi pecahan kristal dan platform bergerak dari kedua sisi.
+- [ ] Level 14: uji lantai licin dan arus vertikal; pastikan tidak ada switch yang tertutup hazard yang salah bagi karakter.
+- [ ] Level 15: tunggu jembatan kristal berkala muncul; pijakan yang padam tidak dapat diinjak dan tidak membuat karakter tetap berdiri di udara.
+- [ ] Level 16: amati arah arus berubah secara bertahap dan hazard air/api menyala-padam sesuai fase.
+- [ ] Level 17: naiki lift vertikal; karakter harus ikut terbawa ketika berdiri di atas lift.
+- [ ] Level 18: uji arus ke atas dan ke bawah serta kedua jalur karakter.
+- [ ] Level 19: uji arus kuat yang berbalik, platform berkala, hazard bergerak, dan permukaan es.
+- [ ] Level 20: selesaikan gabungan arus, lift, platform berkala, hazard bergerak, dan dua pressure plate.
+- [ ] Pastikan kedua perangkat menampilkan fase arus/platform/hazard yang sama; untuk menguji, ubah jam lokal salah satu HP beberapa menit.
+- [ ] Pastikan kedua switch dapat dijangkau dari spawn dan sebelum gerbang; switch tidak boleh bergantung pada platform berkala atau lift vertikal.
+- [ ] Pastikan transisi level 20 ke 21 tidak menghapus bintang, shard, atau jumlah jatuh yang telah direkap.
+
+**Pemasangan v0.26.0:** unggah seluruh isi ZIP ke root repository GitHub Pages dan timpa file lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, serta `css/elemental-duo.css` terbaru ikut terunggah agar cache v0.26.0 terpakai. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
+
+
+## I. Elemental Duo — Kerajaan Bara (level 21–30, v0.27.0)
+
+- [ ] Level 21: pastikan lava berdenyut terlihat; Nira terkena saat aktif, Bara aman.
+- [ ] Level 22: pastikan semburan uap aktif/padam dan berbahaya bagi kedua karakter.
+- [ ] Level 23: Bara mendekati Katup Bara, menekan AKSI, lalu pastikan aliran lava terkait mati dan gerbang baru bisa dibuka setelah dua pijakan aktif.
+- [ ] Level 24: pastikan karakter terbawa platform horizontal bergerak saat berdiri di atasnya.
+- [ ] Level 25: pastikan jalur air/lava dan arus pendingin berjalan; kedua pemain memilih jalur elemen masing-masing.
+- [ ] Level 26: coba aktifkan pijakan Bara lebih dahulu; harus ditolak. Aktifkan Nira dahulu, lalu pastikan pijakan Bara dapat aktif.
+- [ ] Level 27: amati beberapa ventilasi uap yang memiliki fase berbeda; cari jeda aman untuk melintasi lorong.
+- [ ] Level 28: pastikan magma bergerak naik/turun dari fase waktu yang sama pada kedua HP.
+- [ ] Level 29: Bara mengaktifkan Katup Bara dan Nira mengaktifkan Katup Air; masing-masing ventilasi harus padam setelah katupnya terbuka.
+- [ ] Level 30: uji dua katup, dua urutan pijakan (Nira lalu Bara), lava, uap, dan platform bergerak sampai kedua pemain masuk pintu.
+- [ ] Putus-sambungkan jaringan sebentar lalu pastikan status katup/urutan tetap tersimpan dan kedua HP menunjukkan state yang sama.
+
+**Pemasangan v0.27.0:** unggah seluruh isi ZIP ke root repository GitHub Pages dan timpa file lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan `css/elemental-duo.css` ikut terganti untuk mengaktifkan cache v0.27.0. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
+
+## J. Elemental Duo — Reruntuhan Langit (level 31–40, v0.28.0)
+
+- [ ] Selesaikan level 30 dan pastikan level 31 terbuka dengan tema Reruntuhan Langit.
+- [ ] Level 31: masuk ke updraft; pastikan hembusan ke atas membantu lompatan dan kekuatannya berdenyut.
+- [ ] Level 32: tunggu pulau bergerak mendekat; pastikan karakter yang berdiri ikut terbawa.
+- [ ] Level 33: masuk ke dua lorong angin dan pastikan dorongan berlawanan terasa.
+- [ ] Level 34: naiki menara melalui lift vertikal dan updraft; pastikan kedua switch tetap berada di pijakan stabil.
+- [ ] Level 35: dekati Tuas Badai dan tekan AKSI; pastikan arah hembusan berubah pada kedua perangkat dan gerbang tetap terkunci sebelum tuas serta dua pijakan aktif.
+- [ ] Level 36: seberangi dua platform awan bergerak; pastikan keduanya membawa karakter ketika diinjak.
+- [ ] Level 37: manfaatkan zona tenang untuk mengatur lompatan di antara dua gust.
+- [ ] Level 38: Bara mengaktifkan Tuas Bara dan Nira mengaktifkan Tuas Air; tuas milik elemen lain harus menolak interaksi.
+- [ ] Level 39: amati lorong angin yang membalik arah pada fase berbeda dan hazard elemen yang bergerak.
+- [ ] Level 40: aktifkan kedua tuas sesuai elemen, lewati gust berbalik dan lift awan, lalu selesaikan dua pijakan dan pintu masing-masing.
+- [ ] Ubah jam lokal salah satu HP beberapa menit; fase angin/platform harus tetap sama karena memakai jam Firebase bersama.
+- [ ] Putus-sambungkan jaringan sebentar; status tuas yang sudah aktif harus tetap tersimpan di kedua perangkat.
+- [ ] Pastikan AKSI pada desktop (E/Enter) dan tombol AKSI pada mode Potret/Layar Penuh dapat mengoperasikan tuas.
+
+**Pemasangan v0.28.0:** unggah seluruh isi ZIP ke root repository GitHub Pages dan timpa file lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan folder `css/` ikut terganti agar cache v0.28.0 terpakai. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
+
+
+## K. Elemental Duo — Jantung Kuno (level 41–50, v0.29.0)
+
+- [ ] Selesaikan level 40 dan pastikan level 41 terbuka dengan tema Jantung Kuno serta latar runik.
+- [ ] Level 41: uji gabungan es, arus, angin, lava, air, dan uap. Pastikan tiap karakter hanya terkena hazard yang tidak sesuai elemennya; uap berbahaya bagi keduanya.
+- [ ] Level 42: Bara membuka Segel Bara dan Nira membuka Segel Air. Pastikan hazard terkait padam dan gerbang tetap terkunci hingga kedua katup serta dua pijakan aktif.
+- [ ] Level 43: Bara mengaktifkan Kristal Bara dan Nira mengaktifkan Kristal Air. Tuas yang bukan milik elemen pemain harus menolak interaksi.
+- [ ] Level 44: coba Bara lebih dahulu; urutan harus ditolak. Nira mengaktifkan pijakan terlebih dahulu, kemudian Bara.
+- [ ] Level 45: pilih cabang masing-masing, uji platform pulau bergerak, lantai es, arus dan crosswind. Pastikan jalur kontrol wajib tetap bisa dilewati tanpa harus berdiri di platform bergerak.
+- [ ] Level 46: aktifkan dua katup dan uji lift vertikal; karakter yang berdiri di lift harus ikut terbawa.
+- [ ] Level 47: aktifkan Katup Tungku, pastikan aliran lava utama berhenti dan semburan uap masih mengikuti fase waktu bersama.
+- [ ] Level 48: aktifkan Kristal Bara dan Kristal Air; perhatikan arus berbalik serta updraft. Kedua tuas harus memengaruhi zona angin yang berbeda.
+- [ ] Level 49: aktifkan dua katup dan dua tuas dengan pemilik elemen yang sesuai; kemudian Nira harus menginjak pijakan sebelum Bara.
+- [ ] Level 50: selesaikan Segel Api Purba, Segel Air Purba, kedua kristal angin, hazard gabungan, dan urutan pijakan Nira → Bara sebelum kedua pemain masuk pintu masing-masing.
+- [ ] Ubah jam lokal salah satu HP beberapa menit; fase es/arus/angin/hazard/platform harus tetap konsisten karena memakai jam Firebase bersama.
+- [ ] Putus-sambungkan jaringan sebentar setelah mengaktifkan katup/tuas; state harus tetap sama pada kedua perangkat.
+- [ ] Uji mode Potret dan Layar Penuh pada level dengan platform bergerak; pastikan kamera lokal tetap mengikuti karakter dan kontrol tidak menutupi pijakan.
+
+**Pemasangan v0.29.0:** unggah seluruh isi ZIP ke root repository GitHub Pages dan timpa file lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, `css/elemental-duo.css`, serta `ELEMENTAL-WORLD-5.md` ikut terganti agar cache v0.29.0 terpakai. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.

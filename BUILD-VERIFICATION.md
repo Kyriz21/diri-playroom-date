@@ -1,31 +1,103 @@
-# Build Verification — Diri. Playroom Date v0.24.2
+# Build Verification — Diri. Playroom Date v0.29.0
 
-## Elemental Duo
-- 50 level dalam lima dunia masih menggunakan satu engine platformer.
-- Setiap level memiliki dua pijakan elemen, dua permata khusus, platform, zona lava/air, checkpoint, penghalang, dan dua pintu elemen.
-- Bara hanya mengaktifkan pijakan dan pintu Bara; Nira hanya mengaktifkan pijakan dan pintu Air.
-- Penghalang hanya terbuka setelah kedua pijakan aktif. Kedua pemain harus masuk ke pintu masing-masing untuk membuka level selanjutnya.
-- Kamera mengikuti posisi rata-rata kedua pemain dan memperbesar area pandang di layar sempit tanpa mengubah skala dunia secara tidak proporsional.
-- Kontrol sentuh lebih besar, layout landscape lebih ringkas, dan tombol layar penuh tersedia.
-- Sinkronisasi status tiba diantrekan agar pembaruan `complete=true` tidak hilang ketika sinkronisasi posisi masih berlangsung.
-- Kunci transisi level yang tertinggal dipulihkan setelah 12 detik bila host terputus.
-- Teks objektif dan notifikasi tidak lagi digambar di dalam kanvas. Notifikasi sementara dipindahkan ke strip HUD di luar arena; kartu petunjuk panjang disembunyikan di layar HP.
-- Lazy-loaded Elemental Duo menggunakan cache key v0.24.2. Firebase Rules tidak berubah.
+## Pemeriksaan terbaru v0.29.0
+- Unit tests: **181/181 passed** (`npm test`).
+- JavaScript syntax checks: passed untuk seluruh file di `js/`.
+- Firebase Rules JSON: valid; file Rules dan struktur node RTDB tidak berubah.
+- Blueprint khusus mencakup seluruh level **01–50** dalam lima dunia.
+- Tidak ada dependensi npm baru.
+- Cache key untuk `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan `css/elemental-duo.css` menggunakan v0.29.0.
+
+## v0.29.0 — Jantung Kuno (level 41–50)
+- Sepuluh level memakai blueprint khusus, bukan generator lama.
+- Dunia final menggabungkan mekanik es, arus, angin, lava, air, uap, hazard berkala/bergerak, dan platform bergerak.
+- Dual-valve dan dual-wind-lever dapat menjadi persyaratan gerbang; semua node state tetap berada di bawah `levels/{level}`.
+- Level 44, 49, dan 50 menjalankan urutan pijakan Nira lalu Bara melalui transaksi RTDB atomik.
+- Dekorasi runik Jantung Kuno digambar di latar arena; dekorasi tidak memengaruhi collision.
+- Semua pressure plate, katup, tuas, dan checkpoint diperiksa terhadap hazard, gerbang, kestabilan platform, dan keterjangkauan kedua pemain.
+- Pengujian dua HP dengan Firebase aktif tetap harus dilakukan setelah deployment.
+
+
+# Build Verification — Diri. Playroom Date v0.27.0
+
+## Pemeriksaan terbaru v0.27.0
+- Unit tests: **173/173 passed** (`npm test`).
+- JavaScript syntax checks: **passed** untuk seluruh file di `js/`.
+- Blueprint khusus kini mencakup level **01–30**: Hutan Berbisik, Kedalaman Kristal, dan Kerajaan Bara.
+- Level 31–50 masih menggunakan generator/layout sebelumnya; Dunia 4–5 belum diimplementasikan.
+- Tidak ada dependensi npm baru.
+- Firebase Rules dan struktur node utama RTDB tidak berubah.
+
+## v0.27.0 — Kerajaan Bara (level 21–30)
+- Sepuluh level memakai blueprint khusus, bukan generator lama.
+- Lava berdenyut/bergerak, uap berkala, katup interaktif, syarat katup untuk gerbang, dan urutan pijakan Nira lalu Bara pada level 26 dan 30.
+- State katup dan urutan pijakan disimpan di bawah `levels/{level}`; fase mekanik memakai jam level bersama Firebase.
+- Checklist uji dua perangkat tersedia di `REVIEW-BUILD-QA.md` bagian I.
+
+---
+
+## v0.27.0 — Elemental Duo World 3
+- Level 21–30 memakai 10 blueprint khusus Kerajaan Bara.
+- Lava/api visual berdenyut dan hazard bergerak mengikuti jam level bersama.
+- Ventilasi uap (`type: steam`) berbahaya untuk kedua pemain, dengan fase aktif/nonaktif deterministik.
+- Interaksi katup memakai AKSI dan menyimpan state per katup pada RTDB; katup mematikan hazard terkait.
+- `requiredValves` menjadi syarat tambahan gerbang; level 29–30 membutuhkan dua katup dari pemain yang sesuai elemen.
+- Level 26 dan 30 menerapkan urutan pijakan Nira lalu Bara melalui transaksi atomik pada node `switches`.
+- Pressure plate dan katup divalidasi berada pada platform stabil/terjangkau dan sebelum gerbang.
+- Firebase Rules tidak berubah; semua state baru berada di bawah node `levels` yang sudah diizinkan.
+
+# Build Verification — Diri. Playroom Date v0.27.0
+
+## v0.26.0 — Elemental Duo World 2
+- Level 11–20 memakai 10 blueprint Kedalaman Kristal, bukan layout generator lama.
+- Permukaan `ice` dan `iceZones` memakai gesekan rendah; karakter mempertahankan momentum ketika melepas tombol arah.
+- `currents` memberi gaya horizontal/vertikal, dapat berdenyut atau berbalik arah, dan ditampilkan dengan panah visual.
+- Lift vertikal menggunakan gerak platform yang sudah deterministik dan membawa karakter ketika ia berdiri di atasnya.
+- Hazard mendukung cycle aktif/nonaktif; collision dan rendering memakai status yang sama.
+- Kedua pressure plate berada sebelum gerbang dan tidak bergantung pada platform timed atau lift vertikal.
+- Jam level bersama Firebase menjaga fase arus, platform, dan hazard konsisten di kedua perangkat.
+- Firebase Rules dan struktur data RTDB tidak berubah.
+
+## v0.25.0 — Elemental Duo World 1
+- 10 level Hutan Berbisik menggunakan blueprint buatan tangan, bukan kombinasi layout generik.
+- Difficulty Dunia 1: 1–3 Mudah, 4–6 Normal, 7–10 Menengah.
+- Platform moving/cycle dan hazard bergerak dihitung lewat helper deterministik yang diuji pada waktu level yang sama.
+- Fisika membawa karakter mengikuti perubahan posisi platform saat ia sedang berdiri di atasnya.
+- Jamur pantul memberikan impuls otomatis; pressure plate dapat berada di platform dan diperiksa lewat collision rectangle.
+- Tes jalur memeriksa bahwa sakelar tiap karakter dapat dijangkau melalui rangkaian lompatan dari spawn dan tidak berada di balik gerbang.
+- Firebase Rules tidak berubah.
 
 ## Pemeriksaan lokal
-- 153/153 unit test lulus (`npm test`).
-- Seluruh file JavaScript lolos `node --check`.
-- `firebase-database.rules.json` tidak diubah.
-- Tidak ada dependensi npm baru.
+- Unit tests: 168/168 passed (`npm test`).
+- JavaScript syntax checks: passed for all files under `js/`.
+- No new npm dependencies.
+- Level clock reads Firebase `/.info/serverTimeOffset`; both devices derive moving-platform and hazard phases from the same shared `startedAt`.
 
 ## Belum dibuktikan pada perangkat nyata
-- Sinkronisasi tekanan pijakan, pintu khusus, dan pergantian level pada Firebase aktif dengan dua HP.
-- Kenyamanan kamera/zoom pada berbagai rasio layar fisik dan orientasi portrait/landscape.
-- Fullscreen API dapat berbeda dukungannya antar browser dan perangkat.
+- Gerakan platform, sentuhan, orientasi layar, kamera, dan sinkronisasi dua perangkat Firebase perlu diuji langsung.
+- Pada saat build v0.26.0, blueprint khusus mencakup level 01–20; level 21–50 masih memakai generator sebelumnya. Status terbaru lihat pemeriksaan v0.27.0 di bagian atas.
+
+---
 
 
-## v0.24.2 — Elemental Duo HUD cleanup
-- Objective labels are no longer drawn inside the canvas.
-- Temporary messages are rendered in an accessible status strip outside the canvas.
-- Added regression coverage that checks the arena contains no text/toast overlays.
-- Cache keys use v0.24.2. Firebase Rules are unchanged.
+## v0.24.4 — Elemental Duo camera follow and mobile modes
+- Camera viewport is always narrower than the full world on standard portrait and landscape screens.
+- Each device follows its locally controlled character, with a capped partner framing bias. The view window remains narrower than the full stage even on wide displays.
+- Portrait mode uses a taller mobile arena; full-page mode requests fullscreen and attempts `screen.orientation.lock('landscape')`.
+- When orientation lock is not supported, an in-game prompt asks the player to rotate the device manually. Landscape touch controls float at the lower corners so the arena keeps more vertical space.
+- Added app-level fixed full-page fallback for browsers that block the Fullscreen API.
+- Firebase Rules unchanged.
+
+## Elemental Duo
+- 50 levels in five worlds; two elemental switches, two gems, elemental hazards, checkpoints, shared gate, and individual elemental doors.
+- Arrival state writes remain queued and level transition locks recover after a host disconnect.
+- Arena objective labels and transient status messages remain outside the playable canvas.
+
+## Pemeriksaan lokal
+- Unit tests: 155/155 passed (`npm test`).
+- JavaScript syntax checks: passed for all files under `js/`.
+- No new npm dependencies.
+
+## Belum dibuktikan pada perangkat nyata
+- Actual orientation lock support varies by mobile browser and operating system.
+- Two-device Firebase play, touch feel, and visual camera framing still require real-device verification.

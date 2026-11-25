@@ -2,15 +2,19 @@ import { db, ref, set, update, onValue, runTransaction } from '../firebase.js';
 import {
   ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
-  createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap
-} from './elemental-duo-logic.js?v=0.24.2';
+  createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap,
+  getElementalViewport, getElementalCameraTarget,
+  getElementalPlatformState, getElementalHazardState,
+  getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
+} from './elemental-duo-logic.js?v=0.29.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
   host: { name:'Bara', element:'fire', label:'Roh Bara', symbol:'✦', color:'#ff985b', other:'Nira' },
   guest: { name:'Nira', element:'water', label:'Roh Air', symbol:'✧', color:'#59cbe0', other:'Bara' }
 };
-const now = () => Date.now();
+let elementalServerTimeOffset = 0;
+const now = () => Date.now() + elementalServerTimeOffset;
 
 export function mountElementalDuo(root, context) {
   const { code, session, room, role, onBack, toast = () => {} } = context;
@@ -27,6 +31,10 @@ export function mountElementalDuo(root, context) {
   let currentLevel = 1;
   let currentView = '';
   let unsubscribe = null;
+  let unsubscribeServerClock = null;
+  let serverClockReady = false;
+  let resolveServerClockReady = () => {};
+  const serverClockReadyPromise = new Promise(resolve => { resolveServerClockReady = resolve; });
   let rafId = 0;
   let lastFrame = 0;
   let lastWriteAt = 0;
@@ -38,6 +46,8 @@ export function mountElementalDuo(root, context) {
   let metaInitStarted = false;
   let readyBusy = false;
   let switchBusy = false;
+  let valveBusy = false;
+  let windLeverBusy = false;
   let gemBusy = false;
   let advanceBusy = false;
   let destroyed = false;
@@ -48,6 +58,8 @@ export function mountElementalDuo(root, context) {
   let lastCanvasWidth = 0;
   let lastCanvasHeight = 0;
   let canvasNotice = '';
+  let canvasResizeObserver = null;
+  let displayMode = 'portrait';
   let noticeUntil = 0;
   let starsEarned = 0;
   const input = { left:false, right:false, jump:false, interact:false, jumpQueued:false, interactQueued:false };
@@ -69,7 +81,13 @@ export function mountElementalDuo(root, context) {
   function levelData() { return getElementalLevel(Number(data.meta?.level) || 1); }
   function levelState() { return data.levels?.[String(Number(data.meta?.level) || 1)] || {}; }
   function switchIsOn(element) { return Boolean(levelState().switches?.[element]); }
-  function gateIsOpen() { return switchIsOn('fire') && switchIsOn('water'); }
+  function valveIsOpen(id) { return Boolean(levelState().valves?.[id]); }
+  function windLeverIsOn(id) { return Boolean(levelState().windLevers?.[id]); }
+  function gateIsOpen() {
+    const level = levelData();
+    return switchIsOn('fire') && switchIsOn('water') && (level.requiredValves || []).every(valveIsOpen) && (level.requiredWindLevers || []).every(windLeverIsOn);
+  }
+  function levelElapsedMs() { return Math.max(0, now() - (Number(data.meta?.startedAt) || now())); }
 
   function shell() {
     root.innerHTML = `
@@ -96,7 +114,7 @@ export function mountElementalDuo(root, context) {
           <p class="ed-lobby-note">Petualangan memiliki 50 level dalam 5 dunia. Level berikutnya terbuka otomatis setelah kalian berdua mencapai gerbang.</p>
         </section>
         <section class="ed-panel ed-game-panel" data-ed-view="game" hidden>
-          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><button class="ed-fullscreen-button" type="button" data-ed-action="fullscreen" aria-label="Perbesar arena" title="Perbesar arena">⛶</button></div></div>
+          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh otomatis landscape" title="Layar penuh otomatis landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button></div></div></div>
           <div class="ed-progress-track"><span data-ed-progress></span></div>
           <div class="ed-hud-row">
             <div class="ed-hud-player"><span class="ed-hud-orb ed-fire-icon">✦</span><span><b>${ESCAPE(names.host)}</b><small data-ed-status="host">Bara · belum tiba</small></span></div>
@@ -104,6 +122,7 @@ export function mountElementalDuo(root, context) {
             <div class="ed-hud-player ed-hud-right"><span><b>${ESCAPE(names.guest)}</b><small data-ed-status="guest">Nira · belum tiba</small></span><span class="ed-hud-orb ed-water-icon">✧</span></div>
           </div>
           <div class="ed-live-notice" data-ed-notice aria-live="polite" hidden></div>
+          <div class="ed-rotate-prompt" data-ed-rotate-prompt hidden><div class="ed-rotate-icon">↻</div><strong>Putar perangkat ke samping</strong><span>Mode layar penuh menggunakan posisi landscape agar arena lebih luas.</span><button type="button" data-ed-action="portrait">Kembali ke mode potret</button></div>
           <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="960" height="560" aria-label="Arena platformer Elemental Duo"></canvas></div>
           <div class="ed-touch-controls" aria-label="Kontrol permainan">
             <div class="ed-move-controls"><button type="button" data-ed-control="left" aria-label="Bergerak ke kiri">←</button><button type="button" data-ed-control="right" aria-label="Bergerak ke kanan">→</button></div>
@@ -138,33 +157,97 @@ export function mountElementalDuo(root, context) {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 2 || rect.height < 2) return;
-    const aspect = rect.width / rect.height;
-    // Keep the world scale uniform. Narrow screens see a closer, camera-followed slice;
-    // wide screens retain the complete 960-unit arena.
-    const desiredHeight = Math.min(ELEMENTAL_WORLD_HEIGHT, Math.max(400, ELEMENTAL_WORLD_HEIGHT * Math.min(1, aspect / (ELEMENTAL_WORLD_WIDTH / ELEMENTAL_WORLD_HEIGHT))));
-    const desiredWidth = desiredHeight * aspect;
-    const viewWidth = Math.min(ELEMENTAL_WORLD_WIDTH, Math.max(582, desiredWidth));
-    const viewHeight = viewWidth / aspect;
-    const backingHeight = Math.max(260, Math.round(canvas.width / aspect));
+    const viewport = getElementalViewport(rect.width, rect.height);
+    const backingHeight = Math.max(260, Math.round(canvas.width / viewport.aspect));
     if (Math.abs(rect.width - lastCanvasWidth) < 1 && Math.abs(rect.height - lastCanvasHeight) < 1 && canvas.height === backingHeight) return;
     lastCanvasWidth = rect.width;
     lastCanvasHeight = rect.height;
     canvas.width = ELEMENTAL_WORLD_WIDTH;
     canvas.height = backingHeight;
     ctx = canvas.getContext('2d');
-    canvasView.zoom = ELEMENTAL_WORLD_WIDTH / viewWidth;
-    canvasView.viewWidth = viewWidth;
-    canvasView.viewHeight = viewHeight;
+    canvasView.zoom = viewport.zoom;
+    canvasView.viewWidth = viewport.viewWidth;
+    canvasView.viewHeight = viewport.viewHeight;
   }
 
-  function updateCamera() {
-    const host = role === 'host' ? localPlayer : remoteRender;
-    const guest = role === 'guest' ? localPlayer : remoteRender;
-    const centerX = (Number(host?.x) + Number(guest?.x)) / 2 || 480;
-    const centerY = (Number(host?.y) + Number(guest?.y)) / 2 || 468;
-    canvasView.cameraX = Math.max(0, Math.min(ELEMENTAL_WORLD_WIDTH - canvasView.viewWidth, centerX - canvasView.viewWidth / 2));
-    const maxY = Math.max(0, ELEMENTAL_WORLD_HEIGHT - canvasView.viewHeight);
-    canvasView.cameraY = Math.max(0, Math.min(maxY, centerY - canvasView.viewHeight * .62));
+  function updateCamera(dt = 1 / 60) {
+    // Every device follows the character it controls. The partner gets a small
+    // framing bias, but cannot pull the camera away when the players separate.
+    const target = getElementalCameraTarget(localPlayer, remoteRender, canvasView.viewWidth, canvasView.viewHeight);
+    const easing = 1 - Math.exp(-12 * Math.max(0, Math.min(0.1, dt)));
+    canvasView.cameraX += (target.x - canvasView.cameraX) * easing;
+    canvasView.cameraY += (target.y - canvasView.cameraY) * easing;
+  }
+
+  function updateDisplayModeUI() {
+    const panel = root.querySelector('.ed-game-panel');
+    if (!panel) return;
+    panel.dataset.displayMode = displayMode;
+    root.querySelectorAll('.ed-display-modes [data-ed-action="portrait"], .ed-display-modes [data-ed-action="fullscreen"]').forEach(button => {
+      const active = button.dataset.edAction === displayMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    const prompt = panel.querySelector('[data-ed-rotate-prompt]');
+    const isLandscape = Boolean(window.matchMedia?.('(orientation: landscape)').matches);
+    if (prompt) prompt.hidden = displayMode !== 'fullscreen' || isLandscape;
+  }
+
+  async function enterPortraitMode() {
+    const panel = root.querySelector('.ed-game-panel');
+    displayMode = 'portrait';
+    panel?.classList.remove('ed-fullpage-fallback');
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+    } catch { /* Some mobile browsers exit fullscreen through their own UI. */ }
+    try { screen.orientation?.unlock?.(); } catch {}
+    if (panel) panel.dataset.displayMode = 'portrait';
+    updateDisplayModeUI();
+    lastCanvasWidth = 0; lastCanvasHeight = 0;
+    requestAnimationFrame(resizeCanvasViewport);
+  }
+
+  async function enterLandscapeMode() {
+    const panel = root.querySelector('.ed-game-panel');
+    if (!panel) return;
+    displayMode = 'fullscreen';
+    panel.dataset.displayMode = 'fullscreen';
+    updateDisplayModeUI();
+    try {
+      if (document.fullscreenElement !== panel && panel.requestFullscreen) {
+        await panel.requestFullscreen({ navigationUI:'hide' });
+      } else if (!panel.requestFullscreen) {
+        panel.classList.add('ed-fullpage-fallback');
+      }
+    } catch {
+      // Keep a usable app-level full-page mode when the browser blocks the native API.
+      panel.classList.add('ed-fullpage-fallback');
+      notify('Layar penuh browser dibatasi. Mode layar penuh aplikasi diaktifkan.');
+    }
+    try {
+      if (screen.orientation?.lock) await screen.orientation.lock('landscape');
+    } catch {
+      // Orientation lock requires fullscreen and is not available in every mobile browser.
+    }
+    updateDisplayModeUI();
+    if (displayMode === 'fullscreen' && !window.matchMedia?.('(orientation: landscape)').matches) {
+      notify('Mode layar penuh aktif. Jika layar belum berputar otomatis, putar HP ke posisi mendatar.');
+    }
+    lastCanvasWidth = 0; lastCanvasHeight = 0;
+    requestAnimationFrame(resizeCanvasViewport);
+  }
+
+  function handleFullscreenChange() {
+    const panel = root.querySelector('.ed-game-panel');
+    if (document.fullscreenElement === panel) {
+      displayMode = 'fullscreen';
+    } else if (!panel?.classList.contains('ed-fullpage-fallback')) {
+      displayMode = 'portrait';
+      try { screen.orientation?.unlock?.(); } catch {}
+    }
+    updateDisplayModeUI();
+    lastCanvasWidth = 0; lastCanvasHeight = 0;
+    requestAnimationFrame(resizeCanvasViewport);
   }
 
   function bindControls() {
@@ -192,8 +275,22 @@ export function mountElementalDuo(root, context) {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', clearInput);
-    window.addEventListener('resize', resizeCanvasViewport, { passive:true });
-    document.addEventListener('fullscreenchange', resizeCanvasViewport);
+    window.addEventListener('resize', handleViewportChange, { passive:true });
+    window.addEventListener('orientationchange', handleViewportChange, { passive:true });
+    window.visualViewport?.addEventListener?.('resize', handleViewportChange, { passive:true });
+    screen.orientation?.addEventListener?.('change', handleViewportChange);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    const canvasWrap = root.querySelector('.ed-canvas-wrap');
+    if (canvasWrap && 'ResizeObserver' in window) {
+      canvasResizeObserver = new ResizeObserver(handleViewportChange);
+      canvasResizeObserver.observe(canvasWrap);
+    }
+  }
+
+  function handleViewportChange() {
+    updateDisplayModeUI();
+    lastCanvasWidth = 0; lastCanvasHeight = 0;
+    resizeCanvasViewport();
   }
 
   function clearInput() {
@@ -216,19 +313,10 @@ export function mountElementalDuo(root, context) {
   async function handleClick(event) {
     const action = event.target.closest('[data-ed-action]')?.dataset.edAction;
     if (!action) return;
+    if (action === 'portrait') { await enterPortraitMode(); return; }
     if (action === 'fullscreen') {
-      const panel = root.querySelector('.ed-game-panel');
-      try {
-        if (document.fullscreenElement) {
-          if (document.exitFullscreen) await document.exitFullscreen();
-        } else if (panel?.requestFullscreen) {
-          await panel.requestFullscreen();
-        } else {
-          notify('Mode layar penuh tidak didukung browser ini.');
-          return;
-        }
-        requestAnimationFrame(resizeCanvasViewport);
-      } catch { notify('Browser tidak mengizinkan mode layar penuh.'); }
+      if (displayMode === 'fullscreen') await enterPortraitMode();
+      else await enterLandscapeMode();
       return;
     }
     if (action === 'ready') {
@@ -244,7 +332,7 @@ export function mountElementalDuo(root, context) {
         if (role === 'host' && data.players?.guest?.ready && data.meta?.phase === 'lobby') void startAdventure();
       }
     }
-    if (action === 'back') onBack?.();
+    if (action === 'back') { await enterPortraitMode(); onBack?.(); }
   }
 
   function updateHud() {
@@ -259,9 +347,19 @@ export function mountElementalDuo(root, context) {
     const setText = (selector, value) => { const el = root.querySelector(selector); if (el) el.textContent = value; };
     setText('[data-ed-world]', level.worldName.toUpperCase());
     setText('[data-ed-level-title]', `${String(level.id).padStart(2,'0')} · ${level.name}`);
-    setText('[data-ed-level-note]', level.note);
+    setText('[data-ed-level-note]', `${level.difficultyLabel || 'Petualangan'} · ${level.note}`);
     setText('[data-ed-level-number]', String(level.id).padStart(2,'0'));
-    setText('[data-ed-gates]', switchesLeft ? `Pijakan ${switchIsOn('fire') ? '✓' : '✕'} Bara · ${switchIsOn('water') ? '✓' : '✕'} Air` : 'Penghalang terbuka · cari pintu!');
+    const sequence = level.switchSequence || [];
+    const sequenceIndex = Math.max(0, Number(levelState().switches?.sequenceIndex) || 0);
+    const nextSequenceElement = sequence[sequenceIndex];
+    const sequenceLabel = sequence.length && nextSequenceElement ? ` · Urutan: ${nextSequenceElement === 'fire' ? 'Bara' : 'Nira'}` : '';
+    const requiredValves = level.requiredValves || [];
+    const openedValves = requiredValves.filter(valveIsOpen).length;
+    const valveLabel = requiredValves.length ? ` · Katup ${openedValves}/${requiredValves.length}` : '';
+    const requiredWindLevers = level.requiredWindLevers || [];
+    const activeWindLevers = requiredWindLevers.filter(windLeverIsOn).length;
+    const windLeverLabel = requiredWindLevers.length ? ` · Tuas angin ${activeWindLevers}/${requiredWindLevers.length}` : '';
+    setText('[data-ed-gates]', gateIsOpen() ? 'Penghalang terbuka · cari pintu!' : `Bara ${switchIsOn('fire') ? '✓' : '✕'} · Nira ${switchIsOn('water') ? '✓' : '✕'}${sequenceLabel}${valveLabel}${windLeverLabel}`);
     setText('[data-ed-shards]', `◇ ${claimed} / 2`);
     setText('[data-ed-status="host"]', host.complete ? 'Bara · tiba di gerbang' : host.ready ? 'Bara · menjelajah' : 'Bara · menunggu');
     setText('[data-ed-status="guest"]', guest.complete ? 'Nira · tiba di gerbang' : guest.ready ? 'Nira · menjelajah' : 'Nira · menunggu');
@@ -350,6 +448,9 @@ export function mountElementalDuo(root, context) {
     if (readyBusy || data.meta?.phase !== 'lobby') return;
     readyBusy = true;
     try {
+      // Align moving platforms and timed hazards to Firebase's shared clock,
+      // so both devices simulate the same world phase even when phone clocks drift.
+      if (!serverClockReady) await serverClockReadyPromise;
       await runTransaction(metaRef, current => {
         if (!current || current.phase !== 'lobby') return;
         return { ...current, phase:'playing', startedAt:now(), transitioning:false };
@@ -477,32 +578,109 @@ export function mountElementalDuo(root, context) {
     localPlayer.deaths = (Number(localPlayer.deaths)||0) + 1;
     localPlayer.levelDeaths = (Number(localPlayer.levelDeaths)||0) + 1;
     localPlayer.complete = false;
+    localPlayer.supportPlatformId = null;
     notify('Ups! Coba jalur yang lain. Kamu kembali ke titik aman.');
     saveLocalPlayer(true);
+  }
+
+  function attemptValve(valve) {
+    if (valveBusy || localPlayer.complete || data.meta?.phase !== 'playing') return;
+    if (valve.element && valve.element !== CHARACTER[role].element) {
+      notify(valve.element === 'fire' ? 'Katup ini hanya dapat diputar Bara.' : 'Katup ini hanya dapat diputar Nira.');
+      return;
+    }
+    if (valveIsOpen(valve.id)) { notify(`${valve.label || 'Katup'} sudah aktif.`); return; }
+    valveBusy = true;
+    runTransaction(ref(db, path('levels', String(currentLevel), 'valves', valve.id)), value => value === true ? undefined : true)
+      .then(result => {
+        if (result.committed) notify(`${valve.label || 'Katup'} terbuka. Aliran yang terhubung berhenti!`);
+        else notify(`${valve.label || 'Katup'} sudah diaktifkan pasangan.`);
+      })
+      .catch(error => notify(`Katup gagal diaktifkan: ${error.message}`, 'error'))
+      .finally(() => { valveBusy = false; });
+  }
+
+  function attemptWindLever(lever) {
+    if (windLeverBusy || localPlayer.complete || data.meta?.phase !== 'playing') return;
+    if (lever.element && lever.element !== CHARACTER[role].element) {
+      notify(lever.element === 'fire' ? 'Tuas ini hanya dapat diaktifkan Bara.' : 'Tuas ini hanya dapat diaktifkan Nira.');
+      return;
+    }
+    if (windLeverIsOn(lever.id)) { notify(`${lever.label || 'Tuas angin'} sudah aktif.`); return; }
+    windLeverBusy = true;
+    runTransaction(ref(db, path('levels', String(currentLevel), 'windLevers', lever.id)), value => value === true ? undefined : true)
+      .then(result => {
+        if (result.committed) notify(`${lever.label || 'Tuas angin'} aktif. Arah hembusan berubah!`);
+        else notify(`${lever.label || 'Tuas angin'} sudah diaktifkan pasangan.`);
+      })
+      .catch(error => notify(`Tuas angin gagal diaktifkan: ${error.message}`, 'error'))
+      .finally(() => { windLeverBusy = false; });
   }
 
   function attemptSwitch(forcedPlate = null) {
     if (switchBusy || localPlayer.complete || data.meta?.phase !== 'playing') return;
     const level = levelData();
+    if (!forcedPlate) {
+      const nearbyValve = (level.valves || []).find(item => Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
+      if (nearbyValve) { attemptValve(nearbyValve); return; }
+      const nearbyWindLever = (level.windLevers || []).find(item => Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
+      if (nearbyWindLever) { attemptWindLever(nearbyWindLever); return; }
+    }
     const nearby = forcedPlate || level.switches.find(item => Math.hypot(localPlayer.x-item.x, (localPlayer.y-3)-item.y) < 62);
-    if (!nearby) { notify('Dekati pijakan elemen untuk mengaktifkannya.'); return; }
+    if (!nearby) { notify('Dekati pijakan, katup, atau tuas angin untuk berinteraksi.'); return; }
     if (nearby.element !== CHARACTER[role].element) {
       if (!forcedPlate) notify(nearby.element === 'fire' ? 'Pijakan ini hanya untuk Bara.' : 'Pijakan ini hanya untuk Nira.');
       return;
     }
     if (switchIsOn(nearby.element)) return;
+    const sequence = level.switchSequence || [];
+    const sequenceIndex = Math.max(0, Number(levelState().switches?.sequenceIndex) || 0);
+    if (sequence.length && sequence[sequenceIndex] !== nearby.element) {
+      const expected = sequence[sequenceIndex] === 'fire' ? 'Bara' : 'Nira';
+      notify(`Urutan belum tepat. Aktifkan pijakan ${expected} terlebih dahulu.`);
+      return;
+    }
     switchBusy = true;
-    runTransaction(ref(db, path('levels', String(currentLevel), 'switches', nearby.element)), value => value === true ? undefined : true)
-      .then(result => { if (result.committed) notify(`Pijakan ${nearby.element === 'fire' ? 'Bara' : 'Air'} aktif! Penghalang terbuka sebagian.`); })
+    const switchRef = sequence.length
+      ? ref(db, path('levels', String(currentLevel), 'switches'))
+      : ref(db, path('levels', String(currentLevel), 'switches', nearby.element));
+    runTransaction(switchRef, value => {
+      if (!sequence.length) return value === true ? undefined : true;
+      const state = value && typeof value === 'object' ? { ...value } : {};
+      const index = Math.max(0, Number(state.sequenceIndex) || 0);
+      if (sequence[index] !== nearby.element || state[nearby.element]) return;
+      state[nearby.element] = true;
+      state.sequenceIndex = index + 1;
+      return state;
+    })
+      .then(result => {
+        if (result.committed) {
+          const nextIndex = Math.max(0, Number(result.snapshot.val()?.sequenceIndex) || 0);
+          if (sequence.length && nextIndex < sequence.length) {
+            notify(`Pijakan ${nearby.element === 'fire' ? 'Bara' : 'Nira'} aktif! Berikutnya ${sequence[nextIndex] === 'fire' ? 'Bara' : 'Nira'}.`);
+          } else {
+            notify(`Pijakan ${nearby.element === 'fire' ? 'Bara' : 'Nira'} aktif!`);
+          }
+        }
+      })
       .catch(error => notify(`Pijakan gagal diaktifkan: ${error.message}`, 'error'))
       .finally(() => { switchBusy = false; });
   }
 
   function checkPressurePlate() {
     if (switchBusy || !localPlayer.grounded || localPlayer.complete) return;
+    const level = levelData();
     const element = CHARACTER[role].element;
     if (switchIsOn(element)) return;
-    const plate = levelData().switches.find(item => item.element === element && Math.abs(localPlayer.x - item.x) < 27 && localPlayer.y + 17 >= 512);
+    const sequence = level.switchSequence || [];
+    const sequenceIndex = Math.max(0, Number(levelState().switches?.sequenceIndex) || 0);
+    if (sequence.length && sequence[sequenceIndex] !== element) return;
+    const body = { x:localPlayer.x-14, y:localPlayer.y-17, w:28, h:34 };
+    const plate = level.switches.find(item => {
+      if (item.element !== element) return false;
+      const plateRect = { x:item.x-(item.w||52)/2, y:item.y-(item.h||10)/2, w:item.w||52, h:item.h||10 };
+      return rectsOverlap(body, plateRect);
+    });
     if (plate) attemptSwitch(plate);
   }
 
@@ -526,13 +704,35 @@ export function mountElementalDuo(root, context) {
   function physics(dt) {
     if (!data.meta || data.meta.phase !== 'playing' || localPlayer.complete) return;
     const level = levelData();
+    const elapsedMs = levelElapsedMs();
+    const previousElapsedMs = Math.max(0, elapsedMs - dt * 1000);
+    const platforms = level.platforms.map(platform => ({
+      current:getElementalPlatformState(platform, elapsedMs),
+      previous:getElementalPlatformState(platform, previousElapsedMs)
+    }));
+    const hazards = level.hazards
+      .filter(hazard => !hazard.valveId || !valveIsOpen(hazard.valveId))
+      .map(hazard => getElementalHazardState(hazard, elapsedMs));
+
+    // Carry a player standing on a moving platform by the exact platform delta.
+    if (localPlayer.grounded && localPlayer.supportPlatformId) {
+      const support = platforms.find(item => item.current.id === localPlayer.supportPlatformId);
+      if (support?.current.active && support.previous.active) {
+        localPlayer.x += support.current.x - support.previous.x;
+        localPlayer.y += support.current.y - support.previous.y;
+      } else if (support && !support.current.active) {
+        localPlayer.supportPlatformId = null;
+        localPlayer.grounded = false;
+      }
+    }
+
     const direction = Number(input.right) - Number(input.left);
     const maxSpeed = ELEMENTAL_MOVE_SPEED + (level.modifier === 'wind' ? 28 : 0);
     if (direction) {
       localPlayer.vx = direction * maxSpeed;
       localPlayer.dir = direction;
     } else {
-      const friction = level.modifier === 'slippery' ? 0.94 : 0.78;
+      const friction = getElementalSurfaceFriction(localPlayer, level);
       localPlayer.vx *= Math.pow(friction, dt * 60);
       if (Math.abs(localPlayer.vx) < 3) localPlayer.vx = 0;
     }
@@ -540,6 +740,7 @@ export function mountElementalDuo(root, context) {
     if (input.jumpQueued && localPlayer.grounded) {
       localPlayer.vy = -(level.modifier === 'bouncy' ? ELEMENTAL_JUMP_SPEED * 1.08 : ELEMENTAL_JUMP_SPEED);
       localPlayer.grounded = false;
+      localPlayer.supportPlatformId = null;
     }
     input.jumpQueued = false;
     if (input.interactQueued) attemptSwitch();
@@ -547,9 +748,26 @@ export function mountElementalDuo(root, context) {
 
     const halfW = 14;
     const halfH = 17;
+    const flowBody = { x:localPlayer.x-halfW, y:localPlayer.y-halfH, w:halfW*2, h:halfH*2 };
+    for (const source of (level.currents || [])) {
+      const flow = getElementalCurrentState(source, elapsedMs);
+      if (!rectsOverlap(flowBody, flow)) continue;
+      localPlayer.vx += (Number(flow.forceX) || 0) * dt;
+      localPlayer.vy += (Number(flow.forceY) || 0) * dt;
+    }
+    for (const source of (level.windZones || [])) {
+      const wind = getElementalWindState(source, elapsedMs, source.leverId ? windLeverIsOn(source.leverId) : false);
+      if (!rectsOverlap(flowBody, wind)) continue;
+      localPlayer.vx += (Number(wind.forceX) || 0) * dt * 3.4;
+      localPlayer.vy += (Number(wind.forceY) || 0) * dt * 3.4;
+    }
+    localPlayer.vx = Math.max(-390, Math.min(390, localPlayer.vx));
+    localPlayer.vy = Math.max(-760, Math.min(760, localPlayer.vy));
     localPlayer.x += localPlayer.vx * dt;
     localPlayer.x = Math.max(halfW + 3, Math.min(ELEMENTAL_WORLD_WIDTH - halfW - 3, localPlayer.x));
-    for (const platform of level.platforms) {
+    for (const entry of platforms) {
+      const platform = entry.current;
+      if (!platform.active) continue;
       const body = { x:localPlayer.x-halfW, y:localPlayer.y-halfH+3, w:halfW*2, h:halfH*2-3 };
       if (!rectsOverlap(body, platform)) continue;
       const previousX = localPlayer.x - localPlayer.vx * dt;
@@ -571,13 +789,22 @@ export function mountElementalDuo(root, context) {
     localPlayer.vy += ELEMENTAL_GRAVITY * dt * (level.modifier === 'wind' ? 0.98 : 1);
     localPlayer.y += localPlayer.vy * dt;
     localPlayer.grounded = false;
-    for (const platform of [...level.platforms, { x:0, y:520, w:ELEMENTAL_WORLD_WIDTH, h:50 }]) {
+    localPlayer.supportPlatformId = null;
+    const collisionPlatforms = [...platforms.filter(item => item.current.active).map(item => item.current), { id:'main-floor', x:0, y:520, w:ELEMENTAL_WORLD_WIDTH, h:50, kind:'floor' }];
+    for (const platform of collisionPlatforms) {
       const horizontal = localPlayer.x + halfW > platform.x && localPlayer.x - halfW < platform.x + platform.w;
       const bottom = localPlayer.y + halfH;
       if (horizontal && localPlayer.vy >= 0 && previousBottom <= platform.y + 5 && bottom >= platform.y) {
         localPlayer.y = platform.y - halfH;
-        localPlayer.vy = 0;
-        localPlayer.grounded = true;
+        if (platform.kind === 'bounce') {
+          localPlayer.vy = -ELEMENTAL_JUMP_SPEED * 1.18;
+          localPlayer.grounded = false;
+          localPlayer.supportPlatformId = null;
+        } else {
+          localPlayer.vy = 0;
+          localPlayer.grounded = true;
+          localPlayer.supportPlatformId = platform.id === 'main-floor' ? null : platform.id;
+        }
       } else if (horizontal && localPlayer.vy < 0 && localPlayer.y - halfH < platform.y + platform.h && localPlayer.y - halfH > platform.y) {
         localPlayer.y = platform.y + platform.h + halfH;
         localPlayer.vy = 0;
@@ -586,10 +813,10 @@ export function mountElementalDuo(root, context) {
 
     if (localPlayer.y > 620) resetAfterHit();
     const body = { x:localPlayer.x-halfW, y:localPlayer.y-halfH, w:halfW*2, h:halfH*2 };
-    for (const hazard of level.hazards) {
-      if (!rectsOverlap(body, hazard)) continue;
+    for (const hazard of hazards) {
+      if (hazard.active === false || !rectsOverlap(body, hazard)) continue;
       const safeType = CHARACTER[role].element === 'fire' ? 'fire' : 'water';
-      if (hazard.type !== safeType) { resetAfterHit(); break; }
+      if (hazard.type === 'steam' || hazard.type !== safeType) { resetAfterHit(); break; }
     }
 
     if (localPlayer.x > level.checkpoint.x && !localCheckpoint) {
@@ -646,34 +873,281 @@ export function mountElementalDuo(root, context) {
     ctx.restore();
   }
 
-  function drawPlatforms(level) {
-    const c = level.colors;
-    for (const p of level.platforms) {
-      ctx.fillStyle = p.kind === 'crystal' ? 'rgba(230,250,255,.88)' : c.ground;
-      roundedRect(ctx,p.x,p.y,p.w,p.h,8); ctx.fill();
-      ctx.fillStyle = p.kind === 'crystal' ? '#fff' : 'rgba(255,255,255,.28)';
-      roundedRect(ctx,p.x+4,p.y+3,p.w-8,3,2); ctx.fill();
-      if (p.kind === 'crystal') {
-        ctx.fillStyle='rgba(105,203,220,.25)';
-        ctx.beginPath(); ctx.moveTo(p.x+16,p.y+2);ctx.lineTo(p.x+26,p.y-10);ctx.lineTo(p.x+36,p.y+2);ctx.fill();
+
+  function drawSkyDecor(level, time) {
+    if (level.worldIndex !== 4) return;
+    ctx.save();
+    // Soft, layered cloud banks distinguish the sky world from earlier biomes.
+    for (let i=0;i<8;i++) {
+      const drift = (time * (.006 + i*.0007) * (i%2 ? 1 : -1));
+      const x = ((i*151 + drift) % 1120 + 1120) % 1120 - 80;
+      const y = 105 + (i%4)*62;
+      const r = 24 + (i%3)*9;
+      ctx.globalAlpha = .2 + (i%2)*.08;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(x,y,r*1.8,r*.48,0,0,Math.PI*2);
+      ctx.ellipse(x-r*.65,y+2,r*.78,r*.54,0,0,Math.PI*2);
+      ctx.ellipse(x+r*.55,y-3,r*.92,r*.62,0,0,Math.PI*2);
+      ctx.fill();
+    }
+    // Distant floating islands are decorative only; collision remains on authored platforms.
+    for (let i=0;i<4;i++) {
+      const x = 105 + i*245 + Math.sin(time*.0005+i)*8;
+      const y = 270 + (i%2)*64;
+      ctx.globalAlpha = .28;
+      ctx.fillStyle = level.colors.far;
+      ctx.beginPath(); ctx.moveTo(x-48,y); ctx.lineTo(x+48,y); ctx.lineTo(x+27,y+15); ctx.lineTo(x+8,y+34); ctx.lineTo(x-18,y+22); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = .48; ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(x,y-2,51,7,0,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+
+  function drawAncientDecor(level, time) {
+    if (level.worldIndex !== 5) return;
+    ctx.save();
+    // Ancient runic halos and floating shards are decorative only; collisions
+    // remain entirely data-driven by the authored platforms and hazards.
+    const centers = [[245,205,74],[505,170,96],[760,225,68]];
+    for (let i=0;i<centers.length;i++) {
+      const [x,y,r] = centers[i];
+      const rotation = time * (i%2 ? -.00012 : .00009) + i*.8;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(rotation);
+      ctx.globalAlpha = .12 + .035*Math.sin(time*.001+i);
+      ctx.strokeStyle = i===1 ? '#fff0c9' : '#c9c0ef';
+      ctx.lineWidth = 3; ctx.setLineDash([7,9]);
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0,0,r*.72,0,Math.PI*2); ctx.stroke();
+      for (let n=0;n<8;n++) {
+        const a = n*Math.PI/4;
+        ctx.save(); ctx.rotate(a); ctx.translate(r,0);
+        ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(5,0); ctx.lineTo(0,7); ctx.lineTo(-5,0); ctx.closePath(); ctx.stroke();
+        ctx.restore();
       }
+      ctx.restore();
+    }
+    for (let i=0;i<18;i++) {
+      const drift = time*.009 + i*53;
+      const x = (i*67 + Math.sin(drift*.012)*17 + 960) % 960;
+      const y = 90 + (i*61)%315 + Math.sin(drift*.02)*7;
+      const size = 3 + (i%3)*1.5;
+      ctx.globalAlpha = .16 + .1*Math.sin(drift*.018+i);
+      ctx.fillStyle = i%2 ? '#fff0c9' : '#c9e9f3';
+      ctx.beginPath(); ctx.moveTo(x,y-size); ctx.lineTo(x+size*.7,y); ctx.lineTo(x,y+size); ctx.lineTo(x-size*.7,y); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawIceZones(level, time) {
+    for (const zone of (level.iceZones || [])) {
+      ctx.save();
+      const gradient = ctx.createLinearGradient(0, zone.y, 0, zone.y + zone.h);
+      gradient.addColorStop(0, 'rgba(211,249,255,.82)');
+      gradient.addColorStop(1, 'rgba(91,185,216,.25)');
+      ctx.fillStyle = gradient;
+      roundedRect(ctx, zone.x, zone.y, zone.w, zone.h, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(237,255,255,.85)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(zone.x+7,zone.y+3); ctx.lineTo(zone.x+zone.w-7,zone.y+3); ctx.stroke();
+      for (let i=0;i<Math.max(2,Math.floor(zone.w/46));i++) {
+        const x = zone.x + 14 + i*42;
+        const shimmer = .35 + .25*Math.sin(time*.004+i);
+        ctx.globalAlpha = shimmer; ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.moveTo(x,zone.y+5); ctx.lineTo(x+5,zone.y+10); ctx.lineTo(x,zone.y+14); ctx.lineTo(x-5,zone.y+10); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
     }
   }
 
-  function drawHazards(level, time) {
-    for (const h of level.hazards) {
-      const fire = h.type === 'fire';
-      const base = fire ? '#dc7959' : '#3e9db8';
-      ctx.fillStyle = base; roundedRect(ctx,h.x,h.y,h.w,h.h,7); ctx.fill();
+  function drawCurrentZones(level, time, elapsedMs = 0) {
+    for (const source of (level.currents || [])) {
+      const flow = getElementalCurrentState(source, elapsedMs);
       ctx.save();
-      ctx.strokeStyle = fire ? '#ffd08f' : '#c6f7ff'; ctx.lineWidth=3;
-      ctx.beginPath();
-      for(let x=0;x<=h.w;x+=5){const y=h.y+6+Math.sin((x+time*.09)/12)*3; if(x===0)ctx.moveTo(h.x+x,y);else ctx.lineTo(h.x+x,y);}
-      ctx.stroke(); ctx.restore();
-      ctx.globalAlpha=.38;
-      ctx.fillStyle = fire ? '#ffdf9d' : '#d5fbff';
-      for(let i=0;i<3;i++) { const x=h.x+12+i*(h.w-24)/2; const y=h.y+17+Math.sin(time*.003+i)*3; ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill(); }
-      ctx.globalAlpha=1;
+      ctx.fillStyle = 'rgba(105,211,235,.12)';
+      roundedRect(ctx,flow.x,flow.y,flow.w,flow.h,16); ctx.fill();
+      ctx.strokeStyle = 'rgba(161,239,250,.55)'; ctx.lineWidth = 2; ctx.setLineDash([7,7]);
+      ctx.strokeRect(flow.x+3,flow.y+3,flow.w-6,flow.h-6); ctx.setLineDash([]);
+      const fx = Number(flow.forceX) || 0; const fy = Number(flow.forceY) || 0;
+      const angle = Math.atan2(fy,fx);
+      const horizontalCount = Math.max(2,Math.floor(flow.w/62));
+      const verticalCount = Math.max(1,Math.floor(flow.h/45));
+      for (let row=0;row<verticalCount;row++) for (let col=0;col<horizontalCount;col++) {
+        const drift = (time*.035 + row*17 + col*31) % 34;
+        const x = flow.x + 18 + col*((flow.w-36)/Math.max(1,horizontalCount-1)) + (fx>=0 ? drift : -drift);
+        const y = flow.y + 18 + row*((flow.h-36)/Math.max(1,verticalCount-1)) + (fy>=0 ? drift*.24 : -drift*.24);
+        ctx.save(); ctx.translate(x,y); ctx.rotate(Math.abs(fx)+Math.abs(fy)<1 ? angle : angle);
+        ctx.globalAlpha = .5 + .22*Math.sin(time*.006+row+col);
+        ctx.strokeStyle = '#d7fbff'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(3,-5); ctx.lineTo(8,0); ctx.lineTo(3,5); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  }
+
+
+  function drawWindZones(level, time, elapsedMs = 0) {
+    for (const source of (level.windZones || [])) {
+      const wind = getElementalWindState(source, elapsedMs, source.leverId ? windLeverIsOn(source.leverId) : false);
+      const fx = Number(wind.forceX) || 0;
+      const fy = Number(wind.forceY) || 0;
+      const angle = Math.atan2(fy, fx);
+      ctx.save();
+      ctx.globalAlpha = .08 + .08 * Math.max(0, wind.strength || 0);
+      ctx.fillStyle = '#f6fbff';
+      roundedRect(ctx, wind.x, wind.y, wind.w, wind.h, 18); ctx.fill();
+      ctx.globalAlpha = .35 + .2 * Math.max(0, wind.strength || 0);
+      ctx.strokeStyle = '#f8fdff'; ctx.lineWidth = 1.8; ctx.setLineDash([8,9]);
+      ctx.strokeRect(wind.x+3, wind.y+3, Math.max(0,wind.w-6), Math.max(0,wind.h-6)); ctx.setLineDash([]);
+      const horizontalCount = Math.max(2, Math.floor(wind.w/72));
+      const verticalCount = Math.max(1, Math.floor(wind.h/58));
+      for (let row=0;row<verticalCount;row++) for (let col=0;col<horizontalCount;col++) {
+        const baseX = wind.x + 22 + col*((wind.w-44)/Math.max(1,horizontalCount-1));
+        const baseY = wind.y + 22 + row*((wind.h-44)/Math.max(1,verticalCount-1));
+        const drift = (time*.028 + row*19 + col*27) % 25;
+        const px = baseX + (Math.abs(fx)>Math.abs(fy) ? Math.sign(fx || 1)*drift : Math.sin(time*.002+row+col)*3);
+        const py = baseY + (Math.abs(fy)>=Math.abs(fx) ? Math.sign(fy || -1)*drift : Math.cos(time*.002+row+col)*3);
+        ctx.save(); ctx.translate(px,py); ctx.rotate(angle);
+        ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 2.4; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(9,0); ctx.moveTo(3,-5); ctx.lineTo(9,0); ctx.lineTo(3,5); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawPlatforms(level, elapsedMs = 0) {
+    const c = level.colors;
+    for (const source of level.platforms) {
+      const p = getElementalPlatformState(source, elapsedMs);
+      if (!p.active) continue;
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      if (p.kind === 'bounce') {
+        ctx.fillStyle = '#6e9870';
+        ctx.beginPath(); ctx.ellipse(p.x+p.w/2,p.y+8,p.w/2,13,0,Math.PI,Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#b7db91';
+        ctx.beginPath(); ctx.ellipse(p.x+p.w/2,p.y+3,p.w/2,10,0,Math.PI,Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.beginPath(); ctx.ellipse(p.x+p.w/2,p.y+1,p.w*.3,3,0,Math.PI,Math.PI*2); ctx.fill();
+      } else if (p.kind === 'cloud') {
+        ctx.fillStyle = 'rgba(255,255,255,.94)';
+        roundedRect(ctx,p.x,p.y+5,p.w,p.h-5,9); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.98)';
+        ctx.beginPath(); ctx.ellipse(p.x+p.w*.25,p.y+5,p.w*.22,7,0,Math.PI,Math.PI*2); ctx.ellipse(p.x+p.w*.52,p.y+3,p.w*.25,9,0,Math.PI,Math.PI*2); ctx.ellipse(p.x+p.w*.78,p.y+6,p.w*.19,6,0,Math.PI,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(139,163,218,.48)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(p.x+7,p.y+p.h-2); ctx.lineTo(p.x+p.w-7,p.y+p.h-2); ctx.stroke();
+      } else if (p.kind === 'ice') {
+        const iceGradient = ctx.createLinearGradient(0,p.y,0,p.y+p.h);
+        iceGradient.addColorStop(0,'#f1fdff'); iceGradient.addColorStop(.42,'#b6edf6'); iceGradient.addColorStop(1,'#6fb8d4');
+        ctx.fillStyle = iceGradient; roundedRect(ctx,p.x,p.y,p.w,p.h,8); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.92)'; roundedRect(ctx,p.x+5,p.y+3,p.w-10,3,2); ctx.fill();
+        ctx.strokeStyle='rgba(80,167,197,.48)'; ctx.lineWidth=1.3;
+        ctx.beginPath(); ctx.moveTo(p.x+p.w*.32,p.y+5); ctx.lineTo(p.x+p.w*.42,p.y+11); ctx.lineTo(p.x+p.w*.51,p.y+5); ctx.stroke();
+      } else {
+        ctx.fillStyle = p.kind === 'crystal' ? 'rgba(230,250,255,.88)' : c.ground;
+        roundedRect(ctx,p.x,p.y,p.w,p.h,8); ctx.fill();
+        ctx.fillStyle = p.kind === 'crystal' ? '#fff' : 'rgba(255,255,255,.28)';
+        roundedRect(ctx,p.x+4,p.y+3,p.w-8,3,2); ctx.fill();
+        if (p.kind === 'crystal') {
+          ctx.fillStyle='rgba(105,203,220,.25)';
+          ctx.beginPath(); ctx.moveTo(p.x+16,p.y+2); ctx.lineTo(p.x+26,p.y-10); ctx.lineTo(p.x+36,p.y+2); ctx.fill();
+        }
+      }
+      if (source.motion) {
+        ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2; ctx.setLineDash([5,5]);
+        ctx.beginPath();
+        if (source.motion.axis === 'y') {
+          ctx.moveTo(source.x+source.w/2,source.y-source.motion.amplitude); ctx.lineTo(source.x+source.w/2,source.y+source.motion.amplitude+source.h);
+        } else {
+          ctx.moveTo(source.x-source.motion.amplitude,source.y+20); ctx.lineTo(source.x+source.w+source.motion.amplitude,source.y+20);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawHazards(level, time, elapsedMs = 0) {
+    for (const source of level.hazards) {
+      if (source.valveId && valveIsOpen(source.valveId)) continue;
+      const h = getElementalHazardState(source, elapsedMs);
+      if (h.active === false) continue;
+      ctx.save(); ctx.globalAlpha = h.opacity ?? 1;
+      if (h.visual === 'lava') {
+        const magma = ctx.createLinearGradient(0,h.y,0,h.y+h.h);
+        magma.addColorStop(0,'#ffe08a'); magma.addColorStop(.28,'#ff9a45'); magma.addColorStop(1,'#b93635');
+        ctx.shadowColor='#ff713e'; ctx.shadowBlur=16; ctx.fillStyle=magma;
+        roundedRect(ctx,h.x,h.y,h.w,h.h,Math.min(9,h.h/2)); ctx.fill(); ctx.shadowBlur=0;
+        ctx.strokeStyle='rgba(255,239,173,.9)'; ctx.lineWidth=3; ctx.beginPath();
+        for(let x=0;x<=h.w;x+=5){const y=h.y+5+Math.sin((x+time*.075)/14)*3; if(x===0)ctx.moveTo(h.x+x,y);else ctx.lineTo(h.x+x,y);}
+        ctx.stroke();
+        for(let i=0;i<Math.max(2,Math.floor(h.w/34));i++){
+          const bx=h.x+12+((i*31+time*.018)%(Math.max(16,h.w-20)));
+          const by=h.y+8+Math.sin(time*.004+i*1.7)*Math.max(2,h.h*.18);
+          ctx.fillStyle='rgba(255,230,150,.82)';ctx.beginPath();ctx.arc(bx,by,2.2+(i%2),0,Math.PI*2);ctx.fill();
+        }
+      } else if (h.visual === 'steam' || h.type === 'steam') {
+        const steam = ctx.createLinearGradient(0,h.y+h.h,0,h.y);
+        steam.addColorStop(0,'rgba(255,224,190,.12)'); steam.addColorStop(.5,'rgba(255,245,224,.64)'); steam.addColorStop(1,'rgba(255,255,255,.12)');
+        ctx.fillStyle=steam; roundedRect(ctx,h.x,h.y,h.w,h.h,Math.min(12,h.w/2)); ctx.fill();
+        ctx.strokeStyle='rgba(255,247,231,.78)';ctx.lineWidth=2;
+        for(let i=0;i<3;i++){
+          const x=h.x+h.w*(.25+i*.25)+Math.sin(time*.006+i)*4;
+          ctx.beginPath();ctx.moveTo(x,h.y+h.h);ctx.bezierCurveTo(x-7,h.y+h.h*.68,x+8,h.y+h.h*.35,x+Math.sin(time*.004+i)*5,h.y+3);ctx.stroke();
+        }
+        ctx.fillStyle='rgba(255,205,157,.75)';ctx.fillRect(h.x,h.y+h.h-4,h.w,4);
+      } else {
+        const fire = h.type === 'fire';
+        const base = fire ? '#dc7959' : '#3e9db8';
+        ctx.fillStyle = base; roundedRect(ctx,h.x,h.y,h.w,h.h,7); ctx.fill();
+        ctx.strokeStyle = fire ? '#ffd08f' : '#c6f7ff'; ctx.lineWidth=3;
+        ctx.beginPath();
+        for(let x=0;x<=h.w;x+=5){const y=h.y+6+Math.sin((x+time*.09)/12)*3; if(x===0)ctx.moveTo(h.x+x,y);else ctx.lineTo(h.x+x,y);}
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawValves(level, time) {
+    for (const valve of (level.valves || [])) {
+      const open = valveIsOpen(valve.id);
+      const fire = valve.element === 'fire';
+      const color = fire ? '#ffad63' : '#75dce8';
+      ctx.save(); ctx.translate(valve.x,valve.y);
+      ctx.shadowColor=color; ctx.shadowBlur=open?18:8;
+      ctx.fillStyle=open?'#6fc59b':'#65515a';
+      ctx.beginPath();ctx.arc(0,0,13,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle=color;ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(10,0);ctx.moveTo(0,-10);ctx.lineTo(0,10);ctx.stroke();
+      ctx.fillStyle='#fff6e8';ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=color;ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(valve.label || (fire?'KATUP BARA':'KATUP AIR'),0,-18);
+      if(open){ctx.fillStyle='#c9ffe1';ctx.font='bold 12px system-ui';ctx.textBaseline='top';ctx.fillText('✓',0,13);}
+      else {ctx.globalAlpha=.65+.25*Math.sin(time*.006);ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,19,0,Math.PI*2);ctx.stroke();}
+      ctx.restore();
+    }
+  }
+
+
+  function drawWindLevers(level, time) {
+    for (const lever of (level.windLevers || [])) {
+      const active = windLeverIsOn(lever.id);
+      const color = lever.element === 'fire' ? '#ffb16d' : lever.element === 'water' ? '#8de7f2' : '#e8efff';
+      ctx.save(); ctx.translate(lever.x,lever.y);
+      ctx.shadowColor = color; ctx.shadowBlur = active ? 18 : 9;
+      ctx.fillStyle = active ? '#78bd9c' : '#59628d';
+      ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+      ctx.strokeStyle = color; ctx.lineWidth=4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(active ? 9 : -8, active ? -15 : -12); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(active ? 9 : -8,active ? -15 : -12,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=color; ctx.font='bold 10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(lever.label || 'TUAS ANGIN',0,-23);
+      if (active) { ctx.fillStyle='#d8ffe8'; ctx.font='bold 12px system-ui'; ctx.textBaseline='top'; ctx.fillText('↔',0,14); }
+      else { ctx.globalAlpha=.6+.25*Math.sin(time*.006); ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,19,0,Math.PI*2); ctx.stroke(); }
+      ctx.restore();
     }
   }
 
@@ -776,18 +1250,26 @@ export function mountElementalDuo(root, context) {
     ctx.restore();
   }
 
-  function drawScene(time) {
+  function drawScene(time, dt = 1 / 60) {
     if (!ctx || currentView !== 'game') return;
     resizeCanvasViewport();
-    updateCamera();
+    updateCamera(dt);
     const level = levelData();
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.save();
     const z = canvasView.zoom;
     ctx.setTransform(z,0,0,z,-canvasView.cameraX*z,-canvasView.cameraY*z);
     drawBackground(level,time);
-    drawPlatforms(level);
-    drawHazards(level,time);
+    drawSkyDecor(level,time);
+    drawAncientDecor(level,time);
+    const elapsedMs = levelElapsedMs();
+    drawIceZones(level,time);
+    drawCurrentZones(level,time,elapsedMs);
+    drawWindZones(level,time,elapsedMs);
+    drawPlatforms(level, elapsedMs);
+    drawHazards(level,time,elapsedMs);
+    drawValves(level,time);
+    drawWindLevers(level,time);
     drawCheckpoint(level);
     drawGems(level,time);
     drawSwitches(level,time);
@@ -806,7 +1288,8 @@ export function mountElementalDuo(root, context) {
     const dt = lastFrame ? Math.min(.05, (timestamp-lastFrame)/1000) : 0;
     lastFrame = timestamp;
     if (data.meta?.phase === 'playing' && currentView === 'game') {
-      physics(dt);
+      // Do not advance local physics until the shared Firebase clock has initialized.
+      if (serverClockReady) physics(dt);
       const target = data.players?.[otherRole];
       if (target && Number.isFinite(target.x) && Number.isFinite(target.y)) {
         remoteTarget = { x:target.x, y:target.y, dir:target.dir || (otherRole==='guest'?-1:1), complete:Boolean(target.complete) };
@@ -817,7 +1300,7 @@ export function mountElementalDuo(root, context) {
       remoteRender.complete = remoteTarget.complete;
       updateHud();
     }
-    drawScene(timestamp);
+    drawScene(timestamp, dt);
     rafId = requestAnimationFrame(frame);
   }
 
@@ -834,13 +1317,28 @@ export function mountElementalDuo(root, context) {
   }
 
   shell();
+  updateDisplayModeUI();
+  unsubscribeServerClock = onValue(ref(db, '.info/serverTimeOffset'), snapshot => {
+    elementalServerTimeOffset = Number(snapshot.val()) || 0;
+    if (!serverClockReady) { serverClockReady = true; resolveServerClockReady(); }
+  }, () => {
+    // A failed offset read should not deadlock the lobby; use the local clock fallback.
+    if (!serverClockReady) { serverClockReady = true; resolveServerClockReady(); }
+  });
   unsubscribe = onValue(baseRef, handleSnapshot, error => notify(`Koneksi permainan terputus: ${error.message}`, 'error'));
   rafId = requestAnimationFrame(frame);
 
   return {
     destroy() {
+      const gamePanel = root.querySelector('.ed-game-panel');
+      if (document.fullscreenElement === gamePanel && document.exitFullscreen) {
+        try { const exitRequest = document.exitFullscreen(); exitRequest?.catch?.(() => {}); } catch {}
+      }
+      gamePanel?.classList.remove('ed-fullpage-fallback');
+      try { screen.orientation?.unlock?.(); } catch {}
       destroyed = true;
       if (unsubscribe) unsubscribe();
+      if (unsubscribeServerClock) unsubscribeServerClock();
       if (rafId) cancelAnimationFrame(rafId);
       if (playerWriteRetryTimer) window.clearTimeout(playerWriteRetryTimer);
       pendingPlayerPayload = null;
@@ -848,8 +1346,12 @@ export function mountElementalDuo(root, context) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', clearInput);
-      window.removeEventListener('resize', resizeCanvasViewport);
-      document.removeEventListener('fullscreenchange', resizeCanvasViewport);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('orientationchange', handleViewportChange);
+      window.visualViewport?.removeEventListener?.('resize', handleViewportChange);
+      screen.orientation?.removeEventListener?.('change', handleViewportChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      canvasResizeObserver?.disconnect();
       clearInput();
     }
   };
