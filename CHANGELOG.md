@@ -1,3 +1,14 @@
+## v0.30.0 — Elemental Duo Adventure Maps & Multi-directional Exploration
+- Mengubah arena menjadi peta eksplorasi 2D 1440×960 dengan perjalanan horizontal dan vertikal, bukan koridor lurus menuju pintu di ujung kanan.
+- Setiap level kini memiliki 13 pijakan jalur utama, 5 jalur samping, 4 jembatan pintas yang membentuk loop, serta lantai terputus untuk mendorong lompatan dan eksplorasi.
+- Menambahkan lima pola peta yang bervariasi: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno. Posisi pintu Bara dan Nira tersebar di sisi kiri, tengah, kanan, serta lantai atas/bawah.
+- Menambahkan peta mini yang memperlihatkan jalur, platform cabang, hazard, sakelar, permata, dua pintu, posisi kedua pemain, dan viewport kamera masing-masing perangkat.
+- Menambahkan penunjuk arah pada tepi layar menuju pintu elemen milik pemain ketika pintunya berada di luar kamera.
+- HUD menampilkan nama pola peta; renderer tetap memakai kamera lokal dan dua mode mobile Potret/Layar Penuh.
+- Menaikkan `ELEMENTAL_MAP_VERSION` ke 3: posisi lama di-reset ke spawn peta baru, tetapi progres skor/jumlah jatuh tetap dipertahankan dan status `complete` lama tidak mengunci pemain.
+- Tidak ada dependensi baru. Firebase Rules dan struktur node RTDB tidak berubah.
+- Tes otomatis: 186/186 lulus, termasuk jangkauan semua platform dari kedua spawn, variasi pintu, gerbang vertikal, peta mini, dan migrasi posisi versi lama.
+
 ## v0.29.0 — Elemental Duo World 5: Jantung Kuno
 - Level 41–50 kini memakai 10 blueprint final khusus, sehingga seluruh 50 level sudah memiliki layout dan mekanik yang ditulis khusus.
 - Dunia final menggabungkan es, arus, angin, lava, air, uap, hazard berkala/bergerak, dan platform bergerak.

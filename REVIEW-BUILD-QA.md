@@ -1,3 +1,25 @@
+# QA — Diri. Playroom Date v0.30.0
+
+## Elemental Duo — full exploration map regression
+- [ ] Level 01–50 dibuka dari room Firebase dengan kedua pemain siap.
+- [ ] Gerakkan kedua karakter ke kiri/kanan dan jelajahi platform atas/bawah; pastikan kamera masing-masing mengikuti karakter lokal.
+- [ ] Buka peta mini: posisi Bara/Nira, pintu dua elemen, sakelar, permata, hazard, dan kamera harus terlihat.
+- [ ] Saat pintu di luar layar, penunjuk arah mengarah ke pintu karakter yang benar.
+- [ ] Uji jalur cabang dan empat shortcut loop; pastikan karakter dapat jatuh/naik tanpa terjebak.
+- [ ] Pastikan pintu tidak selalu berada di kanan dan kedua pemain tetap masuk pintu elemennya sendiri.
+- [ ] Uji Mode Potret dan Layar Penuh pada HP; cek minimap tidak menutupi kontrol atau objek penting.
+- [ ] Uji sakelar, katup, tuas angin, hazard, dan progres dunia lama tetap berfungsi.
+- [ ] Refresh salah satu HP saat bermain; verifikasi versi map 3 memindahkan posisi lama ke spawn tanpa menghapus progres level.
+- [ ] Mainkan beberapa level sampai transisi dan penyelesaian bersama terkonfirmasi pada kedua perangkat.
+
+## Hasil verifikasi otomatis v0.30.0
+- 186/186 tests passed.
+- Semua file JavaScript lolos `node --check`.
+- Semua platform pada 50 map lolos uji reachability geometri dari kedua spawn.
+- Firebase Rules tidak berubah.
+
+---
+
 # QA — Diri. Playroom Date foundation v0.1
 
 ## Tahap 0 — halaman awal dan mode masuk

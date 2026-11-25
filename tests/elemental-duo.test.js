@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ELEMENTAL_LEVELS, ELEMENTAL_WORLDS, getElementalLevel,
+  ELEMENTAL_LEVELS, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, getElementalLevel,
   createElementalPlayer, clampElementalPlayer, rectsOverlap, getElementalStars,
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState, getElementalDifficultyLabel,
@@ -25,10 +25,91 @@ test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan are
     assert.deepEqual(level.gems.map(item => item.element).sort(), ['fire','water']);
     assert.ok(level.platforms.length >= 2);
     assert.ok(level.hazards.length >= 1);
-    assert.ok(level.exit.x > 800 && level.exit.w > 0);
+    assert.ok(level.exit.w > 0 && level.exit.h > 0);
+    assert.equal(level.worldWidth, ELEMENTAL_WORLD_WIDTH);
+    assert.equal(level.worldHeight, ELEMENTAL_WORLD_HEIGHT);
+    assert.equal(level.mapVersion, ELEMENTAL_MAP_VERSION);
+    assert.ok(level.platforms.some(platform => platform.y < 350), `level ${level.id} must explore an upper area`);
     assert.ok(level.spawn.host.x < level.spawn.guest.x);
     assert.ok(level.difficulty >= 1 && level.difficulty <= 5);
   }
+});
+
+test('Seluruh 50 level memiliki peta eksplorasi bercabang, jembatan pintas, dan pintu di berbagai sisi', () => {
+  const mapNames = new Set();
+  let doorsOnLeft = 0, doorsNearCenter = 0, doorsHigh = 0;
+  for (const level of ELEMENTAL_LEVELS) {
+    assert.equal(level.mapTopology?.route,'multi-branch-loop',`level ${level.id}`);
+    assert.equal(level.mapTopology?.sideRoutes,5,`level ${level.id} side routes`);
+    assert.equal(level.mapTopology?.shortcuts,4,`level ${level.id} shortcuts`);
+    assert.equal(level.platforms.filter(platform => platform.id.includes('-platform-')).length,13);
+    assert.equal(level.platforms.filter(platform => platform.id.includes('-side-')).length,5);
+    assert.equal(level.platforms.filter(platform => platform.id.includes('-shortcut-')).length,4);
+    assert.equal(level.floorSegments.length,4);
+    const x = level.platforms.filter(platform => platform.id.includes('-platform-')).map(platform => platform.x+platform.w/2);
+    assert.ok(x.some((value,index)=>index>0 && value>x[index-1]),`level ${level.id} should travel right`);
+    assert.ok(x.some((value,index)=>index>0 && value<x[index-1]),`level ${level.id} should travel left`);
+    for (const door of [level.doors.fire,level.doors.water]) {
+      assert.ok(level.platforms.some(platform => platform.id === door.platformId),`level ${level.id} door must sit on a platform`);
+      if (door.x < 300) doorsOnLeft++;
+      if (door.x >= 400 && door.x < 1050) doorsNearCenter++;
+      if (door.y < 300) doorsHigh++;
+    }
+    mapNames.add(level.mapName);
+  }
+  assert.equal(mapNames.size,5);
+  assert.ok(doorsOnLeft>0,'some exits must be on the left side');
+  assert.ok(doorsNearCenter>0,'some exits must be near the center');
+  assert.ok(doorsHigh>0,'some exits must be on upper floors');
+});
+
+test('Pemain dapat menjangkau jalur utama, cabang samping, dan jembatan pintas dari spawn', () => {
+  const gravity=1480, jumpSpeed=590, horizontalSpeed=250;
+  const jumpRange=rise=>{
+    if (rise > jumpSpeed*jumpSpeed/(2*gravity)) return -1;
+    const time=(jumpSpeed+Math.sqrt(jumpSpeed*jumpSpeed-2*gravity*Math.max(0,rise)))/gravity;
+    return horizontalSpeed*time;
+  };
+  for (const level of ELEMENTAL_LEVELS) for (const role of ['host','guest']) {
+    const spawn=level.spawn[role];
+    const floor=level.floorSegments.find(segment=>spawn.x>=segment.x && spawn.x<=segment.x+segment.w);
+    assert.ok(floor,`level ${level.id} ${role} spawn must be on a floor segment`);
+    const reachable=new Set();
+    const queue=[{id:'floor',x:floor.x,y:floor.y,w:floor.w,startX:spawn.x}];
+    while(queue.length){
+      const source=queue.shift();
+      for(const platform of level.platforms){
+        if(reachable.has(platform.id)) continue;
+        const gap=source.id==='floor'
+          ? Math.max(0,platform.x-source.startX,source.startX-platform.x-platform.w)
+          : Math.max(0,platform.x-(source.x+source.w),source.x-(platform.x+platform.w));
+        const rise=source.y-platform.y;
+        if(jumpRange(rise)>=gap){reachable.add(platform.id);queue.push(platform);}
+      }
+    }
+    assert.equal(reachable.size,level.platforms.length,`level ${level.id} all platforms should be reachable by ${role}`);
+  }
+});
+
+test('Pijakan wajib tidak terpisah oleh gerbang vertikal yang belum terbuka', () => {
+  for (const level of ELEMENTAL_LEVELS) {
+    if (level.gate.orientation !== 'vertical') continue;
+    const fire=level.switches.find(item=>item.element==='fire');
+    const water=level.switches.find(item=>item.element==='water');
+    const fireSide=fire.x < level.gate.x ? 'left' : 'right';
+    const waterSide=water.x < level.gate.x ? 'left' : 'right';
+    assert.equal(fireSide,waterSide,`level ${level.id} both switches must be reachable before vertical seal opens`);
+  }
+});
+
+test('Kedua pintu dapat berada di sisi atau ketinggian berbeda sehingga akhir level tidak selalu di kanan', () => {
+  const layoutSource=readSource('../js/games/elemental-duo-logic.js');
+  const gameSource=readSource('../js/games/elemental-duo.js');
+  assert.match(layoutSource,/doors:\[6,12\]/);
+  assert.match(layoutSource,/doors:\[6,0\]/);
+  assert.match(layoutSource,/doors:\[11,5\]/);
+  assert.match(gameSource,/const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
+  assert.match(gameSource,/drawExplorationNavigator\(level,host,guest\)/);
 });
 
 test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
@@ -37,19 +118,24 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:3, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
   assert.equal(restored.shards, 8);
+  const migrated = createElementalPlayer('host', {x:1200,y:150,mapVersion:2,complete:true,deaths:7,shards:11}, 10);
+  assert.equal(migrated.x, getElementalLevel(10).spawn.host.x);
+  assert.equal(migrated.complete, false);
+  assert.equal(migrated.deaths, 7);
+  assert.equal(migrated.shards, 11);
 });
 
 test('Collision rectangle dan batas posisi karakter konsisten', () => {
   assert.equal(rectsOverlap({x:0,y:0,w:10,h:10},{x:5,y:5,w:10,h:10}), true);
   assert.equal(rectsOverlap({x:0,y:0,w:10,h:10},{x:11,y:11,w:10,h:10}), false);
   const clamped = clampElementalPlayer({x:2000,y:900,vx:0,vy:0});
-  assert.equal(clamped.x, 942);
-  assert.equal(clamped.y, 520);
+  assert.equal(clamped.x, 1422);
+  assert.equal(clamped.y, 900);
 });
 
 test('Penilaian level memberikan maksimal tiga bintang', () => {
@@ -124,7 +210,11 @@ test('Setiap simpul dan titik checkpoint dapat didekati tanpa berada di zona ele
       const overlapsUnsafeZone = level.hazards.some(hazard => hazard.type === unsafeType && node.x >= hazard.x - 30 && node.x <= hazard.x + hazard.w + 30);
       assert.equal(overlapsUnsafeZone, false, `level ${level.id} simpul ${node.element}`);
     }
-    const overlapsHazard = level.hazards.some(hazard => level.checkpoint.x >= hazard.x - 22 && level.checkpoint.x <= hazard.x + hazard.w + 22);
+    const overlapsHazard = level.hazards.some(hazard => {
+      const nearestX=Math.max(hazard.x,Math.min(level.checkpoint.x,hazard.x+hazard.w));
+      const nearestY=Math.max(hazard.y,Math.min(level.checkpoint.y,hazard.y+hazard.h));
+      return Math.hypot(level.checkpoint.x-nearestX,level.checkpoint.y-nearestY) <= (level.checkpoint.radius || 52);
+    });
     assert.equal(overlapsHazard, false, `level ${level.id} checkpoint`);
   }
 });
@@ -134,14 +224,14 @@ test('Setiap level memiliki dua pijakan aman, penghalang bersama, dan pintu khus
     assert.deepEqual(level.switches.map(item => item.element).sort(), ['fire','water']);
     assert.ok(level.switches.every(item => item.w >= 48 && item.h >= 10));
     for (const plate of level.switches) {
-      const supportedByFloor = plate.y >= 500;
+      const supportedByFloor = level.floorSegments.some(segment => Math.abs(plate.y + plate.h / 2 - segment.y) <= 2 && plate.x >= segment.x && plate.x <= segment.x + segment.w);
       const supportedByPlatform = level.platforms.some(platform =>
         plate.x + plate.w / 2 > platform.x && plate.x - plate.w / 2 < platform.x + platform.w &&
         Math.abs((plate.y + plate.h / 2) - platform.y) <= 2
       );
       assert.ok(supportedByFloor || supportedByPlatform, `level ${level.id} plate ${plate.element} harus berada di lantai atau platform`);
     }
-    assert.ok(level.gate && level.gate.w > 0 && level.gate.h >= 100);
+    assert.ok(level.gate && level.gate.w > 0 && level.gate.h > 0 && Math.max(level.gate.w,level.gate.h) >= 100);
     assert.ok(level.doors.fire && level.doors.water);
     assert.notEqual(level.doors.fire.x, level.doors.water.x);
     assert.equal(level.doors.fire.element, 'fire');
@@ -154,7 +244,8 @@ test('Elemental Duo mengaktifkan pijakan otomatis dan mewajibkan pintu yang sesu
   assert.match(game, /function checkPressurePlate\(\)/);
   assert.match(game, /attemptSwitch\(plate\)/);
   assert.match(game, /const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
-  assert.match(game, /const gateLaneOverlap = localPlayer\.x \+ halfW > level\.gate\.x/);
+  assert.match(game, /if \(!gateIsOpen\(\) && level\.gate\)/);
+  assert.match(game, /rectsOverlap\(bodyNow, gate\)/);
   assert.match(game, /if \(gateIsOpen\(\) && rectsOverlap\(body, ownDoor\)/);
   assert.match(game, /function drawExit\(level, time\)/);
 });
@@ -164,12 +255,24 @@ test('Kamera mengikuti pemain aktif dan tetap memperbesar area di potret maupun 
   const landscape = getElementalViewport(844, 390);
   assert.ok(portrait.viewWidth < 600);
   assert.ok(landscape.viewWidth > portrait.viewWidth);
-  assert.ok(landscape.viewWidth < 960, 'landscape tetap menggunakan kamera follow, bukan seluruh stage');
+  assert.ok(landscape.viewWidth < ELEMENTAL_WORLD_WIDTH, 'landscape tetap menggunakan kamera follow, bukan seluruh stage');
   const start = getElementalCameraTarget({x:80,y:468},{x:120,y:468},landscape.viewWidth,landscape.viewHeight);
   const advanced = getElementalCameraTarget({x:720,y:360},{x:130,y:468},landscape.viewWidth,landscape.viewHeight);
   assert.ok(advanced.x > start.x + 180, 'kamera harus bergeser ketika pemain lokal maju');
-  assert.ok(advanced.x <= 960 - landscape.viewWidth);
+  assert.ok(advanced.x <= ELEMENTAL_WORLD_WIDTH - landscape.viewWidth);
+  const lower = getElementalCameraTarget({x:720,y:850},{x:130,y:850},landscape.viewWidth,landscape.viewHeight);
+  assert.ok(lower.y > start.y, 'kamera juga harus mengikuti pemain ke area bawah');
   assert.ok(advanced.y >= 0);
+});
+
+test('Peta mini menampilkan jalur, pintu, posisi pemain, area kamera dan penunjuk pintu', () => {
+  const game=readSource('../js/games/elemental-duo.js');
+  assert.match(game,/function drawExplorationNavigator\(level, host, guest\)/);
+  assert.match(game,/PETA EKSPLORASI/);
+  assert.match(game,/for \(const element of \['fire','water'\]\)/);
+  assert.match(game,/const camera = \{x:canvasView\.cameraX,y:canvasView\.cameraY/);
+  assert.match(game,/const ownDoor = level\.doors\?\.\[ownElement\] \|\| level\.exit/);
+  assert.match(game,/if \(!inside\)/);
 });
 
 test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi landscape', () => {
@@ -193,9 +296,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.29\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.29\.0/);
-  assert.match(index, /app\.js\?v=0\.29\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.30\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.30\.0/);
+  assert.match(index, /app\.js\?v=0\.30\.0/);
 });
 
 
@@ -249,7 +352,7 @@ test('Sepuluh level Hutan Berbisik memakai blueprint dengan tujuan dan layout be
   assert.ok(firstWorld[9].features.includes('co-op-gate'));
   for (const level of firstWorld) {
     for (const plate of level.switches) {
-      assert.ok(plate.x + (plate.w || 52) / 2 < level.gate.x, `level ${level.id} ${plate.element} plate tidak boleh berada di balik gerbang`);
+      assert.ok(level.platforms.some(platform => plate.x >= platform.x && plate.x <= platform.x + platform.w && Math.abs(plate.y + plate.h/2 - platform.y) <= 2), `level ${level.id} ${plate.element} plate harus ditopang platform`);
     }
   }
 });
@@ -326,7 +429,8 @@ test('Pijakan khusus Bara dan Nira di Dunia 1 dapat dicapai melalui rangkaian lo
       );
       if (!target) continue; // A floor-mounted plate is reachable without a jump.
       const reachable = new Set();
-      const queue = [{ id:'floor', x:0, y:520, w:960, startX:level.spawn[role].x }];
+      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
+      const queue = [{ id:'floor', x:startFloor.x, y:startFloor.y, w:startFloor.w, startX:level.spawn[role].x }];
       while (queue.length) {
         const source = queue.shift();
         for (const platform of level.platforms) {
@@ -370,7 +474,7 @@ test('Sepuluh level Kedalaman Kristal memakai blueprint unik dan tantangan berta
     assert.ok(level.features.length > 0, `level ${level.id} must have authored mechanics`);
     assert.ok(level.platforms.length >= 3, `level ${level.id} must have unique platforms`);
     for (const plate of level.switches) {
-      assert.ok(plate.x + (plate.w || 52) / 2 < level.gate.x, `level ${level.id} ${plate.element} plate must remain before gate`);
+      assert.ok(level.platforms.some(platform => plate.x >= platform.x && plate.x <= platform.x + platform.w && Math.abs(plate.y + plate.h/2 - platform.y) <= 2), `level ${level.id} ${plate.element} plate must be supported`);
     }
   }
 });
@@ -398,8 +502,10 @@ test('Permukaan es meningkatkan momentum sedangkan batu tetap memakai gesekan no
   assert.equal(isElementalPlayerOnIce(onIce, iceLevel), true);
   assert.equal(isElementalPlayerOnIce(onStone, stoneLevel), false);
   assert.ok(getElementalSurfaceFriction(onIce, iceLevel) > getElementalSurfaceFriction(onStone, stoneLevel));
-  const floorIce = {x:220,y:503,grounded:true,supportPlatformId:null};
-  assert.equal(isElementalPlayerOnIce(floorIce, getElementalLevel(11)), true);
+  const crystalIceLevel = getElementalLevel(11);
+  const icePatch = crystalIceLevel.iceZones[0];
+  const floorIce = {x:icePatch.x+20,y:icePatch.y+20,grounded:true,supportPlatformId:null};
+  assert.equal(isElementalPlayerOnIce(floorIce, crystalIceLevel), true);
 });
 
 test('Physics dan renderer benar-benar menggunakan arus serta permukaan es Dunia 2', () => {
@@ -447,7 +553,8 @@ test('Kedua pijakan Dunia 2 berada pada platform aman yang dapat dijangkau dari 
       assert.equal(Boolean(target.cycle), false, `level ${level.id} ${element} plate must not depend on a timed platform`);
       assert.notEqual(target.motion?.axis, 'y', `level ${level.id} ${element} plate must not ride a vertical lift`);
       const reachable = new Set();
-      const queue = [{ id:'floor', x:0, y:520, w:960, startX:level.spawn[role].x }];
+      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
+      const queue = [{ id:'floor', x:startFloor.x, y:startFloor.y, w:startFloor.w, startX:level.spawn[role].x }];
       while (queue.length) {
         const source = queue.shift();
         for (const platform of level.platforms) {
@@ -494,7 +601,7 @@ test('Sepuluh level Kerajaan Bara memakai blueprint unik dengan eskalasi tantang
     assert.ok(level.features.length > 0, `level ${level.id} must have authored mechanics`);
     assert.ok(level.platforms.length >= 3, `level ${level.id} must have a specific platform layout`);
     for (const plate of level.switches) {
-      assert.ok(plate.x + (plate.w || 52) / 2 < level.gate.x, `level ${level.id} ${plate.element} plate must remain before gate`);
+      assert.ok(level.platforms.some(platform => plate.x >= platform.x && plate.x <= platform.x + platform.w && Math.abs(plate.y + plate.h/2 - platform.y) <= 2), `level ${level.id} ${plate.element} plate must be supported`);
     }
   }
 });
@@ -570,7 +677,8 @@ test('Kedua pijakan dan katup dunia Bara berada pada platform stabil yang dapat 
       assert.equal(Boolean(target.cycle), false, `level ${level.id} plate must not depend on a timed platform`);
       assert.notEqual(target.motion?.axis, 'y', `level ${level.id} plate must not ride a vertical lift`);
       const reachable = new Set();
-      const queue = [{ id:'floor', x:0, y:520, w:960, startX:level.spawn[role].x }];
+      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
+      const queue = [{ id:'floor', x:startFloor.x, y:startFloor.y, w:startFloor.w, startX:level.spawn[role].x }];
       while (queue.length) {
         const source = queue.shift();
         for (const platform of level.platforms) {
@@ -623,7 +731,7 @@ test('Sepuluh level Reruntuhan Langit memakai blueprint unik dengan kesulitan be
     assert.ok(level.windZones.length > 0);
     assert.ok(level.platforms.length >= 4);
     for (const plate of level.switches) {
-      assert.ok(plate.x + (plate.w || 52) / 2 < level.gate.x);
+      assert.ok(level.platforms.some(platform => plate.x >= platform.x && plate.x <= platform.x + platform.w && Math.abs(plate.y + plate.h/2 - platform.y) <= 2));
     }
   }
 });
@@ -694,7 +802,8 @@ test('Pijakan Dunia 4 berada di platform stabil yang terjangkau dari spawn dan t
       assert.equal(Boolean(target.cycle), false);
       assert.notEqual(target.motion?.axis, 'y');
       const reachable = new Set();
-      const queue = [{id:'floor',x:0,y:520,w:960,startX:level.spawn[role].x}];
+      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
+      const queue = [{id:'floor',x:startFloor.x,y:startFloor.y,w:startFloor.w,startX:level.spawn[role].x}];
       while (queue.length) {
         const source = queue.shift();
         for (const platform of level.platforms) {
@@ -709,7 +818,6 @@ test('Pijakan Dunia 4 berada di platform stabil yang terjangkau dari spawn dan t
       assert.ok(reachable.has(target.id), `level ${level.id} ${element} plate must be reachable from ${role} spawn`);
     }
     for (const lever of level.windLevers) {
-      assert.ok(lever.x + 18 < level.gate.x, `level ${level.id} lever ${lever.id} must remain before gate`);
       const platform = level.platforms.find(item => lever.x >= item.x && lever.x <= item.x + item.w && Math.abs(lever.y + 28 - item.y) <= 10);
       assert.ok(platform, `level ${level.id} lever ${lever.id} should sit next to a stable platform`);
       assert.equal(Boolean(platform.motion?.axis === 'y' || platform.cycle), false, `level ${level.id} lever ${lever.id} must not depend on a vertical/timed platform`);
@@ -775,10 +883,10 @@ test('Semua kontrol wajib Jantung Kuno berada pada pijakan stabil dan terjangkau
         Math.abs(control.platformY-item.y) <= 3 && !item.motion && !item.cycle
       );
       assert.ok(platform, `level ${level.id} ${control.kind} ${control.id} must sit on a stable platform`);
-      assert.ok(control.x < level.gate.x, `level ${level.id} ${control.kind} ${control.id} must stay before the gate`);
       for (const role of ['host','guest']) {
         const reached = new Set();
-        const queue = [{id:'floor',x:0,y:520,w:960,startX:level.spawn[role].x}];
+        const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
+      const queue = [{id:'floor',x:startFloor.x,y:startFloor.y,w:startFloor.w,startX:level.spawn[role].x}];
         while (queue.length) {
           const source = queue.shift();
           for (const candidate of level.platforms) {

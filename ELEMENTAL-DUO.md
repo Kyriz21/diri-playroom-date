@@ -1,6 +1,22 @@
-# Elemental Duo — Panduan Game (build v0.29.0)
+# Elemental Duo — Panduan Game (build v0.30.0)
 
 **Elemental Duo** adalah platform-puzzle kooperatif untuk dua pemain. Pola permainan menekankan kerja sama dua karakter elemen: melewati jalur platform, menghindari bahaya yang berlawanan, mengumpulkan permata milik karakter sendiri, mengaktifkan pijakan, lalu mencapai pintu masing-masing.
+
+## Peta eksplorasi multi-arah — v0.30.0
+
+Tidak semua level berakhir di ujung kanan. Setiap arena memakai ruang 1440×960 dan jaringan platform bertingkat yang mendorong gerak horizontal serta vertikal.
+
+- **Jalur utama:** 13 platform stabil untuk memastikan pemain selalu punya rute dasar.
+- **Jalur samping:** 5 platform cabang di atas atau di sisi rute utama untuk memancing eksplorasi dan pencarian permata.
+- **Jembatan pintas:** 4 platform yang menghubungkan titik non-berurutan dan membentuk loop/shortcut.
+- **Lantai terputus:** empat pulau lantai membuat pemain harus melompat dan memilih jalur, bukan sekadar berjalan lurus.
+- **Pintu terpisah:** pintu Bara dan Air berada pada node berbeda; koordinatnya bervariasi di sisi kiri, tengah, kanan, dan lantai atas.
+- **Peta mini:** menunjukkan platform, shortcut, hazard, sakelar, permata, pintu, dua pemain, dan area kamera yang sedang terlihat.
+- **Penunjuk arah:** indikator di tepi viewport memberi arah menuju pintu karakter lokal saat pintu belum terlihat.
+
+Lima bentuk ruang adalah Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno. Pola dipakai berulang untuk 50 level, tetapi koordinat pintu, switch, gem, hazard, dan platform tetap dipetakan menurut level serta mekanik dunia masing-masing.
+
+`ELEMENTAL_MAP_VERSION` dinaikkan ke 3. Saat build baru dibuka, koordinat pemain dari layout lama dipindahkan ke spawn yang valid; progres jumlah jatuh dan serpihan tetap dibawa, sedangkan status selesai lama dibersihkan agar pemain tidak terkunci.
 
 ## Karakter dan aturan elemen
 
@@ -84,7 +100,7 @@ Hutan Berbisik level 01–10 telah diganti dari layout generik menjadi 10 bluepr
 - Pijakan otomatis mendeteksi karakter ketika berdiri di lantai maupun platform. Pijakan tidak diletakkan di balik gerbang atau pada zona bahaya yang mematikan karakter pemiliknya.
 - Permukaan jamur (`kind: bounce`) memberikan impuls pantulan saat karakter mendarat.
 
-Catatan historis v0.25.0: pada build pertama Dunia 1, level 11–50 masih memakai generator lama. Status terkini telah berubah; seluruh level 01–50 kini mempunyai blueprint khusus hingga Dunia 5 pada v0.29.0.
+Catatan historis v0.25.0: pada build pertama Dunia 1, level 11–50 masih memakai generator lama. Status terkini telah berubah; seluruh level 01–50 kini mempunyai blueprint khusus hingga Dunia 5 pada v0.29.0; v0.30.0 menambahkan peta eksplorasi multi-arah.
 
 Lihat `ELEMENTAL-WORLD-1.md` untuk tabel level dan `REVIEW-BUILD-QA.md` untuk checklist pengujian.
 
@@ -93,7 +109,7 @@ Lihat `ELEMENTAL-WORLD-1.md` untuk tabel level dan `REVIEW-BUILD-QA.md` untuk ch
 
 Kedalaman Kristal level 11–20 telah menerima blueprint khusus. Mekanik aktif mencakup permukaan es yang mengurangi gesekan, zona arus yang memberi dorongan, arus berdenyut/berbalik arah, lift vertikal, jembatan kristal berkala, dan hazard aktif/nonaktif. Semua fase mekanik memakai jam Firebase bersama dari `/.info/serverTimeOffset`. Hazard yang padam diabaikan oleh renderer dan collision. Tiap pressure plate tetap ditempatkan sebelum gerbang dan tidak bergantung pada platform timed atau lift vertikal. Lihat `ELEMENTAL-WORLD-2.md` untuk blueprint 10 level.
 
-Catatan historis v0.26.0: pada saat Dunia 2 diterbitkan, level 21–50 belum mendapat blueprint khusus. Implementasi terbaru kini mencakup seluruh level 01–50 pada v0.29.0.
+Catatan historis v0.26.0: pada saat Dunia 2 diterbitkan, level 21–50 belum mendapat blueprint khusus. Implementasi terbaru kini mencakup seluruh level 01–50 pada v0.29.0; v0.30.0 menambahkan peta eksplorasi multi-arah.
 
 
 ## Implementasi Dunia 3 — v0.27.0

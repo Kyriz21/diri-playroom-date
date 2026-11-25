@@ -1,12 +1,12 @@
 import { db, ref, set, update, onValue, runTransaction } from '../firebase.js';
 import {
-  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT,
+  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
   createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap,
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.29.0';
+} from './elemental-duo-logic.js?v=0.30.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -26,7 +26,7 @@ export function mountElementalDuo(root, context) {
   const ownPlayerRef = ref(db, `${basePath}/players/${role}`);
   let data = {};
   let localPlayer = createElementalPlayer(role);
-  let remoteRender = { x: 112, y: 468, dir: -1 };
+  let remoteRender = createElementalPlayer(otherRole);
   let remoteTarget = { ...remoteRender };
   let currentLevel = 1;
   let currentView = '';
@@ -123,7 +123,7 @@ export function mountElementalDuo(root, context) {
           </div>
           <div class="ed-live-notice" data-ed-notice aria-live="polite" hidden></div>
           <div class="ed-rotate-prompt" data-ed-rotate-prompt hidden><div class="ed-rotate-icon">↻</div><strong>Putar perangkat ke samping</strong><span>Mode layar penuh menggunakan posisi landscape agar arena lebih luas.</span><button type="button" data-ed-action="portrait">Kembali ke mode potret</button></div>
-          <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="960" height="560" aria-label="Arena platformer Elemental Duo"></canvas></div>
+          <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="${ELEMENTAL_WORLD_WIDTH}" height="${ELEMENTAL_WORLD_HEIGHT}" aria-label="Arena platformer eksplorasi dua dimensi Elemental Duo"></canvas></div>
           <div class="ed-touch-controls" aria-label="Kontrol permainan">
             <div class="ed-move-controls"><button type="button" data-ed-control="left" aria-label="Bergerak ke kiri">←</button><button type="button" data-ed-control="right" aria-label="Bergerak ke kanan">→</button></div>
             <div class="ed-action-controls"><button type="button" data-ed-control="interact" class="ed-interact-control">AKSI <small>E</small></button><button type="button" data-ed-control="jump" class="ed-jump-control">LOMPAT <small>SPACE</small></button></div>
@@ -347,7 +347,7 @@ export function mountElementalDuo(root, context) {
     const setText = (selector, value) => { const el = root.querySelector(selector); if (el) el.textContent = value; };
     setText('[data-ed-world]', level.worldName.toUpperCase());
     setText('[data-ed-level-title]', `${String(level.id).padStart(2,'0')} · ${level.name}`);
-    setText('[data-ed-level-note]', `${level.difficultyLabel || 'Petualangan'} · ${level.note}`);
+    setText('[data-ed-level-note]', `${level.mapName || 'Jelajah arena'} · ${level.difficultyLabel || 'Petualangan'} · ${level.note}`);
     setText('[data-ed-level-number]', String(level.id).padStart(2,'0'));
     const sequence = level.switchSequence || [];
     const sequenceIndex = Math.max(0, Number(levelState().switches?.sequenceIndex) || 0);
@@ -523,7 +523,7 @@ export function mountElementalDuo(root, context) {
       x:Math.round(localPlayer.x*10)/10, y:Math.round(localPlayer.y*10)/10,
       vx:Math.round(localPlayer.vx*10)/10, vy:Math.round(localPlayer.vy*10)/10,
       dir:localPlayer.dir, grounded:Boolean(localPlayer.grounded), ready:true,
-      complete:Boolean(localPlayer.complete), deaths:Number(localPlayer.deaths)||0,
+      complete:Boolean(localPlayer.complete), mapVersion:ELEMENTAL_MAP_VERSION, deaths:Number(localPlayer.deaths)||0,
       levelDeaths:Number(localPlayer.levelDeaths)||0, shards:Number(localPlayer.shards)||0, updatedAt:now()
     };
   }
@@ -704,6 +704,8 @@ export function mountElementalDuo(root, context) {
   function physics(dt) {
     if (!data.meta || data.meta.phase !== 'playing' || localPlayer.complete) return;
     const level = levelData();
+    const previousPlayerX = localPlayer.x;
+    const previousPlayerY = localPlayer.y;
     const elapsedMs = levelElapsedMs();
     const previousElapsedMs = Math.max(0, elapsedMs - dt * 1000);
     const platforms = level.platforms.map(platform => ({
@@ -764,7 +766,7 @@ export function mountElementalDuo(root, context) {
     localPlayer.vx = Math.max(-390, Math.min(390, localPlayer.vx));
     localPlayer.vy = Math.max(-760, Math.min(760, localPlayer.vy));
     localPlayer.x += localPlayer.vx * dt;
-    localPlayer.x = Math.max(halfW + 3, Math.min(ELEMENTAL_WORLD_WIDTH - halfW - 3, localPlayer.x));
+    localPlayer.x = Math.max(halfW + 3, Math.min((level.worldWidth || ELEMENTAL_WORLD_WIDTH) - halfW - 3, localPlayer.x));
     for (const entry of platforms) {
       const platform = entry.current;
       if (!platform.active) continue;
@@ -775,22 +777,13 @@ export function mountElementalDuo(root, context) {
       else if (localPlayer.vx < 0 && previousX - halfW >= platform.x + platform.w - 4) localPlayer.x = platform.x + platform.w + halfW;
       localPlayer.vx = 0;
     }
-    if (!gateIsOpen() && level.gate) {
-      const gateLaneOverlap = localPlayer.x + halfW > level.gate.x && localPlayer.x - halfW < level.gate.x + level.gate.w;
-      if (gateLaneOverlap) {
-        const previousX = localPlayer.x - localPlayer.vx * dt;
-        const cameFromLeft = previousX <= level.gate.x + level.gate.w / 2;
-        localPlayer.x = cameFromLeft ? level.gate.x - halfW : level.gate.x + level.gate.w + halfW;
-        localPlayer.vx = 0;
-      }
-    }
-
     const previousBottom = localPlayer.y + halfH;
     localPlayer.vy += ELEMENTAL_GRAVITY * dt * (level.modifier === 'wind' ? 0.98 : 1);
     localPlayer.y += localPlayer.vy * dt;
     localPlayer.grounded = false;
     localPlayer.supportPlatformId = null;
-    const collisionPlatforms = [...platforms.filter(item => item.current.active).map(item => item.current), { id:'main-floor', x:0, y:520, w:ELEMENTAL_WORLD_WIDTH, h:50, kind:'floor' }];
+    const floorPlatforms = (level.floorSegments || [{ id:'main-floor', x:0, y:ELEMENTAL_FLOOR_Y, w:ELEMENTAL_WORLD_WIDTH, h:60 }]).map(segment => ({ ...segment, kind:'floor' }));
+    const collisionPlatforms = [...platforms.filter(item => item.current.active).map(item => item.current), ...floorPlatforms];
     for (const platform of collisionPlatforms) {
       const horizontal = localPlayer.x + halfW > platform.x && localPlayer.x - halfW < platform.x + platform.w;
       const bottom = localPlayer.y + halfH;
@@ -811,7 +804,39 @@ export function mountElementalDuo(root, context) {
       }
     }
 
-    if (localPlayer.y > 620) resetAfterHit();
+    if (localPlayer.y > (level.worldHeight || ELEMENTAL_WORLD_HEIGHT) + 55) {
+      resetAfterHit();
+      return;
+    }
+
+    // Closed seals are solid 2D rectangles. Depending on their shape, the
+    // player is stopped horizontally or vertically; a high route can bypass
+    // a tall seal, which makes exploration and alternate routes meaningful.
+    if (!gateIsOpen() && level.gate) {
+      const gate = level.gate;
+      const bodyNow = { x:localPlayer.x-halfW, y:localPlayer.y-halfH, w:halfW*2, h:halfH*2 };
+      if (rectsOverlap(bodyNow, gate)) {
+        const overlapX = Math.min(bodyNow.x+bodyNow.w,gate.x+gate.w)-Math.max(bodyNow.x,gate.x);
+        const overlapY = Math.min(bodyNow.y+bodyNow.h,gate.y+gate.h)-Math.max(bodyNow.y,gate.y);
+        if (overlapX <= overlapY) {
+          if (previousPlayerX+halfW <= gate.x+4) localPlayer.x = gate.x-halfW-1;
+          else if (previousPlayerX-halfW >= gate.x+gate.w-4) localPlayer.x = gate.x+gate.w+halfW+1;
+          else localPlayer.x += (localPlayer.x < gate.x+gate.w/2 ? -1 : 1) * (overlapX+1);
+          localPlayer.vx = 0;
+        } else {
+          if (previousPlayerY+halfH <= gate.y+4) {
+            localPlayer.y = gate.y-halfH-1;
+            localPlayer.grounded = true;
+          } else if (previousPlayerY-halfH >= gate.y+gate.h-4) {
+            localPlayer.y = gate.y+gate.h+halfH+1;
+          } else {
+            localPlayer.y += (localPlayer.y < gate.y+gate.h/2 ? -1 : 1) * (overlapY+1);
+          }
+          localPlayer.vy = 0;
+        }
+      }
+    }
+
     const body = { x:localPlayer.x-halfW, y:localPlayer.y-halfH, w:halfW*2, h:halfH*2 };
     for (const hazard of hazards) {
       if (hazard.active === false || !rectsOverlap(body, hazard)) continue;
@@ -819,9 +844,9 @@ export function mountElementalDuo(root, context) {
       if (hazard.type === 'steam' || hazard.type !== safeType) { resetAfterHit(); break; }
     }
 
-    if (localPlayer.x > level.checkpoint.x && !localCheckpoint) {
+    if (!localCheckpoint && Math.hypot(localPlayer.x-level.checkpoint.x, localPlayer.y-level.checkpoint.y) <= (level.checkpoint.radius || 52)) {
       localCheckpoint = { x:level.checkpoint.x, y:level.checkpoint.y };
-      notify('Titik aman tercapai. Teruskan!');
+      notify('Titik aman tercapai. Kalian bisa menjelajah lebih jauh!');
     }
     checkPressurePlate();
     collectNearbyGem();
@@ -844,35 +869,54 @@ export function mountElementalDuo(root, context) {
 
   function drawBackground(level, time) {
     const c = level.colors;
-    const gradient = ctx.createLinearGradient(0,0,0,ELEMENTAL_WORLD_HEIGHT);
-    gradient.addColorStop(0,c.sky); gradient.addColorStop(1,c.sky2);
-    ctx.fillStyle = gradient; ctx.fillRect(0,0,ELEMENTAL_WORLD_WIDTH,ELEMENTAL_WORLD_HEIGHT);
+    const floorY = level.floorY || ELEMENTAL_FLOOR_Y;
+    const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
+    const height = level.worldHeight || ELEMENTAL_WORLD_HEIGHT;
+    const gradient = ctx.createLinearGradient(0,0,0,height);
+    gradient.addColorStop(0,c.sky); gradient.addColorStop(.58,c.sky2); gradient.addColorStop(1,c.sky2);
+    ctx.fillStyle = gradient; ctx.fillRect(0,0,width,height);
+    // Distant layered silhouettes give the tall rooms depth while the camera scrolls.
     ctx.save();
-    ctx.globalAlpha = .18;
-    for (let i=0;i<7;i++) {
-      const x = ((i*177 + (time*.008*(i%2?1:-1))) % 1120) - 80;
-      const y = 95 + (i%3)*70;
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x,y,28+(i%3)*8,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha = .22;
+    for (let i=0;i<9;i++) {
+      const drift = ((i*191 + time*.006*(i%2 ? 1 : -1)) % (width+240) + width+240) % (width+240) - 120;
+      const y = 115 + (i%4)*108;
+      const r = 28 + (i%3)*9;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(drift,y,r*1.6,r*.55,0,0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
-    ctx.fillStyle = c.far;
-    ctx.beginPath(); ctx.moveTo(0,360);
-    for (let x=0;x<=ELEMENTAL_WORLD_WIDTH;x+=80) ctx.quadraticCurveTo(x+40,285+(x%160)*.12,x+80,360);
-    ctx.lineTo(ELEMENTAL_WORLD_WIDTH,520); ctx.lineTo(0,520); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = c.near;
-    ctx.beginPath(); ctx.moveTo(0,430);
-    for (let x=0;x<=ELEMENTAL_WORLD_WIDTH;x+=90) ctx.quadraticCurveTo(x+45,390+(x%180)*.08,x+90,430);
-    ctx.lineTo(ELEMENTAL_WORLD_WIDTH,520); ctx.lineTo(0,520); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = c.ground; ctx.fillRect(0,520,ELEMENTAL_WORLD_WIDTH,40);
-    ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(0,520,ELEMENTAL_WORLD_WIDTH,4);
+    for (const [baseY,color,alpha,step] of [[floorY-190,c.far,.54,115],[floorY-105,c.near,.72,92]]) {
+      ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(0,baseY);
+      for (let x=0;x<=width+step;x+=step) {
+        const ridge = baseY - 48 - ((Math.floor(x/step)%3)*19);
+        ctx.quadraticCurveTo(x+step/2,ridge,x+step,baseY+10);
+      }
+      ctx.lineTo(width,height); ctx.lineTo(0,height); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
     ctx.save(); ctx.globalAlpha=.22;
-    for(let i=0;i<34;i++){
-      const x=(i*83+23)%960, y=80+(i*47)%360;
+    for(let i=0;i<66;i++){
+      const x=(i*83+23)%width, y=45+(i*67)%(floorY-95);
       ctx.fillStyle=i%2?'#fff':'#ffe7b6'; ctx.beginPath(); ctx.arc(x,y,1.2+(i%3),0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
   }
 
+  function drawFloorSegments(level) {
+    const segments = level.floorSegments || [{x:0,y:ELEMENTAL_FLOOR_Y,w:ELEMENTAL_WORLD_WIDTH,h:60}];
+    for (const segment of segments) {
+      const ground = ctx.createLinearGradient(0,segment.y,0,segment.y+segment.h);
+      ground.addColorStop(0,level.colors.ground); ground.addColorStop(1,'rgba(36,35,58,.94)');
+      ctx.fillStyle = ground; roundedRect(ctx,segment.x,segment.y,segment.w,segment.h,7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.24)'; roundedRect(ctx,segment.x+4,segment.y+3,segment.w-8,4,2); ctx.fill();
+      ctx.save(); ctx.globalAlpha=.18; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
+      for(let x=segment.x+18;x<segment.x+segment.w-8;x+=34){
+        ctx.beginPath(); ctx.moveTo(x,segment.y+14); ctx.lineTo(x+8,segment.y+25+(x%3)*3); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
 
   function drawSkyDecor(level, time) {
     if (level.worldIndex !== 4) return;
@@ -1197,8 +1241,13 @@ export function mountElementalDuo(root, context) {
       g.addColorStop(0,'#6e617f'); g.addColorStop(.5,'#d9c9e8'); g.addColorStop(1,'#6e617f');
       ctx.fillStyle=g; roundedRect(ctx,gate.x,gate.y,gate.w,gate.h,8); ctx.fill();
       ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=3;
-      for(let y=gate.y+12;y<gate.y+gate.h-8;y+=25){ctx.beginPath();ctx.moveTo(gate.x+3,y);ctx.lineTo(gate.x+gate.w-3,y);ctx.stroke();}
-      ctx.fillStyle='#fff4c8'; ctx.font='bold 17px system-ui'; ctx.textAlign='center'; ctx.fillText('✦',gate.x+gate.w/2,gate.y-12);
+      if (gate.w >= gate.h) {
+        for(let x=gate.x+12;x<gate.x+gate.w-8;x+=25){ctx.beginPath();ctx.moveTo(x,gate.y+3);ctx.lineTo(x,gate.y+gate.h-3);ctx.stroke();}
+        ctx.fillStyle='#fff4c8'; ctx.font='bold 17px system-ui'; ctx.textAlign='center'; ctx.fillText('✦',gate.x+gate.w/2,gate.y-12);
+      } else {
+        for(let y=gate.y+12;y<gate.y+gate.h-8;y+=25){ctx.beginPath();ctx.moveTo(gate.x+3,y);ctx.lineTo(gate.x+gate.w-3,y);ctx.stroke();}
+        ctx.fillStyle='#fff4c8'; ctx.font='bold 17px system-ui'; ctx.textAlign='center'; ctx.fillText('✦',gate.x+gate.w/2,gate.y-12);
+      }
       ctx.restore();
     }
     const doors = level.doors || { fire:level.exit, water:level.exit };
@@ -1250,6 +1299,122 @@ export function mountElementalDuo(root, context) {
     ctx.restore();
   }
 
+  function drawExplorationNavigator(level, host, guest) {
+    if (!canvas || !ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const pixelScale = canvas.width / Math.max(1, rect.width);
+    const margin = 8 * pixelScale;
+    const panelW = 116 * pixelScale;
+    const panelH = 88 * pixelScale;
+    const panelX = canvas.width - panelW - margin;
+    const panelY = margin;
+    const mapX = panelX + 7 * pixelScale;
+    const mapY = panelY + 18 * pixelScale;
+    const mapW = panelW - 14 * pixelScale;
+    const mapH = panelH - 25 * pixelScale;
+    const toMapX = worldX => mapX + (worldX / (level.worldWidth || ELEMENTAL_WORLD_WIDTH)) * mapW;
+    const toMapY = worldY => mapY + (worldY / (level.worldHeight || ELEMENTAL_WORLD_HEIGHT)) * mapH;
+    const ownElement = CHARACTER[role].element;
+    const ownDoor = level.doors?.[ownElement] || level.exit;
+    const ownColor = ownElement === 'fire' ? '#ffab65' : '#76e1ef';
+
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.globalAlpha = .94;
+    ctx.fillStyle = 'rgba(22,27,47,.80)';
+    roundedRect(ctx,panelX,panelY,panelW,panelH,9*pixelScale); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.36)'; ctx.lineWidth = Math.max(1,pixelScale); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.font = `800 ${7.5*pixelScale}px system-ui`; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('PETA EKSPLORASI',panelX+8*pixelScale,panelY+9*pixelScale);
+
+    // Floor, platforms and shortcut bridges show the room's multiple routes.
+    ctx.lineCap='round';
+    for (const floor of level.floorSegments || []) {
+      ctx.strokeStyle='rgba(255,255,255,.34)'; ctx.lineWidth=3*pixelScale;
+      ctx.beginPath(); ctx.moveTo(toMapX(floor.x),toMapY(floor.y)); ctx.lineTo(toMapX(floor.x+floor.w),toMapY(floor.y)); ctx.stroke();
+    }
+    const elapsedMs=levelElapsedMs();
+    for (const platform of level.platforms || []) {
+      const state = getElementalPlatformState(platform,elapsedMs);
+      if (!state.active) continue;
+      ctx.strokeStyle = platform.id?.includes('-shortcut-') ? 'rgba(255,233,164,.95)' : platform.id?.includes('-side-') ? 'rgba(184,224,255,.92)' : 'rgba(255,255,255,.74)';
+      ctx.lineWidth = (platform.id?.includes('-shortcut-') ? 2.4 : 1.8)*pixelScale;
+      ctx.beginPath(); ctx.moveTo(toMapX(state.x),toMapY(state.y)); ctx.lineTo(toMapX(state.x+state.w),toMapY(state.y)); ctx.stroke();
+    }
+    if (level.gate && !gateIsOpen()) {
+      ctx.strokeStyle='rgba(255,178,131,.95)'; ctx.lineWidth=3*pixelScale;
+      ctx.beginPath();
+      ctx.moveTo(toMapX(level.gate.x),toMapY(level.gate.y));
+      ctx.lineTo(toMapX(level.gate.x+level.gate.w),toMapY(level.gate.y+level.gate.h));
+      ctx.stroke();
+    }
+    for (const hazardSource of level.hazards || []) {
+      if (hazardSource.valveId && valveIsOpen(hazardSource.valveId)) continue;
+      const hazard=getElementalHazardState(hazardSource,elapsedMs);
+      if (hazard.active===false) continue;
+      ctx.fillStyle=hazard.type==='fire' || hazard.type==='steam' ? '#ff9074' : '#63cbe1';
+      ctx.beginPath(); ctx.arc(toMapX(hazard.x+hazard.w/2),toMapY(hazard.y+hazard.h/2),1.7*pixelScale,0,Math.PI*2); ctx.fill();
+    }
+    for (const element of ['fire','water']) {
+      const door = level.doors?.[element];
+      if (!door) continue;
+      ctx.fillStyle = element === 'fire' ? '#ff9c58' : '#64d6e7';
+      ctx.beginPath(); ctx.arc(toMapX(door.x+door.w/2),toMapY(door.y+door.h/2),2.7*pixelScale,0,Math.PI*2); ctx.fill();
+      const plate=level.switches.find(item=>item.element===element);
+      if (plate) {
+        ctx.fillStyle=switchIsOn(element)?'#9dffc3':(element==='fire'?'#ffd1a4':'#c3f9ff');
+        ctx.beginPath(); ctx.arc(toMapX(plate.x),toMapY(plate.y),2.2*pixelScale,0,Math.PI*2); ctx.fill();
+      }
+      const gem=level.gems.find(item=>item.element===element);
+      if (gem && !levelState().gems?.[element]) {
+        ctx.fillStyle='#ffe69b'; ctx.beginPath(); ctx.arc(toMapX(gem.x),toMapY(gem.y),1.9*pixelScale,0,Math.PI*2); ctx.fill();
+      }
+    }
+    const camera = {x:canvasView.cameraX,y:canvasView.cameraY,w:canvasView.viewWidth,h:canvasView.viewHeight};
+    ctx.strokeStyle='rgba(255,255,255,.78)'; ctx.lineWidth=1.25*pixelScale;
+    ctx.strokeRect(toMapX(camera.x),toMapY(camera.y),(camera.w/(level.worldWidth||ELEMENTAL_WORLD_WIDTH))*mapW,(camera.h/(level.worldHeight||ELEMENTAL_WORLD_HEIGHT))*mapH);
+    const playerDot = (player,color) => {
+      if (!player) return;
+      ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=5*pixelScale;
+      ctx.beginPath(); ctx.arc(toMapX(player.x),toMapY(player.y),3.1*pixelScale,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+    };
+    playerDot(host,'#ff9e5e'); playerDot(guest,'#65d8e8');
+    ctx.fillStyle='rgba(255,255,255,.78)';
+    ctx.font=`600 ${5.5*pixelScale}px system-ui`; ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.fillText('✦ Bara  ✧ Air',panelX+panelW-7*pixelScale,panelY+panelH-3*pixelScale);
+
+    // When a player's own door is outside the camera, place a directional
+    // marker at the edge of the visible screen so exploration never feels lost.
+    if (ownDoor && !localPlayer.complete) {
+      const targetX=(ownDoor.x+ownDoor.w/2-canvasView.cameraX)*canvasView.zoom;
+      const targetY=(ownDoor.y+ownDoor.h/2-canvasView.cameraY)*canvasView.zoom;
+      const inside=targetX>=0 && targetX<=canvas.width && targetY>=0 && targetY<=canvas.height;
+      if (!inside) {
+        const centerX=canvas.width/2, centerY=canvas.height/2;
+        const angle=Math.atan2(targetY-centerY,targetX-centerX);
+        const inset=17*pixelScale;
+        const candidates=[];
+        const dx=Math.cos(angle), dy=Math.sin(angle);
+        if (dx>0) candidates.push((canvas.width-inset-centerX)/dx);
+        if (dx<0) candidates.push((inset-centerX)/dx);
+        if (dy>0) candidates.push((canvas.height-inset-centerY)/dy);
+        if (dy<0) candidates.push((inset-centerY)/dy);
+        const distance=Math.min(...candidates.filter(value=>value>0));
+        let arrowX=centerX+dx*distance, arrowY=centerY+dy*distance;
+        if (arrowX>panelX-7*pixelScale && arrowY<panelY+panelH+7*pixelScale) {
+          arrowX=Math.max(inset,Math.min(canvas.width-panelW-18*pixelScale,arrowX));
+          arrowY=Math.max(panelY+panelH+9*pixelScale,arrowY);
+        }
+        ctx.save(); ctx.translate(arrowX,arrowY); ctx.rotate(angle);
+        ctx.fillStyle=ownColor; ctx.shadowColor=ownColor; ctx.shadowBlur=9*pixelScale;
+        ctx.beginPath(); ctx.moveTo(10*pixelScale,0); ctx.lineTo(-7*pixelScale,-6*pixelScale); ctx.lineTo(-4*pixelScale,0); ctx.lineTo(-7*pixelScale,6*pixelScale); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawScene(time, dt = 1 / 60) {
     if (!ctx || currentView !== 'game') return;
     resizeCanvasViewport();
@@ -1260,6 +1425,7 @@ export function mountElementalDuo(root, context) {
     const z = canvasView.zoom;
     ctx.setTransform(z,0,0,z,-canvasView.cameraX*z,-canvasView.cameraY*z);
     drawBackground(level,time);
+    drawFloorSegments(level);
     drawSkyDecor(level,time);
     drawAncientDecor(level,time);
     const elapsedMs = levelElapsedMs();
@@ -1279,8 +1445,9 @@ export function mountElementalDuo(root, context) {
     drawSpirit(host,'fire',role!=='host',time);
     drawSpirit(guest,'water',role!=='guest',time);
     // Objective and transient feedback are shown in the HUD outside the arena.
-    // Keep the canvas completely clear so platform edges and characters remain visible.
+    // Keep the world canvas clear, then draw a compact navigation overlay in screen space.
     ctx.restore();
+    drawExplorationNavigator(level,host,guest);
   }
 
   function frame(timestamp) {
@@ -1309,8 +1476,12 @@ export function mountElementalDuo(root, context) {
     if (!data.meta) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
-    if (other && Number.isFinite(other.x) && Number.isFinite(other.y)) {
+    if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {
       remoteTarget = { x:other.x, y:other.y, dir:other.dir || (otherRole==='guest'?-1:1), complete:Boolean(other.complete) };
+      if (!lastFrame) remoteRender = { ...remoteTarget };
+    } else {
+      const safePartnerSpawn = createElementalPlayer(otherRole);
+      remoteTarget = { x:safePartnerSpawn.x, y:safePartnerSpawn.y, dir:safePartnerSpawn.dir, complete:false };
       if (!lastFrame) remoteRender = { ...remoteTarget };
     }
     updateViewFromData();

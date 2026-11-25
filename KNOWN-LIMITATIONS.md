@@ -47,6 +47,12 @@
 - Balloon Pop mengakhiri ronde saat snapshot statistik menunjukkan salah satu pemain memiliki 0 nyawa. Waktu hasil yang muncul pada perangkat kedua tetap bergantung pada sinkronisasi Firebase.
 
 
+## Elemental Duo build v0.30.0 — peta eksplorasi
+- Peta kini mempunyai jalur utama, cabang dan shortcut untuk 50 level; pengujian reachability geometri memastikan platform bisa dijangkau dengan parameter lompatan saat ini. Ini belum membuktikan semua kemungkinan jalur saat hazard aktif, fase platform bergerak, atau koordinasi dua pemain.
+- Peta mini dan penunjuk pintu adalah bantuan navigasi, bukan fog-of-war; keseluruhan struktur ruangan terlihat pada minimap.
+- Karena versi map naik ke 3, koordinat pemain dari build lama akan di-reset ke spawn pada level berjalan ketika build baru pertama kali dimuat. Progres level/serpihan/jumlah jatuh tetap dijaga.
+- Sinkronisasi gerakan dan pengalaman kamera/mini-map pada dua HP perlu diuji langsung setelah deployment.
+
 ## Elemental Duo build v0.29.0
 - Blueprint khusus sekarang mencakup seluruh level 01–50 pada lima dunia. Ini belum membuktikan semua rute terasa seimbang atau menyenangkan; playtest dua perangkat tetap diperlukan.
 - Gameplay end-to-end dengan Firebase aktif pada dua HP belum dilakukan dari lingkungan build ini, termasuk transisi level 40–41, interaksi empat segel level 49–50, reconnect, dan sinkronisasi fase mekanik.

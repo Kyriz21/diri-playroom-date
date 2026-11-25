@@ -1,35 +1,36 @@
-# Mulai di sini — Diri. Playroom Date v0.29.0
+# Mulai di sini — Diri. Playroom Date v0.30.0
 
-## Perubahan terbaru v0.29.0 — Dunia 5: Jantung Kuno
-- Level 41–50 kini memakai 10 blueprint khusus; seluruh 50 level telah memiliki desain level tersendiri.
-- Dunia final menggabungkan es, arus, angin, lava, air, uap, katup, tuas, platform bergerak, dan puzzle dua pemain.
-- Level 42, 46, 49, dan 50 mewajibkan katup elemen; level 43, 48, 49, dan 50 mewajibkan tuas angin.
-- Level 44, 49, dan 50 meminta Nira mengaktifkan pijakan lebih dahulu, kemudian Bara.
-- Level 50 — Penyatuan Elemen — menjadi ujian gabungan seluruh mekanik.
+## Perubahan terbaru v0.30.0 — Adventure Map Elemental Duo
+- Seluruh 50 level kini memakai peta eksplorasi 2D bertingkat dengan perjalanan kiri/kanan dan naik/turun.
+- Setiap level memiliki 13 platform utama, 5 platform cabang, dan 4 jembatan pintas; tidak lagi satu koridor menuju ujung kanan.
+- Lima pola peta berulang dengan variasi geometri dan posisi pintu: Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, serta Lingkaran Kuno.
+- Peta mini menandai platform, hazard, sakelar, permata, kedua pintu, kedua pemain, dan area kamera. Penunjuk arah muncul saat pintu karakter di luar layar.
+- Posisi dari peta versi lama dimigrasikan ke spawn peta baru; jumlah jatuh dan serpihan tetap disimpan.
 
-## Memasang v0.29.0
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.29.0_Elemental_Final_World_Implementation.zip`.
+## Memasang v0.30.0
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.30.0_Elemental_Adventure_Maps.zip`.
 2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
-3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, dan dokumentasi ikut terunggah.
-4. Tunggu deployment selesai lalu refresh kedua perangkat.
-5. Firebase Rules tidak berubah; Rules yang sudah terpasang tetap berlaku.
+3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
+4. Tunggu deployment selesai lalu refresh kedua perangkat. Karena `ELEMENTAL_MAP_VERSION` berubah ke 3, posisi pemain yang berasal dari peta lama akan kembali ke spawn pada level aktif; progres level dan perolehan tetap disimpan.
+5. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
 
-## Cakupan level v0.29.0
-- Level 01–10: Hutan Berbisik — blueprint khusus.
-- Level 11–20: Kedalaman Kristal — blueprint khusus.
-- Level 21–30: Kerajaan Bara — blueprint khusus.
-- Level 31–40: Reruntuhan Langit — blueprint khusus.
-- Level 41–50: Jantung Kuno — blueprint khusus; dunia final.
+## Cakupan petualangan
+- Level 01–10: Hutan Berbisik.
+- Level 11–20: Kedalaman Kristal.
+- Level 21–30: Kerajaan Bara.
+- Level 31–40: Reruntuhan Langit.
+- Level 41–50: Jantung Kuno.
+
+Blueprint tema, hazard, sakelar, katup, tuas angin, dan urutan puzzle dari lima dunia tetap dipertahankan. Layout ruang kini disusun sebagai jaringan jalur cabang dan loop.
 
 ## Verifikasi build
-- `npm test`: **181/181 tes lulus**.
+- `npm test`: **186/186 tes lulus**.
 - Seluruh file JavaScript lolos `node --check`.
-- `firebase-database.rules.json` valid dan tidak berubah dari versi sebelumnya.
-- Pengujian otomatis belum menggantikan uji end-to-end dua HP dengan Firebase aktif.
-- Baca `ELEMENTAL-WORLD-5.md` untuk blueprint final dan `REVIEW-BUILD-QA.md` bagian K untuk checklist perangkat.
+- `firebase-database.rules.json` valid dan tidak berubah.
+- Pengujian otomatis reachability geometri telah mencakup 50 level dan kedua peran pemain. Pengujian dua HP dengan Firebase aktif tetap diperlukan setelah deployment.
 
 ## Hal yang dipertahankan
 - Photobooth tetap menggunakan renderer Canvas yang sama untuk pratinjau dan ekspor.
-- Elemental Duo mempertahankan kamera yang mengikuti karakter lokal serta pilihan Mode Potret dan Layar Penuh.
-- Mini-game lain dan sistem room Firebase tetap disertakan.
-- Tidak ada dependensi npm baru dan Firebase Rules tidak perlu dipublikasikan ulang.
+- Kamera Elemental Duo tetap mengikuti pemain lokal; Mode Potret dan Layar Penuh tetap tersedia.
+- Lima mini-game, sistem room, serta progres 50 level tetap disertakan.
+- Tidak ada dependensi npm baru.

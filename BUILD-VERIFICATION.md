@@ -1,3 +1,29 @@
+# Build Verification — Diri. Playroom Date v0.30.0
+
+## Pemeriksaan terbaru v0.30.0
+- Unit tests: **186/186 passed** (`npm test`).
+- JavaScript syntax checks: passed untuk seluruh file di `js/`.
+- Firebase Rules JSON: valid; dibandingkan dengan paket v0.29.0 dan tidak berubah.
+- Seluruh 50 level memakai arena eksplorasi 2D dengan 13 platform jalur utama, 5 cabang, 4 jembatan pintas, dan pintu yang bervariasi posisinya.
+- Tes jangkauan geometri mencakup seluruh platform pada 50 level dari spawn host maupun guest.
+- Tes regresi mencakup pintu sisi kiri/tengah/atas, sakelar sebelum gerbang vertikal, minimap, penunjuk arah, dan migrasi state mapVersion.
+- Tidak ada dependensi npm baru.
+- Cache key `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan CSS Elemental Duo menggunakan v0.30.0.
+
+## v0.30.0 — Adventure Maps
+- Lima pola ruang: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno.
+- Tiap peta membuat rute utama, platform cabang, shortcut loop, floor gap, pintu Bara/Air yang ditempatkan terpisah, dan gate yang sesuai pola ruang.
+- Navigator mini digambar pada screen-space setelah kamera arena; menampilkan pemain, kamera, platform, hazard, switch, gem, gate dan pintu.
+- Penunjuk arah layar menunjukkan arah menuju pintu karakter sendiri bila target berada di luar viewport.
+- `ELEMENTAL_MAP_VERSION=3` memindahkan koordinat lama ke spawn baru sambil menjaga data progres yang masih relevan.
+- Firebase Rules dan struktur node RTDB tidak berubah.
+
+## Belum dibuktikan pada perangkat nyata
+- Gerakan platform, kamera, kontrol sentuh, tampilan navigator di berbagai rasio HP, dan sinkronisasi dua perangkat Firebase perlu diuji langsung.
+- Reachability otomatis adalah validasi geometri lompatan, bukan simulasi end-to-end terhadap semua hazard, timing, dan interaksi dua pemain.
+
+---
+
 # Build Verification — Diri. Playroom Date v0.29.0
 
 ## Pemeriksaan terbaru v0.29.0

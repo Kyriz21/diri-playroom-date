@@ -1,6 +1,16 @@
-# Diri. Playroom Date v0.29.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.30.0 — Photobooth, Mini-game & Elemental Duo
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini lima game aktif tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, dan Elemental Duo.
+
+## Pembaruan terbaru v0.30.0 — Peta eksplorasi Elemental Duo
+
+- Arena bukan lagi koridor lurus: setiap level adalah ruang 2D bertingkat untuk menjelajah ke kiri, kanan, atas, dan bawah.
+- Tiap level berisi 13 pijakan utama, 5 jalur cabang, dan 4 jembatan pintas/loop. Pintu Bara dan Nira dapat ditemukan di sisi atau ketinggian berbeda.
+- Lima geometri ruang berulang dengan variasi koordinat: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno.
+- Peta mini menampilkan jalur, hazard, sakelar, permata, posisi kedua pemain, pintu elemen, dan area kamera; penunjuk arah membantu ketika pintu tidak terlihat di layar.
+- Kamera follow dan mode Potret/Layar Penuh dipertahankan. Firebase Rules tidak berubah.
+
+Lihat `ELEMENTAL-EXPLORATION-MAPS.md` untuk penjelasan pola peta dan `BUILD-VERIFICATION.md` untuk hasil pengujian v0.30.0.
 
 ## Keputusan produk
 
