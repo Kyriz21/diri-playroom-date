@@ -377,3 +377,12 @@ Temuan:
 - [ ] Ulangi pada dua perangkat yang terhubung ke Firebase aktif.
 
 **Pemasangan v0.24:** unggah seluruh isi folder proyek. Firebase Rules tidak berubah dari versi sebelumnya sehingga tidak perlu dipublikasikan ulang. Pastikan file `js/app.js` terbaru terunggah karena versi lazy-load Elemental Duo diperbarui dari v0.22.0 ke v0.24.0.
+
+
+## Elemental Duo v0.24.1 — regression test transisi level
+- [ ] Saat salah satu pemain sudah masuk pintu, statusnya tampil `tiba di gerbang` pada kedua perangkat.
+- [ ] Ketika pemain kedua masuk pintu, level berikutnya terbuka otomatis pada kedua perangkat.
+- [ ] Uji ketika satu perangkat memiliki koneksi lambat saat mencapai pintu; status `complete` harus tetap terkirim sesudah sinkronisasi posisi sebelumnya selesai.
+- [ ] Jika tab host ditutup tepat setelah kedua pemain tiba, buka kembali sesi dan pastikan kunci transisi yang tertinggal dapat dipulihkan.
+
+**Pemasangan v0.24.1:** unggah seluruh isi folder proyek dan timpa berkas lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, dan `js/games/elemental-duo-logic.js` terbaru ikut terunggah agar cache key v0.24.1 digunakan. Firebase Rules tidak berubah.

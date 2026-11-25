@@ -1,4 +1,4 @@
-# Diri. Playroom Date v0.24 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.24.2 — Photobooth, Mini-game & Elemental Duo
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini lima game aktif tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, dan Elemental Duo.
 
@@ -217,7 +217,7 @@ Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `n
 - Catatan historis: perubahan transisi hasil ini pertama kali diperkenalkan di v0.21. Untuk deployment saat ini, gunakan Rules lengkap v0.22 dari paket terbaru.
 
 
-## Mini-game 05 — Elemental Duo (v0.24)
+## Mini-game 05 — Elemental Duo (v0.24.2)
 
 - Platformer kooperatif dua pemain dengan karakter orisinal Bara (host) dan Nira (guest); visual, cerita, nama, dan level dibuat khusus untuk Diri. Playroom Date.
 - Lima dunia berisi 10 level masing-masing. Setiap level menggunakan platform, bahaya lava/air, permata khusus elemen, dua pijakan tekanan, penghalang bersama, serta dua pintu akhir yang berbeda untuk Bara dan Nira.

@@ -3,7 +3,7 @@ import {
   ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
   createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap
-} from './elemental-duo-logic.js?v=0.24.0';
+} from './elemental-duo-logic.js?v=0.24.2';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -31,6 +31,8 @@ export function mountElementalDuo(root, context) {
   let lastFrame = 0;
   let lastWriteAt = 0;
   let writingPlayer = false;
+  let pendingPlayerPayload = null;
+  let playerWriteRetryTimer = 0;
   let playerInitStarted = false;
   let localHydrated = false;
   let metaInitStarted = false;
@@ -101,7 +103,8 @@ export function mountElementalDuo(root, context) {
             <div class="ed-hud-center"><span data-ed-gates>2 simpul belum aktif</span><strong data-ed-shards>◇ 0 / 2</strong></div>
             <div class="ed-hud-player ed-hud-right"><span><b>${ESCAPE(names.guest)}</b><small data-ed-status="guest">Nira · belum tiba</small></span><span class="ed-hud-orb ed-water-icon">✧</span></div>
           </div>
-          <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="960" height="560" aria-label="Arena platformer Elemental Duo"></canvas><div class="ed-canvas-notice" data-ed-notice aria-live="polite">Injak pijakan Bara dan Air untuk membuka penghalang.</div></div>
+          <div class="ed-live-notice" data-ed-notice aria-live="polite" hidden></div>
+          <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="960" height="560" aria-label="Arena platformer Elemental Duo"></canvas></div>
           <div class="ed-touch-controls" aria-label="Kontrol permainan">
             <div class="ed-move-controls"><button type="button" data-ed-control="left" aria-label="Bergerak ke kiri">←</button><button type="button" data-ed-control="right" aria-label="Bergerak ke kanan">→</button></div>
             <div class="ed-action-controls"><button type="button" data-ed-control="interact" class="ed-interact-control">AKSI <small>E</small></button><button type="button" data-ed-control="jump" class="ed-jump-control">LOMPAT <small>SPACE</small></button></div>
@@ -275,8 +278,14 @@ export function mountElementalDuo(root, context) {
       readyButton.disabled = Boolean(mine.ready);
       readyButton.innerHTML = mine.ready ? 'Kamu sudah siap ✓ <span>♡</span>' : 'Aku siap bertualang <span>↗</span>';
     }
+    // Keep temporary feedback in the HUD, never over the playable canvas.
     const notice = root.querySelector('[data-ed-notice]');
-    if (notice && canvasNotice && now() < noticeUntil) notice.textContent = canvasNotice;
+    const noticeActive = Boolean(canvasNotice && now() < noticeUntil);
+    if (notice) {
+      notice.hidden = !noticeActive;
+      if (noticeActive) notice.textContent = canvasNotice;
+      else if (canvasNotice) canvasNotice = '';
+    }
   }
 
   function updateFinish() {
@@ -350,7 +359,25 @@ export function mountElementalDuo(root, context) {
   }
 
   async function coordinateProgress() {
-    if (advanceBusy || data.meta?.transitioning) return;
+    if (advanceBusy) return;
+    if (data.meta?.transitioning) {
+      // Recover a transition lock left behind by a tab closing or losing connection
+      // after it acquired the lock but before it published the next level.
+      const lockStartedAt = Number(data.meta.transitionStartedAt) || Number(data.meta.startedAt) || now();
+      if (now() - lockStartedAt < 12000) return;
+      try {
+        const recovered = await runTransaction(metaRef, current => {
+          if (!current || current.phase !== 'playing' || !current.transitioning) return;
+          const currentLockAt = Number(current.transitionStartedAt) || Number(current.startedAt) || now();
+          if (now() - currentLockAt < 12000) return;
+          return { ...current, transitioning:false, transitionStartedAt:null };
+        });
+        if (recovered.committed) notify('Memulihkan progres level…');
+      } catch (error) {
+        notify(`Tidak dapat memulihkan progres: ${error.message}`, 'error');
+      }
+      return;
+    }
     const level = Number(data.meta?.level) || 1;
     const host = data.players?.host;
     const guest = data.players?.guest;
@@ -359,7 +386,7 @@ export function mountElementalDuo(root, context) {
     try {
       const lock = await runTransaction(metaRef, current => {
         if (!current || current.phase !== 'playing' || Number(current.level) !== level || current.transitioning) return;
-        return { ...current, transitioning:true };
+        return { ...current, transitioning:true, transitionStartedAt:now() };
       });
       if (!lock.committed) return;
       const gemState = data.levels?.[String(level)]?.gems || {};
@@ -371,6 +398,7 @@ export function mountElementalDuo(root, context) {
       if (level >= 50) {
         patch['meta/phase'] = 'complete';
         patch['meta/transitioning'] = false;
+        patch['meta/transitionStartedAt'] = null;
         patch['meta/completedAt'] = now();
       } else {
         const nextLevel = level + 1;
@@ -378,29 +406,65 @@ export function mountElementalDuo(root, context) {
         patch['meta/phase'] = 'playing';
         patch['meta/startedAt'] = now();
         patch['meta/transitioning'] = false;
+        patch['meta/transitionStartedAt'] = null;
         patch['players/host'] = createElementalPlayer('host', { ready:true, deaths:Number(host.deaths)||0, levelDeaths:0, shards:Number(host.shards)||0 }, nextLevel);
         patch['players/guest'] = createElementalPlayer('guest', { ready:true, deaths:Number(guest.deaths)||0, levelDeaths:0, shards:Number(guest.shards)||0 }, nextLevel);
       }
       await update(baseRef, patch);
     } catch (error) {
       notify(`Tidak dapat membuka level berikutnya: ${error.message}`, 'error');
-      try { await update(metaRef, { transitioning:false }); } catch {}
+      try { await update(metaRef, { transitioning:false, transitionStartedAt:null }); } catch {}
     } finally { advanceBusy = false; }
   }
 
-  function saveLocalPlayer(force = false) {
-    if (writingPlayer || !data.meta || data.meta.phase !== 'playing') return;
-    if (!force && now() - lastWriteAt < 115) return;
-    lastWriteAt = now();
-    writingPlayer = true;
-    const payload = {
+  function playerPayload() {
+    return {
       x:Math.round(localPlayer.x*10)/10, y:Math.round(localPlayer.y*10)/10,
       vx:Math.round(localPlayer.vx*10)/10, vy:Math.round(localPlayer.vy*10)/10,
       dir:localPlayer.dir, grounded:Boolean(localPlayer.grounded), ready:true,
       complete:Boolean(localPlayer.complete), deaths:Number(localPlayer.deaths)||0,
       levelDeaths:Number(localPlayer.levelDeaths)||0, shards:Number(localPlayer.shards)||0, updatedAt:now()
     };
-    set(ownPlayerRef, payload).catch(error => notify(`Sinkronisasi karakter gagal: ${error.message}`, 'error')).finally(() => { writingPlayer = false; });
+  }
+
+  async function flushPlayerWrites() {
+    if (writingPlayer || destroyed || !pendingPlayerPayload) return;
+    writingPlayer = true;
+    try {
+      while (pendingPlayerPayload && !destroyed) {
+        // Always send the newest snapshot after any in-flight write. In particular,
+        // a completion update must never be dropped behind a position update.
+        const payload = pendingPlayerPayload;
+        pendingPlayerPayload = null;
+        try {
+          await set(ownPlayerRef, payload);
+        } catch (error) {
+          if (!pendingPlayerPayload || Number(payload.updatedAt) > Number(pendingPlayerPayload.updatedAt)) {
+            pendingPlayerPayload = payload;
+          }
+          notify(`Sinkronisasi karakter gagal: ${error.message}`, 'error');
+          break;
+        }
+      }
+    } finally {
+      writingPlayer = false;
+      if (pendingPlayerPayload && !destroyed && !playerWriteRetryTimer) {
+        playerWriteRetryTimer = window.setTimeout(() => {
+          playerWriteRetryTimer = 0;
+          void flushPlayerWrites();
+        }, 900);
+      }
+    }
+  }
+
+  function saveLocalPlayer(force = false) {
+    if (!data.meta || data.meta.phase !== 'playing') return;
+    if (!force && now() - lastWriteAt < 115) return;
+    lastWriteAt = now();
+    pendingPlayerPayload = playerPayload();
+    // Queue writes instead of returning when one is already in progress. This is
+    // critical when the player reaches a door while a position sync is in flight.
+    void flushPlayerWrites();
   }
 
   function resetAfterHit() {
@@ -732,17 +796,8 @@ export function mountElementalDuo(root, context) {
     const guest = role === 'guest' ? localPlayer : remoteRender;
     drawSpirit(host,'fire',role!=='host',time);
     drawSpirit(guest,'water',role!=='guest',time);
-    if (!gateIsOpen()) {
-      ctx.fillStyle='rgba(45,46,65,.76)';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText('INJAK KEDUA PIJAKAN ELEMEN',canvasView.cameraX+canvasView.viewWidth/2,canvasView.cameraY+28);
-    } else if (!localPlayer.complete) {
-      ctx.fillStyle='rgba(45,46,65,.72)';ctx.font='800 14px system-ui';ctx.textAlign='center';ctx.fillText(`MENUJU PINTU ${CHARACTER[role].element==='fire'?'BARA':'AIR'}`,canvasView.cameraX+canvasView.viewWidth/2,canvasView.cameraY+28);
-    }
-    if (canvasNotice && now() < noticeUntil) {
-      const noticeY = canvasView.cameraY + canvasView.viewHeight - 38;
-      roundedRect(ctx,canvasView.cameraX+canvasView.viewWidth/2-180,noticeY,360,30,12);
-      ctx.fillStyle='rgba(48,40,60,.72)';ctx.fill();
-      ctx.fillStyle='#fff';ctx.font='600 12px system-ui';ctx.textAlign='center';ctx.fillText(canvasNotice.slice(0,52),canvasView.cameraX+canvasView.viewWidth/2,noticeY+19);
-    }
+    // Objective and transient feedback are shown in the HUD outside the arena.
+    // Keep the canvas completely clear so platform edges and characters remain visible.
     ctx.restore();
   }
 
@@ -787,6 +842,8 @@ export function mountElementalDuo(root, context) {
       destroyed = true;
       if (unsubscribe) unsubscribe();
       if (rafId) cancelAnimationFrame(rafId);
+      if (playerWriteRetryTimer) window.clearTimeout(playerWriteRetryTimer);
+      pendingPlayerPayload = null;
       root.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);

@@ -1,3 +1,16 @@
+## v0.24.2 — Elemental Duo clean arena HUD
+
+- Removed objective text and toast bubbles from the playable canvas so they no longer cover characters, platforms, or hazards.
+- Moved temporary gameplay feedback to a compact status strip above the arena, outside the canvas.
+- Kept the current objective discoverable through the existing gate/player HUD and level description.
+- Bumped cache keys to v0.24.2. Firebase Rules are unchanged.
+
+## v0.24.1 — Elemental Duo progression sync fix
+- Fixed a race condition that could drop a player's `complete` state when the final door was reached while a position write was still in flight. Player snapshots are now queued and flushed in order, so the final arrival update is not discarded.
+- Added a retry for queued player-state writes after transient connection failures.
+- Added recovery for a stale level-transition lock if the host disconnects after acquiring it but before publishing the next level.
+- Added regression tests for queued arrival-state persistence and stale transition recovery. Cache keys are bumped to v0.24.1. Firebase Rules are unchanged.
+
 # Changelog
 
 ## v0.24.0 — Elemental Duo platform-puzzle and mobile camera

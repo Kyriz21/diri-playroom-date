@@ -160,6 +160,39 @@ test('Elemental Duo memakai kamera responsif, kontrol sentuh lebih besar, dan to
   assert.match(css, /height:clamp\(260px,74vw,370px\)/);
   assert.match(css, /min-height:58px/);
   assert.match(css, /\.ed-game-panel:fullscreen/);
-  assert.match(index, /elemental-duo\.css\?v=0\.24\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.24\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.24\.2/);
+  assert.match(app, /elemental-duo\.js\?v=0\.24\.2/);
+});
+
+
+test('Status tiba selalu diantrekan setelah sinkronisasi posisi yang sedang berlangsung', () => {
+  const game = readSource('../js/games/elemental-duo.js');
+  assert.match(game, /let pendingPlayerPayload = null/);
+  assert.match(game, /async function flushPlayerWrites\(\)/);
+  assert.match(game, /while \(pendingPlayerPayload && !destroyed\)/);
+  assert.match(game, /pendingPlayerPayload = playerPayload\(\)/);
+  assert.match(game, /void flushPlayerWrites\(\)/);
+  assert.doesNotMatch(game, /function saveLocalPlayer\(force = false\) \{\s*if \(writingPlayer \|\|/);
+});
+
+test('Progres level pulih jika kunci transisi tertinggal setelah koneksi terputus', () => {
+  const game = readSource('../js/games/elemental-duo.js');
+  assert.match(game, /transitionStartedAt:now\(\)/);
+  assert.match(game, /now\(\) - lockStartedAt < 12000/);
+  assert.match(game, /transitioning:false, transitionStartedAt:null/);
+  assert.match(game, /if \(!host\?\.complete \|\| !guest\?\.complete\) return/);
+});
+
+
+test('Objektif dan notifikasi tidak lagi menutupi arena permainan', () => {
+  const game = readSource('../js/games/elemental-duo.js');
+  const css = readSource('../css/elemental-duo.css');
+  assert.match(game, /<div class=\"ed-live-notice\" data-ed-notice[^>]*hidden/);
+  assert.match(game, /const noticeActive = Boolean\(canvasNotice && now\(\) < noticeUntil\)/);
+  assert.match(game, /Objective and transient feedback are shown in the HUD outside the arena/);
+  assert.doesNotMatch(game, /fillText\('INJAK KEDUA PIJAKAN ELEMEN'/);
+  assert.doesNotMatch(game, /fillText\(`MENUJU PINTU/);
+  assert.doesNotMatch(game, /class=\"ed-canvas-notice\"/);
+  assert.match(css, /\.ed-live-notice\[hidden\]\{display:none!important\}/);
+  assert.match(css, /@media\(max-width:640px\)\{\.ed-bottom-tip\{display:none\}\}/);
 });

@@ -55,7 +55,12 @@ Hasil bintang dan permata direkap setelah menyelesaikan level 50.
 Game menyimpan status pemain, posisi, kesiapan, status pijakan, permata, dan hasil level pada Firebase Realtime Database di `roomGames/{kode}/{sessionId}/elementalDuo`. Data berada pada node khusus dan hanya dapat dibaca/ditulis oleh anggota ruang ketika sesi aktif bertipe `elementalduo`.
 
 - Tidak menggunakan Cloud Storage, Cloud Functions, server khusus, atau TURN berbayar.
-- Firebase Rules tidak berubah pada revisi v0.24.0; Rules v0.22 yang sudah dipasang tetap berlaku.
+- Firebase Rules tidak berubah pada revisi v0.24.1; Rules v0.22 yang sudah dipasang tetap berlaku.
 - Gerak pemain dikirim berkala melalui RTDB; kualitas gerak jarak jauh dipengaruhi koneksi masing-masing perangkat.
+- Status tiba pemain dikirim melalui antrean tulis agar pembaruan selesai tidak terlewat ketika sinkronisasi posisi masih berlangsung. Kunci transisi yang tertinggal juga memiliki pemulihan otomatis.
 - Progres permainan mengikuti sesi aktif. Ketika host mengakhiri sesi dan kembali ke lobi, data game sesi tersebut dibersihkan sesuai mekanisme proyek.
 - Belum ada uji end-to-end pada Firebase aktif dengan dua perangkat pengguna; gunakan checklist terbaru di `REVIEW-BUILD-QA.md`.
+
+
+## HUD v0.24.2
+Teks objektif dan notifikasi tidak ditampilkan di atas kanvas permainan. Objektif dibaca melalui HUD pijakan/status pemain dan deskripsi level; pesan sementara muncul di strip status di luar arena. Firebase Rules tidak berubah.
