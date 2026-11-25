@@ -1,4 +1,4 @@
-# Elemental Duo — Adventure Map Design (v0.30.0)
+# Elemental Duo — Adventure Map Design (v0.32.0)
 
 ## Sasaran desain
 Mengubah pengalaman dari koridor kiri-ke-kanan menjadi platform-puzzle eksplorasi dua dimensi, dengan pemain harus naik, turun, berbalik, memilih cabang, dan menemukan pintu Bara/Nira yang tersebar pada arena.
@@ -30,7 +30,13 @@ Mengubah pengalaman dari koridor kiri-ke-kanan menjadi platform-puzzle eksploras
 - Hazard dan mekanik khas tiap dunia tetap dipertahankan.
 
 ## Migrasi
-`ELEMENTAL_MAP_VERSION=3`. Posisi dari map lama tidak dipakai ulang karena geometri berubah; pemain ditempatkan kembali pada spawn level berjalan. Death count, level death count, jumlah serpihan, dan readiness dipertahankan; status `complete` lama dibersihkan agar tidak mengunci gerakan di map baru.
+`ELEMENTAL_MAP_VERSION=6`. Posisi dari map lama tidak dipakai ulang karena geometri berubah; pemain ditempatkan kembali pada spawn level berjalan. Death count, level death count, jumlah serpihan, dan readiness dipertahankan; status `complete` lama dibersihkan agar tidak mengunci gerakan di map baru.
 
 ## Batas verifikasi
-186 tes otomatis mencakup struktur map, posisi pintu, jalur geometri dari dua spawn ke semua platform, gate vertikal dan minimap. Tes otomatis tidak menggantikan playtest dua HP dengan Firebase aktif maupun pemeriksaan visual fisik di berbagai ukuran layar.
+188 tes otomatis mencakup struktur map, posisi pintu, jalur geometri dari dua spawn ke semua platform, gate vertikal dan minimap. Tes otomatis tidak menggantikan playtest dua HP dengan Firebase aktif maupun pemeriksaan visual fisik di berbagai ukuran layar.
+
+## Kerapian geometri peta — v0.32.0
+- Lima arketipe disetel ulang pada koordinat vertikal agar lintasan zigzag/loop tidak menghasilkan dua platform yang hampir menempel.
+- Penempatan cabang dan shortcut menilai jarak terhadap platform yang sudah dibuat, bukan hanya menghindari rectangle overlap.
+- Seluruh pasangan platform pada 50 level diuji dengan clearance minimum 18 unit; tes geometri tetap memeriksa batas dunia dan reachability dari kedua spawn.
+- `ELEMENTAL_MAP_VERSION=6`; posisi dari mapVersion sebelumnya dipindahkan ke spawn saat level aktif dimuat.

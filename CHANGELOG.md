@@ -1,4 +1,14 @@
-## v0.30.0 — Elemental Duo Adventure Maps & Multi-directional Exploration
+## v0.32.0 — Elemental Duo Mobile, Map Clarity & Stability
+- Merapikan geometri peta untuk seluruh 50 level: jarak visual minimum antarplatform kini diperiksa, termasuk cabang dan shortcut, agar platform tidak terlihat menyatu/bertumpuk.
+- Menata ulang koordinat vertikal lima arketipe peta; variasi eksplorasi kiri/kanan/atas/bawah dan pintu di lokasi berbeda tetap dipertahankan.
+- Mengubah `ELEMENTAL_MAP_VERSION` menjadi 6 agar posisi sesi dari layout sebelumnya dipindahkan ke spawn aman; progres level, shards, dan jumlah jatuh tetap dipertahankan.
+- Mode landscape menggunakan Fullscreen API dengan fallback portal ke `document.body`; panel benar-benar mengisi viewport dan memakai `100dvh` pada fullscreen native serta `100svh` pada fallback stabil.
+- Menambahkan kontrol analog transparan yang otomatis aktif pada landscape, dapat diganti ke tombol dari HUD; tombol aksi/lompat tetap tersedia di sisi kanan.
+- Mengurangi kedipan/lonjakan dengan tidak mendengarkan `visualViewport.resize`, mengukur ulang via `requestAnimationFrame`, dan hanya mengubah backing canvas saat ukuran CSS berubah nyata.
+- Firebase Rules tidak berubah dan tidak ada dependensi npm baru.
+- Tes otomatis: 188/188 lulus; seluruh JavaScript lolos pemeriksaan sintaks.
+
+## v0.31.0 — Elemental Duo Adventure Maps & Multi-directional Exploration
 - Mengubah arena menjadi peta eksplorasi 2D 1440×960 dengan perjalanan horizontal dan vertikal, bukan koridor lurus menuju pintu di ujung kanan.
 - Setiap level kini memiliki 13 pijakan jalur utama, 5 jalur samping, 4 jembatan pintas yang membentuk loop, serta lantai terputus untuk mendorong lompatan dan eksplorasi.
 - Menambahkan lima pola peta yang bervariasi: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno. Posisi pintu Bara dan Nira tersebar di sisi kiri, tengah, kanan, serta lantai atas/bawah.

@@ -1,3 +1,10 @@
+## Elemental Duo build v0.32.0 — mobile stability dan map spacing
+- Tes otomatis memverifikasi jarak geometris antarpijakan, tetapi tidak menjamin setiap layout terasa seimbang setelah hazard bergerak dan fase puzzle berjalan; playtest tetap diperlukan.
+- Fullscreen native dan orientation lock tetap bergantung dukungan browser/OS. Fallback portal mengisi viewport web yang tersedia, tetapi tidak dapat menyembunyikan chrome browser jika browser tidak memberikan Fullscreen API.
+- Perbaikan viewport menghindari listener `visualViewport.resize` dan memakai ukuran stabil; perilaku browser tertentu serta keyboard sistem dapat tetap memicu perubahan viewport. Perlu validasi pada HP yang digunakan.
+- Analog virtual, sensitivitas, fullscreen, frame rate, dan sinkronisasi dua HP dengan Firebase aktif belum diuji secara fisik.
+- MapVersion 6 memindahkan koordinat sesi aktif ke spawn level saat migrasi; progres level dan statistik tetap dipertahankan.
+
 # Keterbatasan yang diketahui — Diri. Playroom Date v0.19
 
 1. Konfigurasi Web App pada `js/firebase.js` sudah menunjuk ke project `diri-playroom-date` milik pengguna. Create/Gabung Sesi tetap memerlukan Anonymous Authentication, Realtime Database, domain GitHub Pages yang diizinkan, dan Rules terbaru yang sudah dipublikasikan.
@@ -47,10 +54,10 @@
 - Balloon Pop mengakhiri ronde saat snapshot statistik menunjukkan salah satu pemain memiliki 0 nyawa. Waktu hasil yang muncul pada perangkat kedua tetap bergantung pada sinkronisasi Firebase.
 
 
-## Elemental Duo build v0.30.0 — peta eksplorasi
+## Elemental Duo build v0.31.0 — peta eksplorasi
 - Peta kini mempunyai jalur utama, cabang dan shortcut untuk 50 level; pengujian reachability geometri memastikan platform bisa dijangkau dengan parameter lompatan saat ini. Ini belum membuktikan semua kemungkinan jalur saat hazard aktif, fase platform bergerak, atau koordinasi dua pemain.
 - Peta mini dan penunjuk pintu adalah bantuan navigasi, bukan fog-of-war; keseluruhan struktur ruangan terlihat pada minimap.
-- Karena versi map naik ke 3, koordinat pemain dari build lama akan di-reset ke spawn pada level berjalan ketika build baru pertama kali dimuat. Progres level/serpihan/jumlah jatuh tetap dijaga.
+- Karena versi map naik ke 6, koordinat pemain dari build lama akan di-reset ke spawn pada level berjalan ketika build baru pertama kali dimuat. Progres level/serpihan/jumlah jatuh tetap dijaga.
 - Sinkronisasi gerakan dan pengalaman kamera/mini-map pada dua HP perlu diuji langsung setelah deployment.
 
 ## Elemental Duo build v0.29.0

@@ -1,7 +1,7 @@
 export const ELEMENTAL_WORLD_WIDTH = 1440;
 export const ELEMENTAL_WORLD_HEIGHT = 960;
 export const ELEMENTAL_FLOOR_Y = 900;
-export const ELEMENTAL_MAP_VERSION = 3;
+export const ELEMENTAL_MAP_VERSION = 6;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1480;
 export const ELEMENTAL_MOVE_SPEED = 250;
@@ -1359,37 +1359,39 @@ function findSafeFloorPoint(preferred, hazards, element = null, min = 70, max = 
 
 
 const ADVENTURE_ROUTE_XS = [
-  [150,335,520,705,890,1075,1260,1075,890,705,520,335,150],
-  [150,360,570,780,990,1200,1290,1080,870,660,450,240,150],
-  [150,370,590,810,1030,1250,1300,1090,880,670,460,250,150],
-  [170,380,590,800,1010,1220,1280,1060,840,620,400,190,170],
-  [150,370,590,810,1030,1250,1030,810,590,370,150,370,590]
+  [150,350,550,750,950,1150,1300,1000,950,750,550,350,170],
+  [150,370,590,810,1030,1250,1320,1110,900,690,460,180,160],
+  [150,380,610,840,1070,1300,1240,1020,800,580,360,300,470],
+  [170,390,610,830,1050,1270,1200,980,760,540,260,150,420],
+  [150,370,590,810,1030,1250,1320,1100,880,660,440,220,160]
 ];
 const ADVENTURE_MAPS = [
-  { name:'Jalur Zigzag', y:[790,690,590,490,390,290,390,490,590,690,790,690,590], switches:[2,10], doors:[6,12], gems:[5,11], gate:{x:612,y:270,w:22,h:630,orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] },
-  { name:'Menara Kembar', y:[790,690,590,490,390,290,190,290,390,490,590,690,790], switches:[1,4], doors:[5,11], gems:[6,9], gate:{x:300,y:505,w:840,h:22,orientation:'horizontal'}, links:[[0,2],[2,4],[6,8],[8,10]] },
-  { name:'Jalur Berbalik', y:[790,750,650,550,450,350,250,350,450,550,650,750,790], switches:[2,8], doors:[6,0], gems:[6,12], gate:{x:1000,y:250,w:22,h:650,orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] },
-  { name:'Persimpangan Awan', y:[790,690,590,490,390,290,390,290,390,490,590,690,790], switches:[1,2], doors:[11,5], gems:[4,8], gate:{x:350,y:380,w:620,h:22,orientation:'horizontal'}, links:[[0,2],[2,4],[6,8],[8,10]] },
-  { name:'Lingkaran Kuno', y:[790,700,610,520,430,340,250,340,430,520,610,700,790], switches:[1,2], doors:[7,12], gems:[5,9], gate:{x:720,y:225,w:22,h:675,orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] }
+  { name:'Jalur Zigzag', y:[790,690,590,490,390,290,190,300,470,560,660,760,650], switches:[2,9], doors:[6,9], gems:[4,10], gate:{orientation:'vertical'}, links:[[1,3,65],[3,5,65],[7,9,28],[9,11,28]] },
+  { name:'Menara Kembar', y:[790,690,590,490,390,290,190,350,450,550,650,730,620], switches:[1,10], doors:[5,10], gems:[6,9], gate:{orientation:'vertical'}, links:[[0,2],[2,4],[6,8],[8,10]] },
+  { name:'Jalur Berbalik', y:[790,750,650,550,450,350,250,360,470,580,620,810,700], switches:[3,9], doors:[4,0], gems:[5,11], gate:{orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] },
+  { name:'Persimpangan Awan', y:[790,690,590,490,390,290,190,290,390,490,590,690,640], switches:[1,10], doors:[11,6], gems:[4,8], gate:{orientation:'vertical'}, links:[[0,2],[2,4],[6,8],[8,10]] },
+  { name:'Lingkaran Kuno', y:[790,700,610,520,430,340,250,350,450,550,650,680,580], switches:[2,10], doors:[7,10], gems:[5,9], gate:{orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] }
 ];
 
-// Side routes are deliberate detours above or below the main route. They make
-// players choose where to climb, drop, and rejoin rather than follow one corridor.
+// Branches are optional routes. Their final positions are nudged away from
+// the main platforms and shortcuts so platforms remain visually distinct.
 const ADVENTURE_BRANCHES = [
-  [{from:1,side:1,rise:102},{from:3,side:-1,rise:96},{from:5,side:1,rise:105},{from:8,side:-1,rise:100},{from:10,side:1,rise:92}],
-  [{from:0,side:1,rise:92},{from:2,side:-1,rise:100},{from:4,side:1,rise:108},{from:7,side:-1,rise:96},{from:10,side:1,rise:100}],
-  [{from:1,side:-1,rise:94},{from:4,side:1,rise:104},{from:6,side:-1,rise:100},{from:9,side:1,rise:94},{from:11,side:-1,rise:102}],
-  [{from:1,side:1,rise:100},{from:3,side:-1,rise:98},{from:6,side:1,rise:108},{from:8,side:-1,rise:98},{from:11,side:1,rise:100}],
-  [{from:0,side:1,rise:96},{from:3,side:-1,rise:104},{from:5,side:1,rise:108},{from:8,side:-1,rise:100},{from:11,side:1,rise:96}]
+  [{from:1,side:-1,rise:92},{from:3,side:1,rise:96},{from:5,side:-1,rise:100},{from:8,side:1,rise:94},{from:10,side:-1,rise:92}],
+  [{from:0,side:1,rise:92},{from:2,side:-1,rise:96},{from:4,side:1,rise:100},{from:7,side:-1,rise:94},{from:10,side:1,rise:92}],
+  [{from:1,side:1,rise:94},{from:4,side:-1,rise:98},{from:6,side:1,rise:102},{from:9,side:-1,rise:94},{from:11,side:1,rise:96}],
+  [{from:1,side:-1,rise:94},{from:3,side:1,rise:98},{from:6,side:-1,rise:102},{from:8,side:1,rise:96},{from:11,side:-1,rise:94}],
+  [{from:0,side:1,rise:92},{from:3,side:-1,rise:98},{from:5,side:1,rise:104},{from:8,side:-1,rise:98},{from:11,side:1,rise:94}]
 ];
 
 function routePlatform(node, id, kind = 'stone') {
-  return { id, x:node.x-75, y:node.y, w:150, h:17, kind };
+  return { id, x:node.x-58, y:node.y, w:116, h:17, kind };
 }
 
 function mapRectAroundNode(source, node, index, kind = 'zone') {
-  const width = kind === 'wind' || kind === 'current' ? 205 : 155;
-  const height = kind === 'wind' || kind === 'current' ? 125 : 95;
+  // Keep environmental overlays compact so they read as wind/current/ice fields,
+  // not as extra platform bars that visually compete with the level geometry.
+  const width = kind === 'wind' || kind === 'current' ? 142 : 118;
+  const height = kind === 'wind' || kind === 'current' ? 78 : 58;
   const x = Math.max(0, Math.min(ELEMENTAL_WORLD_WIDTH-width, node.x-width/2));
   const y = Math.max(70, Math.min(ELEMENTAL_FLOOR_Y-90-height, node.y-height-32));
   return { ...source, id:source.id || `${kind}-${index+1}`, x, y, w:width, h:height };
@@ -1411,50 +1413,76 @@ function createExplorationMap(level, index) {
     nodeIndex % 4 === 1 ? (level.worldIndex === 2 ? 'ice' : 'crystal') : nodeIndex % 4 === 3 ? 'cloud' : 'stone'
   ));
 
-  // Add reachable side routes and elevated shortcut bridges. Each branch is
-  // positioned within one jump of its parent platform; each bridge links two
-  // non-adjacent route nodes to create loops and alternate ways through the map.
-  const sidePlatforms = (ADVENTURE_BRANCHES[index % ADVENTURE_BRANCHES.length] || []).map((branch, branchIndex) => {
-    const node = nodes[branch.from];
-    const width = 128;
-    const centerX = Math.max(width/2+8, Math.min(ELEMENTAL_WORLD_WIDTH-width/2-8, node.x + branch.side*78));
-    const y = Math.max(112, Math.min(ELEMENTAL_FLOOR_Y-130, node.y - branch.rise));
-    return { id:`map-${level.id}-side-${branchIndex+1}`, x:centerX-width/2, y, w:width, h:16, kind:branchIndex%2?'crystal':'stone', branchOf:branch.from };
-  });
-  const shortcutPlatforms = (map.links || []).map(([from,to], linkIndex) => {
-    const a = nodes[from], b = nodes[to];
-    const width = 184;
-    const centerX = (a.x+b.x)/2;
-    const y = Math.max(125, Math.max(a.y,b.y)-82);
-    return {
-      id:`map-${level.id}-shortcut-${linkIndex+1}`,
-      x:Math.max(8,Math.min(ELEMENTAL_WORLD_WIDTH-width-8,centerX-width/2)),
-      y, w:width, h:16, kind:linkIndex%2?'cloud':'crystal',
-      connects:[from,to]
-    };
-  });
-
-  // Preserve each world's moving/timed/bounce platforms as optional branch routes,
-  // never as the only support beneath a required switch, control, or exit.
   const specialSources = level.platforms.filter(platform => platform.motion || platform.cycle || platform.kind === 'bounce');
-  const specialSlots = [3,6,8,10,4,9,2,11].filter(slot => !reserved.has(slot));
-  const specialPlatforms = specialSources.map((source, sourceIndex) => {
-    const slot = specialSlots[sourceIndex % specialSlots.length];
-    const node = nodes[slot];
-    const width = Math.max(104, Math.min(142, Number(source.w) || 120));
-    const motion = source.motion ? { ...source.motion, amplitude:Math.min(26, Number(source.motion.amplitude)||0) } : undefined;
-    return {
-      ...source,
-      id:`map-${level.id}-branch-${sourceIndex+1}`,
-      x:Math.max(12, Math.min(ELEMENTAL_WORLD_WIDTH-width-12, node.x+54-width/2)),
-      y:Math.max(115, node.y-112), w:width, h:16,
-      ...(motion ? { motion } : {}),
-      ...(source.cycle ? { cycle:{ ...source.cycle } } : {})
-    };
+  const sideSpecs = ADVENTURE_BRANCHES[index % ADVENTURE_BRANCHES.length] || [];
+  const sidePlatforms = [];
+  sideSpecs.forEach((branch, branchIndex) => {
+    const node = nodes[branch.from];
+    const source = specialSources[branchIndex];
+    const width = 96;
+    const candidateSigns = [branch.side || 1, -(branch.side || 1)];
+    const baseYs = [node.y-branch.rise,node.y-branch.rise-38,node.y-branch.rise+38,node.y+Math.min(68,branch.rise*.62),node.y+Math.min(68,branch.rise*.62)+36];
+    const candidateYs = [...new Set(baseYs.map(y=>Math.max(112,Math.min(ELEMENTAL_FLOOR_Y-88,y))))];
+    let best = null;
+    let bestScore = Infinity;
+    for (const sign of candidateSigns) for (const y of candidateYs) {
+      const centerX = Math.max(width/2+16,Math.min(ELEMENTAL_WORLD_WIDTH-width/2-16,node.x+sign*148));
+      const candidate = { x:centerX-width/2,y,w:width,h:15 };
+      let score = 0;
+      for (const other of [...stablePlatforms,...sidePlatforms]) {
+        const gapX = Math.max(0,candidate.x-(other.x+other.w),other.x-(candidate.x+candidate.w));
+        const gapY = Math.max(0,candidate.y-(other.y+other.h),other.y-(candidate.y+candidate.h));
+        const separation = Math.hypot(gapX,gapY);
+        if (separation < 22) score += (22-separation)*1800;
+      }
+      if (score < bestScore) { bestScore=score; best=candidate; }
+    }
+    const chosen = best || {x:node.x+branch.side*148-width/2,y:node.y-branch.rise,w:width,h:15};
+    const motion = source?.motion ? { ...source.motion, amplitude:Math.min(18,Number(source.motion.amplitude)||0) } : undefined;
+    sidePlatforms.push({
+      id:`map-${level.id}-side-${branchIndex+1}`,
+      ...chosen,
+      kind:source?.kind === 'bounce' ? 'bounce' : branchIndex%2 ? 'crystal' : 'stone',
+      branchOf:branch.from,
+      ...(motion ? {motion} : {}),
+      ...(source?.cycle ? {cycle:{...source.cycle}} : {})
+    });
   });
-  level.platforms = [...stablePlatforms, ...sidePlatforms, ...shortcutPlatforms, ...specialPlatforms];
 
-  // Broken floor sections and a chain of platforms force travel in both axes.
+  const shortcutPlatforms = [];
+  (map.links || []).forEach(([from,to,preferredOffset = 28], linkIndex) => {
+    const a = nodes[from], b = nodes[to];
+    const width = 92;
+    const centerX = (a.x+b.x)/2;
+    const xOffsets = [0,-28,28,-56,56,-82,82];
+    const yOffsets = [preferredOffset,preferredOffset+38,preferredOffset-38,preferredOffset+76,preferredOffset-76,preferredOffset+112,preferredOffset-112];
+    const existing = [...stablePlatforms,...sidePlatforms,...shortcutPlatforms];
+    let best = null;
+    let bestScore = Infinity;
+    for (const xOffset of xOffsets) for (const yOffset of yOffsets) {
+      const candidate = {
+        x:Math.max(8,Math.min(ELEMENTAL_WORLD_WIDTH-width-8,centerX-width/2+xOffset)),
+        y:Math.max(112,Math.min(ELEMENTAL_FLOOR_Y-88,(a.y+b.y)/2+yOffset)),
+        w:width,h:13
+      };
+      let score = Math.abs(xOffset)*.025 + Math.abs(yOffset-preferredOffset)*.01;
+      for (const other of existing) {
+        const gapX = Math.max(0,candidate.x-(other.x+other.w),other.x-(candidate.x+candidate.w));
+        const gapY = Math.max(0,candidate.y-(other.y+other.h),other.y-(candidate.y+candidate.h));
+        const separation = Math.hypot(gapX,gapY);
+        if (separation < 20) score += (20-separation)*2200;
+      }
+      if (score < bestScore) { bestScore=score; best=candidate; }
+    }
+    shortcutPlatforms.push({
+      id:`map-${level.id}-shortcut-${linkIndex+1}`,
+      ...best,
+      kind:linkIndex%2 ? 'cloud' : 'crystal',
+      connects:[from,to]
+    });
+  });
+
+  level.platforms = [...stablePlatforms,...sidePlatforms,...shortcutPlatforms];
   level.floorY = ELEMENTAL_FLOOR_Y;
   level.floorSegments = [
     { id:'floor-west', x:0, y:ELEMENTAL_FLOOR_Y, w:230, h:60 },
@@ -1467,64 +1495,71 @@ function createExplorationMap(level, index) {
   const switchElements = ['fire','water'];
   level.switches = switchElements.map((element, elementIndex) => {
     const node = nodes[map.switches[elementIndex]];
-    return { id:element, element, x:node.x, y:node.y-6, w:58, h:12 };
+    return { id:element, element, x:node.x, y:node.y-7, w:54, h:10 };
   });
   level.gems = switchElements.map((element, elementIndex) => {
-    const branch = sidePlatforms[elementIndex === 0 ? 1 : sidePlatforms.length-2];
     const node = nodes[map.gems[elementIndex]];
-    const anchor = branch && (level.id + elementIndex) % 3 === 0 ? branch : null;
-    return anchor
-      ? { id:element, element, x:anchor.x+anchor.w/2, y:anchor.y-24, platformId:anchor.id }
-      : { id:element, element, x:node.x, y:node.y-34 };
+    const branch = sidePlatforms[(elementIndex===0?1:3)%sidePlatforms.length];
+    const useBranch = Boolean(branch) && (level.id+elementIndex)%3===0;
+    return useBranch
+      ? { id:element, element, x:branch.x+branch.w/2, y:branch.y-25, platformId:branch.id }
+      : { id:element, element, x:node.x, y:node.y-30, platformId:`map-${level.id}-platform-${map.gems[elementIndex]+1}` };
   });
 
   const controlSlots = [0,3,6,8,10,12,5,7,9,11,1,2].filter(slot =>
     !map.switches.includes(slot) && !map.doors.includes(slot) && !map.gems.includes(slot)
   );
-  const placeControl = (source, controlIndex, type) => {
-    const node = nodes[controlSlots[controlIndex % controlSlots.length]];
-    return { ...source, x:node.x, y:node.y-25, radius:source.radius || 62 };
+  const placeControl = (source, controlIndex) => {
+    const slot = controlSlots[controlIndex % Math.max(1,controlSlots.length)];
+    const node = nodes[slot];
+    return { ...source, x:node.x, y:node.y-27, radius:source.radius || 58, platformId:`map-${level.id}-platform-${slot+1}` };
   };
-  level.valves = (level.valves || []).map((item,i) => placeControl(item,i,'valve'));
-  level.windLevers = (level.windLevers || []).map((item,i) => placeControl(item,i+level.valves.length,'lever'));
+  level.valves = (level.valves || []).map((item,i) => placeControl(item,i));
+  level.windLevers = (level.windLevers || []).map((item,i) => placeControl(item,i+level.valves.length));
 
   const zoneSlots = [2,5,8,11,4,9];
   level.iceZones = (level.iceZones || []).map((zone,i) => mapRectAroundNode(zone,nodes[zoneSlots[i%zoneSlots.length]],i,'ice'));
   level.currents = (level.currents || []).map((zone,i) => mapRectAroundNode(zone,nodes[zoneSlots[(i+1)%zoneSlots.length]],i,'current'));
   level.windZones = (level.windZones || []).map((zone,i) => mapRectAroundNode(zone,nodes[zoneSlots[(i+2)%zoneSlots.length]],i,'wind'));
 
-  const hazardSlots = [0,2,4,6,8,10,11];
+  const reservedNodes = new Set([...map.switches,...map.doors,...map.gems]);
+  const preferredHazardSlots = [0,2,4,6,8,10,11];
+  const safeHazardSlots = preferredHazardSlots.filter(slot => !reservedNodes.has(slot) && !reservedNodes.has(slot+1));
+  const hazardSlots = safeHazardSlots.length ? safeHazardSlots : preferredHazardSlots;
   level.hazards = level.hazards.map((source,i) => {
     const slot = hazardSlots[i % hazardSlots.length];
-    const a = nodes[slot];
-    const b = nodes[slot+1];
+    const a = nodes[slot], b = nodes[slot+1];
     const centerX = (a.x+b.x)/2;
     const steam = source.type === 'steam';
     return {
       ...source,
-      x:centerX-(steam?23:38),
-      y:Math.min(a.y,b.y)+(steam?18:34),
-      w:steam?46:76,
-      h:steam?66:25,
-      ...(source.motion ? { motion:{ ...source.motion, amplitude:Math.min(12,Number(source.motion.amplitude)||0) } } : {})
+      x:centerX-(steam?18:30),
+      y:Math.min(a.y,b.y)+(steam?28:42),
+      w:steam?36:60,
+      h:steam?52:20,
+      ...(source.motion ? {motion:{...source.motion,amplitude:Math.min(10,Number(source.motion.amplitude)||0)}} : {})
     };
   });
 
   const checkpointNode = nodes[8];
-  level.checkpoint = { x:checkpointNode.x, y:checkpointNode.y-18, radius:58 };
+  level.checkpoint = { x:checkpointNode.x, y:checkpointNode.y-23, radius:48 };
   const makeDoor = (nodeIndex, element) => {
     const node = nodes[nodeIndex];
-    return { x:node.x-23, y:node.y-88, w:46, h:82, element, platformId:`map-${level.id}-platform-${nodeIndex+1}` };
+    return { x:node.x-21, y:node.y-76, w:42, h:72, element, platformId:`map-${level.id}-platform-${nodeIndex+1}` };
   };
   level.doors = {
     fire:makeDoor(map.doors[0],'fire'),
     water:makeDoor(map.doors[1],'water')
   };
-  level.exit = { x:Math.min(level.doors.fire.x,level.doors.water.x), y:Math.min(level.doors.fire.y,level.doors.water.y), w:Math.abs(level.doors.fire.x-level.doors.water.x)+46, h:82 };
-  level.gate = { ...map.gate, id:`map-${level.id}-seal` };
+  level.exit = { x:Math.min(level.doors.fire.x,level.doors.water.x), y:Math.min(level.doors.fire.y,level.doors.water.y), w:Math.abs(level.doors.fire.x-level.doors.water.x)+42, h:72 };
+
+  const gateNodeA = nodes[5], gateNodeB = nodes[6];
+  const gateX = (gateNodeA.x+gateNodeB.x)/2;
+  const gateY = Math.max(165,Math.min(gateNodeA.y,gateNodeB.y)-38);
+  level.gate = { x:gateX-9, y:gateY, w:18, h:178, orientation:'vertical', id:`map-${level.id}-seal` };
   level.mapVersion = ELEMENTAL_MAP_VERSION;
   level.mapName = map.name;
-  level.mapTopology = { route:'multi-branch-loop', sideRoutes:sidePlatforms.length, shortcuts:shortcutPlatforms.length };
+  level.mapTopology = { route:'multi-branch-loop', sideRoutes:sidePlatforms.length, shortcuts:shortcutPlatforms.length, platformSpacing:'collision-checked-grid' };
   level.worldWidth = ELEMENTAL_WORLD_WIDTH;
   level.worldHeight = ELEMENTAL_WORLD_HEIGHT;
   return level;

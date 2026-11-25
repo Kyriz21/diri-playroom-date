@@ -105,9 +105,9 @@ test('Pijakan wajib tidak terpisah oleh gerbang vertikal yang belum terbuka', ()
 test('Kedua pintu dapat berada di sisi atau ketinggian berbeda sehingga akhir level tidak selalu di kanan', () => {
   const layoutSource=readSource('../js/games/elemental-duo-logic.js');
   const gameSource=readSource('../js/games/elemental-duo.js');
-  assert.match(layoutSource,/doors:\[6,12\]/);
-  assert.match(layoutSource,/doors:\[6,0\]/);
-  assert.match(layoutSource,/doors:\[11,5\]/);
+  assert.match(layoutSource,/doors:\[6,9\]/);
+  assert.match(layoutSource,/doors:\[4,0\]/);
+  assert.match(layoutSource,/doors:\[11,6\]/);
   assert.match(gameSource,/const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
   assert.match(gameSource,/drawExplorationNavigator\(level,host,guest\)/);
 });
@@ -118,12 +118,12 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:3, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:6, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
   assert.equal(restored.shards, 8);
-  const migrated = createElementalPlayer('host', {x:1200,y:150,mapVersion:2,complete:true,deaths:7,shards:11}, 10);
+  const migrated = createElementalPlayer('host', {x:1200,y:150,mapVersion:5,complete:true,deaths:7,shards:11}, 10);
   assert.equal(migrated.x, getElementalLevel(10).spawn.host.x);
   assert.equal(migrated.complete, false);
   assert.equal(migrated.deaths, 7);
@@ -291,14 +291,14 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(game, /ed-fullpage-fallback/);
   assert.match(game, /if \(action === 'back'\) \{ await enterPortraitMode\(\); onBack\?\.\(\); \}/);
   assert.match(css, /data-display-mode="portrait"/);
-  assert.match(css, /height:clamp\(340px,52dvh,480px\)/);
+  assert.match(css, /height:clamp\(340px,52svh,480px\)/);
   assert.match(css, /\.ed-game-panel:fullscreen/);
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.30\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.30\.0/);
-  assert.match(index, /app\.js\?v=0\.30\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.32\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.32\.0/);
+  assert.match(index, /app\.js\?v=0\.32\.0/);
 });
 
 
@@ -937,4 +937,52 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
   assert.match(game, /function attemptValve\(valve\)/);
   assert.match(game, /function attemptWindLever\(lever\)/);
   assert.match(game, /drawAncientDecor\(level,time\)/);
+});
+
+
+test('Adventure map v6 keeps platform geometry separated across all 50 levels', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,6);
+  for (const level of ELEMENTAL_LEVELS) {
+    const platforms = level.platforms;
+    for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {
+      const a=platforms[i], b=platforms[j];
+      const overlapX=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);
+      const overlapY=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+      assert.ok(!(overlapX>0 && overlapY>0),`level ${level.id}: ${a.id} overlaps ${b.id}`);
+      const gapX=Math.max(0,a.x-(b.x+b.w),b.x-(a.x+a.w));
+      const gapY=Math.max(0,a.y-(b.y+b.h),b.y-(a.y+a.h));
+      assert.ok(Math.hypot(gapX,gapY)>=18,`level ${level.id}: ${a.id} and ${b.id} must remain visually distinct`);
+    }
+    for (const platform of platforms) {
+      assert.ok(platform.x>=0 && platform.x+platform.w<=ELEMENTAL_WORLD_WIDTH,`level ${level.id} ${platform.id} remains inside world bounds`);
+      assert.ok(platform.y>=0 && platform.y+platform.h<=ELEMENTAL_FLOOR_Y,`level ${level.id} ${platform.id} remains above floor`);
+    }
+    assert.ok(level.platforms.some(platform=>platform.id.includes('-shortcut-')));
+    for (const zone of [...(level.iceZones||[]),...(level.currents||[]),...(level.windZones||[])]) {
+      assert.ok(zone.w<=142 && zone.h<=78,`level ${level.id} environmental zone should stay compact`);
+    }
+  }
+});
+
+test('Fullscreen landscape is portalled to body, uses stable viewport and exposes translucent analog controls', () => {
+  const game=readSource('../js/games/elemental-duo.js');
+  const css=readSource('../css/elemental-duo.css');
+  assert.match(game,/function activateFullPagePortal\(\)/);
+  assert.match(game,/document\.body\.appendChild\(gamePanel\)/);
+  assert.match(game,/document\.documentElement\.classList\.add\('ed-fullpage-active'\)/);
+  assert.match(game,/function restoreFullPagePortal\(\)/);
+  assert.match(game,/document\.documentElement\.classList\.remove\('ed-fullpage-active'\)/);
+  assert.match(game,/data-ed-analog-pad/);
+  assert.match(game,/function bindAnalogStick\(\)/);
+  assert.match(game,/pointercancel/);
+  assert.match(game,/setControlMode\('analog'\)/);
+  assert.match(game,/scheduleViewportMeasure\(\)/);
+  assert.doesNotMatch(game,/visualViewport\?\.addEventListener\?\.\('resize'/);
+  assert.match(css,/height:100svh/);
+  assert.match(css,/ed-game-panel:fullscreen \{[\s\S]*?height:100dvh/);
+  assert.match(css,/html\.ed-fullpage-active/);
+  assert.match(css,/body\.ed-fullpage-active/);
+  assert.match(css,/rgba\(255,255,255,\.075\)/);
+  assert.match(css,/data-display-mode="portrait"\]\[data-control-mode="analog"\] \.ed-analog-pad/);
+  assert.match(css,/ed-analog-knob/);
 });

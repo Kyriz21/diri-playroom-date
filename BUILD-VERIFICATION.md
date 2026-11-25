@@ -1,21 +1,32 @@
-# Build Verification — Diri. Playroom Date v0.30.0
+# Build Verification — Diri. Playroom Date v0.32.0
 
-## Pemeriksaan terbaru v0.30.0
-- Unit tests: **186/186 passed** (`npm test`).
+## Pemeriksaan terbaru v0.32.0
+- Unit tests: **188/188 passed** (`npm test`).
 - JavaScript syntax checks: passed untuk seluruh file di `js/`.
 - Firebase Rules JSON: valid; dibandingkan dengan paket v0.29.0 dan tidak berubah.
 - Seluruh 50 level memakai arena eksplorasi 2D dengan 13 platform jalur utama, 5 cabang, 4 jembatan pintas, dan pintu yang bervariasi posisinya.
 - Tes jangkauan geometri mencakup seluruh platform pada 50 level dari spawn host maupun guest.
 - Tes regresi mencakup pintu sisi kiri/tengah/atas, sakelar sebelum gerbang vertikal, minimap, penunjuk arah, dan migrasi state mapVersion.
 - Tidak ada dependensi npm baru.
-- Cache key `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan CSS Elemental Duo menggunakan v0.30.0.
+- Cache key `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan CSS Elemental Duo menggunakan v0.32.0.
 
-## v0.30.0 — Adventure Maps
+
+## v0.32.0 — Mobile layout, analog and map spacing
+- Platform utama, cabang, dan shortcut seluruh 50 level tidak saling tumpang tindih dan memiliki jarak visual minimal 18 unit.
+- Lima pola geometri disetel ulang pada koordinat vertikal untuk menghindari platform yang terlalu rapat/sejajar hingga tampak menyatu.
+- Native fullscreen menggunakan `100dvh`; fallback portal ke body menggunakan `100svh` stabil.
+- Kontrol analog transparan aktif otomatis pada landscape dan dapat diganti ke tombol; pointer capture/cancel ditangani.
+- Tidak ada listener `visualViewport.resize`; pengukuran canvas dijadwalkan dan backing store hanya diubah jika ukuran berubah nyata.
+- HTML root dan body dikunci ketika fallback fullscreen aktif; portal dipulihkan saat keluar dari game.
+- Cache key runtime menggunakan v0.32.0. Firebase Rules tidak berubah.
+- Tes otomatis 188/188 lulus dan semua JavaScript lolos `node --check`.
+
+## v0.31.0 — Adventure Maps
 - Lima pola ruang: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno.
 - Tiap peta membuat rute utama, platform cabang, shortcut loop, floor gap, pintu Bara/Air yang ditempatkan terpisah, dan gate yang sesuai pola ruang.
 - Navigator mini digambar pada screen-space setelah kamera arena; menampilkan pemain, kamera, platform, hazard, switch, gem, gate dan pintu.
 - Penunjuk arah layar menunjukkan arah menuju pintu karakter sendiri bila target berada di luar viewport.
-- `ELEMENTAL_MAP_VERSION=3` memindahkan koordinat lama ke spawn baru sambil menjaga data progres yang masih relevan.
+- `ELEMENTAL_MAP_VERSION=6` memindahkan koordinat lama ke spawn baru sambil menjaga data progres yang masih relevan.
 - Firebase Rules dan struktur node RTDB tidak berubah.
 
 ## Belum dibuktikan pada perangkat nyata

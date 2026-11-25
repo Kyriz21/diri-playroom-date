@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.30.0';
+} from './elemental-duo-logic.js?v=0.32.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -59,7 +59,12 @@ export function mountElementalDuo(root, context) {
   let lastCanvasHeight = 0;
   let canvasNotice = '';
   let canvasResizeObserver = null;
+  let viewportResizeFrame = 0;
+  let gamePanel = null;
+  let gamePanelPlaceholder = null;
   let displayMode = 'portrait';
+  let controlMode = 'buttons';
+  let analogPointerId = null;
   let noticeUntil = 0;
   let starsEarned = 0;
   const input = { left:false, right:false, jump:false, interact:false, jumpQueued:false, interactQueued:false };
@@ -68,10 +73,110 @@ export function mountElementalDuo(root, context) {
     ['ArrowUp','jump'],['KeyW','jump'],['Space','jump'],['KeyE','interact'],['Enter','interact']
   ]);
 
+  function queryUI(selector) {
+    return root.querySelector(selector) || gamePanel?.querySelector(selector) || null;
+  }
+
+  function queryUIAll(selector) {
+    const matches = Array.from(root.querySelectorAll(selector));
+    if (gamePanel && !root.contains(gamePanel)) {
+      if (gamePanel.matches(selector)) matches.push(gamePanel);
+      matches.push(...gamePanel.querySelectorAll(selector));
+    }
+    return matches;
+  }
+
+  function activateFullPagePortal() {
+    if (!gamePanel || gamePanel.parentElement === document.body) return;
+    const parent = gamePanel.parentNode;
+    if (parent) {
+      gamePanelPlaceholder = document.createComment('elemental-duo-panel-placeholder');
+      parent.insertBefore(gamePanelPlaceholder, gamePanel);
+    }
+    document.body.appendChild(gamePanel);
+    document.documentElement.classList.add('ed-fullpage-active');
+    document.body.classList.add('ed-fullpage-active');
+    gamePanel.classList.add('ed-fullpage-fallback');
+  }
+
+  function restoreFullPagePortal() {
+    if (gamePanelPlaceholder?.parentNode && gamePanel) {
+      gamePanelPlaceholder.parentNode.insertBefore(gamePanel, gamePanelPlaceholder);
+      gamePanelPlaceholder.remove();
+    }
+    gamePanelPlaceholder = null;
+    gamePanel?.classList.remove('ed-fullpage-fallback');
+    document.body.classList.remove('ed-fullpage-active');
+    document.documentElement.classList.remove('ed-fullpage-active');
+  }
+
+  function setControlMode(mode) {
+    controlMode = mode === 'analog' ? 'analog' : 'buttons';
+    if (gamePanel) gamePanel.dataset.controlMode = controlMode;
+    const button = queryUI('[data-ed-action="toggle-controls"]');
+    if (button) {
+      button.setAttribute('aria-pressed', String(controlMode === 'analog'));
+      button.setAttribute('aria-label', controlMode === 'analog' ? 'Ganti ke kontrol tombol' : 'Ganti ke kontrol analog');
+      button.title = controlMode === 'analog' ? 'Ganti ke kontrol tombol' : 'Ganti ke kontrol analog';
+      const label = button.querySelector('[data-ed-control-mode-label]');
+      if (label) label.textContent = controlMode === 'analog' ? 'Analog' : 'Tombol';
+    }
+    resetAnalogStick();
+  }
+
+  function resetAnalogStick() {
+    input.left = false;
+    input.right = false;
+    analogPointerId = null;
+    const knob = queryUI('[data-ed-analog-knob]');
+    if (knob) knob.style.transform = 'translate(-50%, -50%)';
+  }
+
+  function updateAnalogStick(event) {
+    const pad = queryUI('[data-ed-analog-pad]');
+    const knob = queryUI('[data-ed-analog-knob]');
+    if (!pad || analogPointerId !== event.pointerId) return;
+    const rect = pad.getBoundingClientRect();
+    const radius = Math.max(24, Math.min(rect.width, rect.height) * .34);
+    const dx = Math.max(-1, Math.min(1, (event.clientX - (rect.left + rect.width/2)) / radius));
+    const dy = Math.max(-1, Math.min(1, (event.clientY - (rect.top + rect.height/2)) / radius));
+    const magnitude = Math.hypot(dx,dy);
+    const scale = magnitude > 1 ? 1 / magnitude : 1;
+    const x = dx * scale;
+    const y = dy * scale;
+    input.left = x < -.2;
+    input.right = x > .2;
+    if (knob) knob.style.transform = `translate(calc(-50% + ${x*radius*.72}px), calc(-50% + ${y*radius*.72}px))`;
+  }
+
+  function bindAnalogStick() {
+    const pad = queryUI('[data-ed-analog-pad]');
+    if (!pad) return;
+    pad.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      analogPointerId = event.pointerId;
+      try { pad.setPointerCapture(event.pointerId); } catch {}
+      updateAnalogStick(event);
+    });
+    pad.addEventListener('pointermove', event => {
+      if (analogPointerId !== event.pointerId) return;
+      event.preventDefault();
+      updateAnalogStick(event);
+    });
+    const release = event => {
+      if (analogPointerId !== event.pointerId) return;
+      event.preventDefault();
+      resetAnalogStick();
+    };
+    pad.addEventListener('pointerup', release);
+    pad.addEventListener('pointercancel', release);
+    pad.addEventListener('lostpointercapture', release);
+  }
+
   function notify(message, type = 'default') {
     canvasNotice = message;
     noticeUntil = now() + 2400;
-    const status = root.querySelector('[data-ed-notice]');
+    const status = queryUI('[data-ed-notice]');
     if (status) status.textContent = message;
     if (type === 'error') toast(message, 'error');
   }
@@ -114,7 +219,7 @@ export function mountElementalDuo(root, context) {
           <p class="ed-lobby-note">Petualangan memiliki 50 level dalam 5 dunia. Level berikutnya terbuka otomatis setelah kalian berdua mencapai gerbang.</p>
         </section>
         <section class="ed-panel ed-game-panel" data-ed-view="game" hidden>
-          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh otomatis landscape" title="Layar penuh otomatis landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button></div></div></div>
+          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh landscape" title="Layar penuh landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button><button class="ed-mode-button ed-control-mode-button" type="button" data-ed-action="toggle-controls" aria-label="Ganti ke kontrol analog" aria-pressed="false"><span>◎</span><b data-ed-control-mode-label>Tombol</b></button></div></div></div>
           <div class="ed-progress-track"><span data-ed-progress></span></div>
           <div class="ed-hud-row">
             <div class="ed-hud-player"><span class="ed-hud-orb ed-fire-icon">✦</span><span><b>${ESCAPE(names.host)}</b><small data-ed-status="host">Bara · belum tiba</small></span></div>
@@ -126,6 +231,7 @@ export function mountElementalDuo(root, context) {
           <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="${ELEMENTAL_WORLD_WIDTH}" height="${ELEMENTAL_WORLD_HEIGHT}" aria-label="Arena platformer eksplorasi dua dimensi Elemental Duo"></canvas></div>
           <div class="ed-touch-controls" aria-label="Kontrol permainan">
             <div class="ed-move-controls"><button type="button" data-ed-control="left" aria-label="Bergerak ke kiri">←</button><button type="button" data-ed-control="right" aria-label="Bergerak ke kanan">→</button></div>
+            <div class="ed-analog-pad" data-ed-analog-pad role="application" aria-label="Analog virtual untuk bergerak"><div class="ed-analog-ring"><div class="ed-analog-knob" data-ed-analog-knob></div></div><span>GERAK</span></div>
             <div class="ed-action-controls"><button type="button" data-ed-control="interact" class="ed-interact-control">AKSI <small>E</small></button><button type="button" data-ed-control="jump" class="ed-jump-control">LOMPAT <small>SPACE</small></button></div>
           </div>
           <div class="ed-instruction-row"><span>Gerak: A/D atau ←/→ · Lompat: Space · Tekan pijakan sesuai elemen</span><span data-ed-deaths>Jatuh: 0</span></div>
@@ -135,19 +241,23 @@ export function mountElementalDuo(root, context) {
           <div class="ed-finish-emblem">✧</div><span class="ed-section-kicker">PETUALANGAN SELESAI</span><h2>Kalian menyatukan<br><em>lima kekuatan dunia.</em></h2><p>Jantung Lima Dunia kembali bercahaya berkat kerja sama Bara dan Nira.</p><div class="ed-finish-stats"><div><strong data-ed-finish-stars>0</strong><small>BINTANG TERKUMPUL</small></div><div><strong data-ed-finish-shards>0</strong><small>SERPihan ENERGI</small></div><div><strong>50</strong><small>LEVEL DITUNTASKAN</small></div></div><button class="ed-primary-button" type="button" data-ed-action="back">Kembali ke ruang <span>♡</span></button></section>
         <footer class="ed-footer"><span>ELEMENTAL DUO · PETUALANGAN ORISINAL DIRI</span><span>50 LEVEL · 5 DUNIA · 2 PEMAIN</span></footer>
       </section>`;
+    gamePanel = root.querySelector('.ed-game-panel');
     canvas = root.querySelector('.ed-canvas');
     ctx = canvas.getContext('2d');
+    gamePanel.dataset.controlMode = controlMode;
     bindControls();
+    bindAnalogStick();
   }
 
   function showView(view) {
     if (currentView === view) return;
+    if (view !== 'game') restoreFullPagePortal();
     currentView = view;
-    root.querySelectorAll('[data-ed-view]').forEach(element => { element.hidden = element.dataset.edView !== view; });
+    queryUIAll('[data-ed-view]').forEach(element => { element.hidden = element.dataset.edView !== view; });
     if (view === 'game') {
-      canvas = root.querySelector('.ed-canvas');
+      canvas = queryUI('.ed-canvas');
       ctx = canvas?.getContext('2d') || null;
-      requestAnimationFrame(resizeCanvasViewport);
+      scheduleViewportMeasure();
       updateHud();
     }
     if (view === 'finish') updateFinish();
@@ -157,17 +267,32 @@ export function mountElementalDuo(root, context) {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 2 || rect.height < 2) return;
-    const viewport = getElementalViewport(rect.width, rect.height);
-    const backingHeight = Math.max(260, Math.round(canvas.width / viewport.aspect));
-    if (Math.abs(rect.width - lastCanvasWidth) < 1 && Math.abs(rect.height - lastCanvasHeight) < 1 && canvas.height === backingHeight) return;
-    lastCanvasWidth = rect.width;
-    lastCanvasHeight = rect.height;
-    canvas.width = ELEMENTAL_WORLD_WIDTH;
-    canvas.height = backingHeight;
+    const roundedWidth = Math.round(rect.width);
+    const roundedHeight = Math.round(rect.height);
+    if (Math.abs(roundedWidth-lastCanvasWidth) < 2 && Math.abs(roundedHeight-lastCanvasHeight) < 2) return;
+    const viewport = getElementalViewport(rect.width,rect.height);
+    const backingHeight = Math.max(260,Math.round(ELEMENTAL_WORLD_WIDTH / viewport.aspect));
+    if (canvas.width !== ELEMENTAL_WORLD_WIDTH) canvas.width = ELEMENTAL_WORLD_WIDTH;
+    if (canvas.height !== backingHeight) canvas.height = backingHeight;
+    lastCanvasWidth = roundedWidth;
+    lastCanvasHeight = roundedHeight;
     ctx = canvas.getContext('2d');
     canvasView.zoom = viewport.zoom;
     canvasView.viewWidth = viewport.viewWidth;
     canvasView.viewHeight = viewport.viewHeight;
+    // Keep the camera centered on the local spirit after a genuine orientation change.
+    const target = getElementalCameraTarget(localPlayer,remoteRender,canvasView.viewWidth,canvasView.viewHeight);
+    canvasView.cameraX = Math.max(0,Math.min(ELEMENTAL_WORLD_WIDTH-canvasView.viewWidth,target.x));
+    canvasView.cameraY = Math.max(0,Math.min(ELEMENTAL_WORLD_HEIGHT-canvasView.viewHeight,target.y));
+  }
+
+  function scheduleViewportMeasure() {
+    if (viewportResizeFrame || destroyed) return;
+    viewportResizeFrame = requestAnimationFrame(() => {
+      viewportResizeFrame = 0;
+      updateDisplayModeUI();
+      resizeCanvasViewport();
+    });
   }
 
   function updateCamera(dt = 1 / 60) {
@@ -180,13 +305,13 @@ export function mountElementalDuo(root, context) {
   }
 
   function updateDisplayModeUI() {
-    const panel = root.querySelector('.ed-game-panel');
+    const panel = gamePanel || root.querySelector('.ed-game-panel');
     if (!panel) return;
     panel.dataset.displayMode = displayMode;
-    root.querySelectorAll('.ed-display-modes [data-ed-action="portrait"], .ed-display-modes [data-ed-action="fullscreen"]').forEach(button => {
+    queryUIAll('.ed-display-modes [data-ed-action="portrait"], .ed-display-modes [data-ed-action="fullscreen"]').forEach(button => {
       const active = button.dataset.edAction === displayMode;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', String(active));
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
     });
     const prompt = panel.querySelector('[data-ed-rotate-prompt]');
     const isLandscape = Boolean(window.matchMedia?.('(orientation: landscape)').matches);
@@ -194,65 +319,66 @@ export function mountElementalDuo(root, context) {
   }
 
   async function enterPortraitMode() {
-    const panel = root.querySelector('.ed-game-panel');
-    displayMode = 'portrait';
-    panel?.classList.remove('ed-fullpage-fallback');
+    const panel = gamePanel || root.querySelector('.ed-game-panel');
     try {
       if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
-    } catch { /* Some mobile browsers exit fullscreen through their own UI. */ }
+    } catch { /* Browser may leave native fullscreen through its own UI. */ }
     try { screen.orientation?.unlock?.(); } catch {}
+    restoreFullPagePortal();
+    displayMode = 'portrait';
+    setControlMode('buttons');
     if (panel) panel.dataset.displayMode = 'portrait';
     updateDisplayModeUI();
-    lastCanvasWidth = 0; lastCanvasHeight = 0;
-    requestAnimationFrame(resizeCanvasViewport);
+    scheduleViewportMeasure();
   }
 
   async function enterLandscapeMode() {
-    const panel = root.querySelector('.ed-game-panel');
+    const panel = gamePanel || root.querySelector('.ed-game-panel');
     if (!panel) return;
     displayMode = 'fullscreen';
     panel.dataset.displayMode = 'fullscreen';
+    setControlMode('analog');
     updateDisplayModeUI();
     try {
-      if (document.fullscreenElement !== panel && panel.requestFullscreen) {
+      if (document.fullscreenElement !== panel) {
+        if (typeof panel.requestFullscreen !== 'function') throw new Error('Fullscreen API tidak tersedia');
         await panel.requestFullscreen({ navigationUI:'hide' });
-      } else if (!panel.requestFullscreen) {
-        panel.classList.add('ed-fullpage-fallback');
       }
     } catch {
-      // Keep a usable app-level full-page mode when the browser blocks the native API.
-      panel.classList.add('ed-fullpage-fallback');
-      notify('Layar penuh browser dibatasi. Mode layar penuh aplikasi diaktifkan.');
+      activateFullPagePortal();
+      notify('Mode layar penuh aplikasi aktif. Putar perangkat ke posisi mendatar bila belum otomatis.');
     }
+    // Some mobile browsers resolve the request without granting fullscreen.
+    if (document.fullscreenElement !== panel) activateFullPagePortal();
     try {
       if (screen.orientation?.lock) await screen.orientation.lock('landscape');
     } catch {
-      // Orientation lock requires fullscreen and is not available in every mobile browser.
+      notify('Putar HP ke posisi landscape untuk menggunakan arena penuh.');
     }
     updateDisplayModeUI();
-    if (displayMode === 'fullscreen' && !window.matchMedia?.('(orientation: landscape)').matches) {
-      notify('Mode layar penuh aktif. Jika layar belum berputar otomatis, putar HP ke posisi mendatar.');
+    if (!window.matchMedia?.('(orientation: landscape)').matches) {
+      notify('Layar penuh aktif. Putar HP ke posisi mendatar jika belum berputar otomatis.');
     }
-    lastCanvasWidth = 0; lastCanvasHeight = 0;
-    requestAnimationFrame(resizeCanvasViewport);
+    scheduleViewportMeasure();
   }
 
   function handleFullscreenChange() {
-    const panel = root.querySelector('.ed-game-panel');
+    const panel = gamePanel || root.querySelector('.ed-game-panel');
     if (document.fullscreenElement === panel) {
       displayMode = 'fullscreen';
+      setControlMode('analog');
     } else if (!panel?.classList.contains('ed-fullpage-fallback')) {
       displayMode = 'portrait';
+      setControlMode('buttons');
       try { screen.orientation?.unlock?.(); } catch {}
     }
     updateDisplayModeUI();
-    lastCanvasWidth = 0; lastCanvasHeight = 0;
-    requestAnimationFrame(resizeCanvasViewport);
+    scheduleViewportMeasure();
   }
 
   function bindControls() {
-    root.addEventListener('click', handleClick);
-    root.querySelectorAll('[data-ed-control]').forEach(button => {
+    document.addEventListener('click',handleClick);
+    queryUIAll('[data-ed-control]').forEach(button => {
       const key = button.dataset.edControl;
       const start = event => {
         event.preventDefault();
@@ -267,20 +393,21 @@ export function mountElementalDuo(root, context) {
         else if (key === 'interact') input.interact = false;
         else input[key] = false;
       };
-      button.addEventListener('pointerdown', start);
-      button.addEventListener('pointerup', stop);
-      button.addEventListener('pointercancel', stop);
-      button.addEventListener('lostpointercapture', stop);
+      button.addEventListener('pointerdown',start);
+      button.addEventListener('pointerup',stop);
+      button.addEventListener('pointercancel',stop);
+      button.addEventListener('lostpointercapture',stop);
     });
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', clearInput);
-    window.addEventListener('resize', handleViewportChange, { passive:true });
-    window.addEventListener('orientationchange', handleViewportChange, { passive:true });
-    window.visualViewport?.addEventListener?.('resize', handleViewportChange, { passive:true });
-    screen.orientation?.addEventListener?.('change', handleViewportChange);
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    const canvasWrap = root.querySelector('.ed-canvas-wrap');
+    window.addEventListener('keydown',handleKeyDown);
+    window.addEventListener('keyup',handleKeyUp);
+    window.addEventListener('blur',clearInput);
+    window.addEventListener('resize',handleViewportChange,{passive:true});
+    window.addEventListener('orientationchange',handleViewportChange,{passive:true});
+    // Deliberately do not observe visualViewport resize: mobile browser chrome
+    // expands/collapses it while scrolling, which used to reset the canvas each time.
+    screen.orientation?.addEventListener?.('change',handleViewportChange);
+    document.addEventListener('fullscreenchange',handleFullscreenChange);
+    const canvasWrap = queryUI('.ed-canvas-wrap');
     if (canvasWrap && 'ResizeObserver' in window) {
       canvasResizeObserver = new ResizeObserver(handleViewportChange);
       canvasResizeObserver.observe(canvasWrap);
@@ -288,13 +415,13 @@ export function mountElementalDuo(root, context) {
   }
 
   function handleViewportChange() {
-    updateDisplayModeUI();
-    lastCanvasWidth = 0; lastCanvasHeight = 0;
-    resizeCanvasViewport();
+    scheduleViewportMeasure();
   }
 
   function clearInput() {
     input.left = input.right = input.jump = input.interact = false;
+    input.jumpQueued = input.interactQueued = false;
+    resetAnalogStick();
   }
   function handleKeyDown(event) {
     if (document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
@@ -311,9 +438,11 @@ export function mountElementalDuo(root, context) {
   }
 
   async function handleClick(event) {
-    const action = event.target.closest('[data-ed-action]')?.dataset.edAction;
-    if (!action) return;
+    const actionButton = event.target.closest('[data-ed-action]');
+    if (!actionButton || (!root.contains(actionButton) && !gamePanel?.contains(actionButton))) return;
+    const action = actionButton.dataset.edAction;
     if (action === 'portrait') { await enterPortraitMode(); return; }
+    if (action === 'toggle-controls') { setControlMode(controlMode === 'analog' ? 'buttons' : 'analog'); return; }
     if (action === 'fullscreen') {
       if (displayMode === 'fullscreen') await enterPortraitMode();
       else await enterLandscapeMode();
@@ -344,7 +473,7 @@ export function mountElementalDuo(root, context) {
     const guest = players.guest || {};
     const switchesLeft = Number(!switchIsOn('fire')) + Number(!switchIsOn('water'));
     const claimed = Number(Boolean(levelState().gems?.fire)) + Number(Boolean(levelState().gems?.water));
-    const setText = (selector, value) => { const el = root.querySelector(selector); if (el) el.textContent = value; };
+    const setText = (selector, value) => { const el = queryUI(selector); if (el) el.textContent = value; };
     setText('[data-ed-world]', level.worldName.toUpperCase());
     setText('[data-ed-level-title]', `${String(level.id).padStart(2,'0')} · ${level.name}`);
     setText('[data-ed-level-note]', `${level.mapName || 'Jelajah arena'} · ${level.difficultyLabel || 'Petualangan'} · ${level.note}`);
@@ -365,19 +494,19 @@ export function mountElementalDuo(root, context) {
     setText('[data-ed-status="guest"]', guest.complete ? 'Nira · tiba di gerbang' : guest.ready ? 'Nira · menjelajah' : 'Nira · menunggu');
     setText('[data-ed-deaths]', `Jatuh: ${Number(mine.deaths)||0}`);
     setText('[data-ed-mechanic]', `${level.mechanic}. ${level.tagline}`);
-    const progress = root.querySelector('[data-ed-progress]');
+    const progress = queryUI('[data-ed-progress]');
     if (progress) progress.style.width = `${(level.id / 50) * 100}%`;
-    const readyHost = root.querySelector('[data-ed-ready="host"]');
-    const readyGuest = root.querySelector('[data-ed-ready="guest"]');
+    const readyHost = queryUI('[data-ed-ready="host"]');
+    const readyGuest = queryUI('[data-ed-ready="guest"]');
     if (readyHost) readyHost.textContent = host.ready ? 'Siap ✓' : 'Menunggu siap';
     if (readyGuest) readyGuest.textContent = guest.ready ? 'Siap ✓' : 'Menunggu siap';
-    const readyButton = root.querySelector('[data-ed-action="ready"]');
+    const readyButton = queryUI('[data-ed-action="ready"]');
     if (readyButton) {
       readyButton.disabled = Boolean(mine.ready);
       readyButton.innerHTML = mine.ready ? 'Kamu sudah siap ✓ <span>♡</span>' : 'Aku siap bertualang <span>↗</span>';
     }
     // Keep temporary feedback in the HUD, never over the playable canvas.
-    const notice = root.querySelector('[data-ed-notice]');
+    const notice = queryUI('[data-ed-notice]');
     const noticeActive = Boolean(canvasNotice && now() < noticeUntil);
     if (notice) {
       notice.hidden = !noticeActive;
@@ -391,7 +520,7 @@ export function mountElementalDuo(root, context) {
     const totalStars = Object.values(results).reduce((sum, item) => sum + Math.min(3, Number(item?.stars)||0), 0);
     const levels = data.levels || {};
     const totalShards = Object.values(levels).reduce((sum, item) => sum + Number(Boolean(item?.gems?.fire)) + Number(Boolean(item?.gems?.water)), 0);
-    const setText = (selector, value) => { const el = root.querySelector(selector); if (el) el.textContent = value; };
+    const setText = (selector, value) => { const el = queryUI(selector); if (el) el.textContent = value; };
     setText('[data-ed-finish-stars]', `${totalStars} / 150`);
     setText('[data-ed-finish-shards]', `${totalShards} / 100`);
   }
@@ -1307,7 +1436,7 @@ export function mountElementalDuo(root, context) {
     const panelW = 116 * pixelScale;
     const panelH = 88 * pixelScale;
     const panelX = canvas.width - panelW - margin;
-    const panelY = margin;
+    const panelY = displayMode === 'fullscreen' ? 72 * pixelScale : margin;
     const mapX = panelX + 7 * pixelScale;
     const mapY = panelY + 18 * pixelScale;
     const mapW = panelW - 14 * pixelScale;
@@ -1417,7 +1546,6 @@ export function mountElementalDuo(root, context) {
 
   function drawScene(time, dt = 1 / 60) {
     if (!ctx || currentView !== 'game') return;
-    resizeCanvasViewport();
     updateCamera(dt);
     const level = levelData();
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -1488,6 +1616,7 @@ export function mountElementalDuo(root, context) {
   }
 
   shell();
+  setControlMode('buttons');
   updateDisplayModeUI();
   unsubscribeServerClock = onValue(ref(db, '.info/serverTimeOffset'), snapshot => {
     elementalServerTimeOffset = Number(snapshot.val()) || 0;
@@ -1501,25 +1630,25 @@ export function mountElementalDuo(root, context) {
 
   return {
     destroy() {
-      const gamePanel = root.querySelector('.ed-game-panel');
       if (document.fullscreenElement === gamePanel && document.exitFullscreen) {
         try { const exitRequest = document.exitFullscreen(); exitRequest?.catch?.(() => {}); } catch {}
       }
-      gamePanel?.classList.remove('ed-fullpage-fallback');
+      restoreFullPagePortal();
       try { screen.orientation?.unlock?.(); } catch {}
       destroyed = true;
       if (unsubscribe) unsubscribe();
       if (unsubscribeServerClock) unsubscribeServerClock();
       if (rafId) cancelAnimationFrame(rafId);
+      if (viewportResizeFrame) cancelAnimationFrame(viewportResizeFrame);
       if (playerWriteRetryTimer) window.clearTimeout(playerWriteRetryTimer);
       pendingPlayerPayload = null;
-      root.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', clearInput);
       window.removeEventListener('resize', handleViewportChange);
       window.removeEventListener('orientationchange', handleViewportChange);
-      window.visualViewport?.removeEventListener?.('resize', handleViewportChange);
+
       screen.orientation?.removeEventListener?.('change', handleViewportChange);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       canvasResizeObserver?.disconnect();
