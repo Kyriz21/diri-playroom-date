@@ -3,7 +3,7 @@ import {
   ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
   createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap
-} from './elemental-duo-logic.js';
+} from './elemental-duo-logic.js?v=0.24.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -42,6 +42,9 @@ export function mountElementalDuo(root, context) {
   let canvas = null;
   let ctx = null;
   let localCheckpoint = null;
+  const canvasView = { zoom:1, cameraX:0, cameraY:0, viewWidth:ELEMENTAL_WORLD_WIDTH, viewHeight:ELEMENTAL_WORLD_HEIGHT };
+  let lastCanvasWidth = 0;
+  let lastCanvasHeight = 0;
   let canvasNotice = '';
   let noticeUntil = 0;
   let starsEarned = 0;
@@ -77,33 +80,33 @@ export function mountElementalDuo(root, context) {
           <div class="ed-lobby-art" aria-hidden="true"><div class="ed-orbit ed-orbit-one"></div><div class="ed-orbit ed-orbit-two"></div><div class="ed-lobby-spirit ed-bara">✦</div><div class="ed-lobby-spirit ed-nira">✧</div><span class="ed-art-star star-one">✧</span><span class="ed-art-star star-two">✦</span></div>
           <div class="ed-section-kicker">MISI KALIAN DIMULAI DI SINI</div>
           <h2>Bangunkan kembali<br><em>Jantung Lima Dunia</em></h2>
-          <p class="ed-lobby-copy">Bara dan Nira punya kekuatan berbeda. Aktifkan dua sakelar, bantu satu sama lain melewati rintangan, lalu capai gerbang bersama.</p>
+          <p class="ed-lobby-copy">Bara dan Nira punya kekuatan berbeda. Lewati lava dan air, injak pijakan elemen masing-masing, ambil permata, lalu temukan pintu kalian.</p>
           <div class="ed-player-pair">
             <article class="ed-player-card ed-player-fire"><div class="ed-player-orb">✦</div><div><span>PEMAIN 1 · PEMBUAT SESI</span><strong>${ESCAPE(names.host)}</strong><small>Bara · Roh Bara</small></div><b data-ed-ready="host">Menunggu siap</b></article>
             <article class="ed-player-card ed-player-water"><div class="ed-player-orb">✧</div><div><span>PEMAIN 2 · PASANGAN</span><strong>${ESCAPE(names.guest)}</strong><small>Nira · Roh Air</small><b data-ed-ready="guest">Menunggu siap</b></div></article>
           </div>
           <div class="ed-howto-grid">
-            <div><span class="ed-how-icon ed-fire-icon">✦</span><strong>Bara</strong><small>Menyalakan simpul bara dan tahan panas.</small></div>
-            <div><span class="ed-how-icon ed-water-icon">✧</span><strong>Nira</strong><small>Mengaktifkan simpul air dan melewati arus.</small></div>
-            <div><span class="ed-how-icon ed-gem-icon">◇</span><strong>Serpihan</strong><small>Kumpulkan dua serpihan untuk bintang ekstra.</small></div>
+            <div><span class="ed-how-icon ed-fire-icon">✦</span><strong>Bara</strong><small>Aman di lava, hindari air, ambil permata bara.</small></div>
+            <div><span class="ed-how-icon ed-water-icon">✧</span><strong>Nira</strong><small>Aman di air, hindari lava, ambil permata air.</small></div>
+            <div><span class="ed-how-icon ed-gem-icon">◇</span><strong>Kerja sama</strong><small>Tekan kedua pijakan untuk membuka penghalang dan pintu.</small></div>
           </div>
           <button class="ed-primary-button" type="button" data-ed-action="ready">Aku siap bertualang <span>↗</span></button>
           <p class="ed-lobby-note">Petualangan memiliki 50 level dalam 5 dunia. Level berikutnya terbuka otomatis setelah kalian berdua mencapai gerbang.</p>
         </section>
         <section class="ed-panel ed-game-panel" data-ed-view="game" hidden>
-          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Aktifkan dua sakelar elemen.</p></div><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div></div>
+          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><button class="ed-fullscreen-button" type="button" data-ed-action="fullscreen" aria-label="Perbesar arena" title="Perbesar arena">⛶</button></div></div>
           <div class="ed-progress-track"><span data-ed-progress></span></div>
           <div class="ed-hud-row">
             <div class="ed-hud-player"><span class="ed-hud-orb ed-fire-icon">✦</span><span><b>${ESCAPE(names.host)}</b><small data-ed-status="host">Bara · belum tiba</small></span></div>
             <div class="ed-hud-center"><span data-ed-gates>2 simpul belum aktif</span><strong data-ed-shards>◇ 0 / 2</strong></div>
             <div class="ed-hud-player ed-hud-right"><span><b>${ESCAPE(names.guest)}</b><small data-ed-status="guest">Nira · belum tiba</small></span><span class="ed-hud-orb ed-water-icon">✧</span></div>
           </div>
-          <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="960" height="560" aria-label="Arena Elemental Duo"></canvas><div class="ed-canvas-notice" data-ed-notice aria-live="polite">Cari dua sakelar dan capai gerbang bersama.</div></div>
+          <div class="ed-canvas-wrap"><canvas class="ed-canvas" width="960" height="560" aria-label="Arena platformer Elemental Duo"></canvas><div class="ed-canvas-notice" data-ed-notice aria-live="polite">Injak pijakan Bara dan Air untuk membuka penghalang.</div></div>
           <div class="ed-touch-controls" aria-label="Kontrol permainan">
             <div class="ed-move-controls"><button type="button" data-ed-control="left" aria-label="Bergerak ke kiri">←</button><button type="button" data-ed-control="right" aria-label="Bergerak ke kanan">→</button></div>
             <div class="ed-action-controls"><button type="button" data-ed-control="interact" class="ed-interact-control">AKSI <small>E</small></button><button type="button" data-ed-control="jump" class="ed-jump-control">LOMPAT <small>SPACE</small></button></div>
           </div>
-          <div class="ed-instruction-row"><span>⌨️ A / D atau ← / → untuk bergerak · Space untuk lompat · E untuk berinteraksi</span><span data-ed-deaths>Jatuh: 0</span></div>
+          <div class="ed-instruction-row"><span>Gerak: A/D atau ←/→ · Lompat: Space · Tekan pijakan sesuai elemen</span><span data-ed-deaths>Jatuh: 0</span></div>
           <div class="ed-bottom-tip"><b>Petunjuk level</b><span data-ed-mechanic>Perhatikan kemampuan masing-masing karakter.</span></div>
         </section>
         <section class="ed-panel ed-finish-panel" data-ed-view="finish" hidden>
@@ -122,9 +125,43 @@ export function mountElementalDuo(root, context) {
     if (view === 'game') {
       canvas = root.querySelector('.ed-canvas');
       ctx = canvas?.getContext('2d') || null;
+      requestAnimationFrame(resizeCanvasViewport);
       updateHud();
     }
     if (view === 'finish') updateFinish();
+  }
+
+  function resizeCanvasViewport() {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return;
+    const aspect = rect.width / rect.height;
+    // Keep the world scale uniform. Narrow screens see a closer, camera-followed slice;
+    // wide screens retain the complete 960-unit arena.
+    const desiredHeight = Math.min(ELEMENTAL_WORLD_HEIGHT, Math.max(400, ELEMENTAL_WORLD_HEIGHT * Math.min(1, aspect / (ELEMENTAL_WORLD_WIDTH / ELEMENTAL_WORLD_HEIGHT))));
+    const desiredWidth = desiredHeight * aspect;
+    const viewWidth = Math.min(ELEMENTAL_WORLD_WIDTH, Math.max(582, desiredWidth));
+    const viewHeight = viewWidth / aspect;
+    const backingHeight = Math.max(260, Math.round(canvas.width / aspect));
+    if (Math.abs(rect.width - lastCanvasWidth) < 1 && Math.abs(rect.height - lastCanvasHeight) < 1 && canvas.height === backingHeight) return;
+    lastCanvasWidth = rect.width;
+    lastCanvasHeight = rect.height;
+    canvas.width = ELEMENTAL_WORLD_WIDTH;
+    canvas.height = backingHeight;
+    ctx = canvas.getContext('2d');
+    canvasView.zoom = ELEMENTAL_WORLD_WIDTH / viewWidth;
+    canvasView.viewWidth = viewWidth;
+    canvasView.viewHeight = viewHeight;
+  }
+
+  function updateCamera() {
+    const host = role === 'host' ? localPlayer : remoteRender;
+    const guest = role === 'guest' ? localPlayer : remoteRender;
+    const centerX = (Number(host?.x) + Number(guest?.x)) / 2 || 480;
+    const centerY = (Number(host?.y) + Number(guest?.y)) / 2 || 468;
+    canvasView.cameraX = Math.max(0, Math.min(ELEMENTAL_WORLD_WIDTH - canvasView.viewWidth, centerX - canvasView.viewWidth / 2));
+    const maxY = Math.max(0, ELEMENTAL_WORLD_HEIGHT - canvasView.viewHeight);
+    canvasView.cameraY = Math.max(0, Math.min(maxY, centerY - canvasView.viewHeight * .62));
   }
 
   function bindControls() {
@@ -152,6 +189,8 @@ export function mountElementalDuo(root, context) {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', clearInput);
+    window.addEventListener('resize', resizeCanvasViewport, { passive:true });
+    document.addEventListener('fullscreenchange', resizeCanvasViewport);
   }
 
   function clearInput() {
@@ -174,6 +213,21 @@ export function mountElementalDuo(root, context) {
   async function handleClick(event) {
     const action = event.target.closest('[data-ed-action]')?.dataset.edAction;
     if (!action) return;
+    if (action === 'fullscreen') {
+      const panel = root.querySelector('.ed-game-panel');
+      try {
+        if (document.fullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+        } else if (panel?.requestFullscreen) {
+          await panel.requestFullscreen();
+        } else {
+          notify('Mode layar penuh tidak didukung browser ini.');
+          return;
+        }
+        requestAnimationFrame(resizeCanvasViewport);
+      } catch { notify('Browser tidak mengizinkan mode layar penuh.'); }
+      return;
+    }
     if (action === 'ready') {
       if (readyBusy || localPlayer.ready) return;
       readyBusy = true;
@@ -204,7 +258,7 @@ export function mountElementalDuo(root, context) {
     setText('[data-ed-level-title]', `${String(level.id).padStart(2,'0')} · ${level.name}`);
     setText('[data-ed-level-note]', level.note);
     setText('[data-ed-level-number]', String(level.id).padStart(2,'0'));
-    setText('[data-ed-gates]', switchesLeft ? `${switchesLeft} simpul belum aktif` : 'Gerbang terbuka · menuju pintu!');
+    setText('[data-ed-gates]', switchesLeft ? `Pijakan ${switchIsOn('fire') ? '✓' : '✕'} Bara · ${switchIsOn('water') ? '✓' : '✕'} Air` : 'Penghalang terbuka · cari pintu!');
     setText('[data-ed-shards]', `◇ ${claimed} / 2`);
     setText('[data-ed-status="host"]', host.complete ? 'Bara · tiba di gerbang' : host.ready ? 'Bara · menjelajah' : 'Bara · menunggu');
     setText('[data-ed-status="guest"]', guest.complete ? 'Nira · tiba di gerbang' : guest.ready ? 'Nira · menjelajah' : 'Nira · menunggu');
@@ -363,21 +417,29 @@ export function mountElementalDuo(root, context) {
     saveLocalPlayer(true);
   }
 
-  function attemptSwitch() {
+  function attemptSwitch(forcedPlate = null) {
     if (switchBusy || localPlayer.complete || data.meta?.phase !== 'playing') return;
     const level = levelData();
-    const nearby = level.switches.find(item => Math.hypot(localPlayer.x-item.x, (localPlayer.y-3)-item.y) < 62);
-    if (!nearby) { notify('Dekati salah satu simpul elemen untuk mengaktifkannya.'); return; }
+    const nearby = forcedPlate || level.switches.find(item => Math.hypot(localPlayer.x-item.x, (localPlayer.y-3)-item.y) < 62);
+    if (!nearby) { notify('Dekati pijakan elemen untuk mengaktifkannya.'); return; }
     if (nearby.element !== CHARACTER[role].element) {
-      notify(nearby.element === 'fire' ? 'Simpul ini menunggu Bara.' : 'Simpul ini menunggu Nira.');
+      if (!forcedPlate) notify(nearby.element === 'fire' ? 'Pijakan ini hanya untuk Bara.' : 'Pijakan ini hanya untuk Nira.');
       return;
     }
-    if (switchIsOn(nearby.element)) { notify('Simpul ini sudah aktif. Cari simpul pasanganmu!'); return; }
+    if (switchIsOn(nearby.element)) return;
     switchBusy = true;
     runTransaction(ref(db, path('levels', String(currentLevel), 'switches', nearby.element)), value => value === true ? undefined : true)
-      .then(result => notify(result.committed ? `Simpul ${nearby.element === 'fire' ? 'Bara' : 'Air'} aktif!` : 'Simpul sudah diaktifkan.'))
-      .catch(error => notify(`Simpul gagal diaktifkan: ${error.message}`, 'error'))
+      .then(result => { if (result.committed) notify(`Pijakan ${nearby.element === 'fire' ? 'Bara' : 'Air'} aktif! Penghalang terbuka sebagian.`); })
+      .catch(error => notify(`Pijakan gagal diaktifkan: ${error.message}`, 'error'))
       .finally(() => { switchBusy = false; });
+  }
+
+  function checkPressurePlate() {
+    if (switchBusy || !localPlayer.grounded || localPlayer.complete) return;
+    const element = CHARACTER[role].element;
+    if (switchIsOn(element)) return;
+    const plate = levelData().switches.find(item => item.element === element && Math.abs(localPlayer.x - item.x) < 27 && localPlayer.y + 17 >= 512);
+    if (plate) attemptSwitch(plate);
   }
 
   function collectNearbyGem() {
@@ -431,6 +493,15 @@ export function mountElementalDuo(root, context) {
       else if (localPlayer.vx < 0 && previousX - halfW >= platform.x + platform.w - 4) localPlayer.x = platform.x + platform.w + halfW;
       localPlayer.vx = 0;
     }
+    if (!gateIsOpen() && level.gate) {
+      const gateLaneOverlap = localPlayer.x + halfW > level.gate.x && localPlayer.x - halfW < level.gate.x + level.gate.w;
+      if (gateLaneOverlap) {
+        const previousX = localPlayer.x - localPlayer.vx * dt;
+        const cameFromLeft = previousX <= level.gate.x + level.gate.w / 2;
+        localPlayer.x = cameFromLeft ? level.gate.x - halfW : level.gate.x + level.gate.w + halfW;
+        localPlayer.vx = 0;
+      }
+    }
 
     const previousBottom = localPlayer.y + halfH;
     localPlayer.vy += ELEMENTAL_GRAVITY * dt * (level.modifier === 'wind' ? 0.98 : 1);
@@ -461,8 +532,10 @@ export function mountElementalDuo(root, context) {
       localCheckpoint = { x:level.checkpoint.x, y:level.checkpoint.y };
       notify('Titik aman tercapai. Teruskan!');
     }
+    checkPressurePlate();
     collectNearbyGem();
-    if (gateIsOpen() && rectsOverlap(body, level.exit) && !localPlayer.complete) {
+    const ownDoor = level.doors?.[CHARACTER[role].element] || level.exit;
+    if (gateIsOpen() && rectsOverlap(body, ownDoor) && !localPlayer.complete) {
       localPlayer.complete = true;
       localPlayer.vx = localPlayer.vy = 0;
       notify('Kamu tiba! Tunggu pasangan di gerbang.');
@@ -545,13 +618,19 @@ export function mountElementalDuo(root, context) {
       const active = switchIsOn(item.element);
       const fire = item.element === 'fire';
       const color = fire ? '#ff995c' : '#54c9df';
-      ctx.save(); ctx.translate(item.x,item.y);
-      ctx.shadowColor=color; ctx.shadowBlur=active?22:8;
-      ctx.fillStyle=active?color:'rgba(255,255,255,.88)';
-      ctx.beginPath();ctx.arc(0,0,active?17:14,0,Math.PI*2);ctx.fill();
-      ctx.shadowBlur=0;ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
-      ctx.fillStyle=active?'#fff':color;ctx.font='bold 18px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(fire?'✦':'✧',0,1);
-      if(!active){ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,22+Math.sin(time*.004)*2,0,Math.PI*2);ctx.stroke();}
+      const w = item.w || 52;
+      ctx.save(); ctx.translate(item.x, item.y);
+      ctx.shadowColor=color; ctx.shadowBlur=active?20:8;
+      ctx.fillStyle=active ? color : (fire ? '#854b43' : '#376d83');
+      roundedRect(ctx,-w/2,-5,w,10,5); ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.fillStyle=active ? '#fff' : 'rgba(255,255,255,.78)';
+      ctx.fillRect(-w/2+7,-2,w-14,2);
+      ctx.strokeStyle=color; ctx.lineWidth=2;
+      roundedRect(ctx,-w/2-3,-8,w+6,16,6); ctx.stroke();
+      ctx.fillStyle=color; ctx.font='bold 11px system-ui'; ctx.textAlign='center';
+      ctx.fillText(fire?'BARA':'AIR',0,-15);
+      if (!active) { ctx.globalAlpha=.6; ctx.beginPath(); ctx.arc(0,-2,15+Math.sin(time*.005)*2,Math.PI,Math.PI*2); ctx.stroke(); }
       ctx.restore();
     }
   }
@@ -572,15 +651,35 @@ export function mountElementalDuo(root, context) {
 
   function drawExit(level, time) {
     const open = gateIsOpen();
-    const x=level.exit.x,y=level.exit.y;
-    ctx.save();ctx.translate(x,y);
-    ctx.shadowColor=open?'#fff1ad':'rgba(45,49,74,.2)';ctx.shadowBlur=open?28:4;
-    ctx.fillStyle=open?'rgba(255,245,198,.45)':'rgba(48,44,71,.28)';
-    roundedRect(ctx,-16,-8,74,92,35);ctx.fill();
-    ctx.shadowBlur=0;ctx.strokeStyle=open?'#fff2b6':'rgba(255,255,255,.65)';ctx.lineWidth=5;
-    ctx.beginPath();ctx.ellipse(21,38,23,43,0,Math.PI,Math.PI*2);ctx.lineTo(44,84);ctx.moveTo(-2,38);ctx.lineTo(-2,84);ctx.stroke();
-    ctx.fillStyle=open?'#fff5d0':'rgba(255,255,255,.55)';ctx.font='bold 23px system-ui';ctx.textAlign='center';ctx.fillText(open?'✧':'⌑',21,48+Math.sin(time*.004)*2);
-    ctx.restore();
+    if (level.gate && !open) {
+      const gate = level.gate;
+      ctx.save();
+      ctx.shadowColor='rgba(88,69,111,.32)'; ctx.shadowBlur=12;
+      const g = ctx.createLinearGradient(gate.x,0,gate.x+gate.w,0);
+      g.addColorStop(0,'#6e617f'); g.addColorStop(.5,'#d9c9e8'); g.addColorStop(1,'#6e617f');
+      ctx.fillStyle=g; roundedRect(ctx,gate.x,gate.y,gate.w,gate.h,8); ctx.fill();
+      ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=3;
+      for(let y=gate.y+12;y<gate.y+gate.h-8;y+=25){ctx.beginPath();ctx.moveTo(gate.x+3,y);ctx.lineTo(gate.x+gate.w-3,y);ctx.stroke();}
+      ctx.fillStyle='#fff4c8'; ctx.font='bold 17px system-ui'; ctx.textAlign='center'; ctx.fillText('✦',gate.x+gate.w/2,gate.y-12);
+      ctx.restore();
+    }
+    const doors = level.doors || { fire:level.exit, water:level.exit };
+    for (const element of ['fire','water']) {
+      const door = doors[element];
+      const fire = element === 'fire';
+      const color = fire ? '#ff9b5d' : '#58cde2';
+      const player = data.players?.[fire?'host':'guest'];
+      ctx.save(); ctx.translate(door.x+door.w/2,door.y+door.h/2);
+      ctx.shadowColor=open?color:'rgba(45,49,74,.18)'; ctx.shadowBlur=open?24:4;
+      ctx.fillStyle=open?(fire?'rgba(255,187,125,.32)':'rgba(116,228,240,.32)'):'rgba(48,44,71,.22)';
+      roundedRect(ctx,-door.w/2,-door.h/2,door.w,door.h,15); ctx.fill();
+      ctx.shadowBlur=0; ctx.strokeStyle=open?color:'rgba(255,255,255,.55)'; ctx.lineWidth=4;
+      ctx.beginPath(); ctx.moveTo(-door.w/2+3,door.h/2); ctx.lineTo(-door.w/2+3,0); ctx.arc(0,0,door.w/2-3,Math.PI,0); ctx.lineTo(door.w/2-3,door.h/2); ctx.stroke();
+      ctx.fillStyle=open?color:'rgba(255,255,255,.65)'; ctx.font='bold 19px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(fire?'✦':'✧',0,3);
+      ctx.fillStyle='#fff'; ctx.font='800 9px system-ui'; ctx.fillText(fire?'BARA':'AIR',0,door.h/2+13);
+      if (player?.complete) { ctx.fillStyle='#fff4b3'; ctx.font='bold 15px system-ui'; ctx.fillText('✓',0,-door.h/2-10); }
+      ctx.restore();
+    }
   }
 
   function drawCheckpoint(level) {
@@ -615,7 +714,13 @@ export function mountElementalDuo(root, context) {
 
   function drawScene(time) {
     if (!ctx || currentView !== 'game') return;
+    resizeCanvasViewport();
+    updateCamera();
     const level = levelData();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.save();
+    const z = canvasView.zoom;
+    ctx.setTransform(z,0,0,z,-canvasView.cameraX*z,-canvasView.cameraY*z);
     drawBackground(level,time);
     drawPlatforms(level);
     drawHazards(level,time);
@@ -628,14 +733,17 @@ export function mountElementalDuo(root, context) {
     drawSpirit(host,'fire',role!=='host',time);
     drawSpirit(guest,'water',role!=='guest',time);
     if (!gateIsOpen()) {
-      ctx.fillStyle='rgba(45,46,65,.66)';ctx.font='700 15px system-ui';ctx.textAlign='center';ctx.fillText('AKTIFKAN KEDUA SIMPUL',480,45);
+      ctx.fillStyle='rgba(45,46,65,.76)';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText('INJAK KEDUA PIJAKAN ELEMEN',canvasView.cameraX+canvasView.viewWidth/2,canvasView.cameraY+28);
     } else if (!localPlayer.complete) {
-      ctx.fillStyle='rgba(45,46,65,.68)';ctx.font='700 15px system-ui';ctx.textAlign='center';ctx.fillText('GERBANG TERBUKA · TUNGGU SATU SAMA LAIN',480,45);
+      ctx.fillStyle='rgba(45,46,65,.72)';ctx.font='800 14px system-ui';ctx.textAlign='center';ctx.fillText(`MENUJU PINTU ${CHARACTER[role].element==='fire'?'BARA':'AIR'}`,canvasView.cameraX+canvasView.viewWidth/2,canvasView.cameraY+28);
     }
     if (canvasNotice && now() < noticeUntil) {
-      ctx.fillStyle='rgba(48,40,60,.72)';roundedRect(ctx,300,505,360,34,14);ctx.fill();
-      ctx.fillStyle='#fff';ctx.font='600 12px system-ui';ctx.textAlign='center';ctx.fillText(canvasNotice.slice(0,52),480,527);
+      const noticeY = canvasView.cameraY + canvasView.viewHeight - 38;
+      roundedRect(ctx,canvasView.cameraX+canvasView.viewWidth/2-180,noticeY,360,30,12);
+      ctx.fillStyle='rgba(48,40,60,.72)';ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='600 12px system-ui';ctx.textAlign='center';ctx.fillText(canvasNotice.slice(0,52),canvasView.cameraX+canvasView.viewWidth/2,noticeY+19);
     }
+    ctx.restore();
   }
 
   function frame(timestamp) {
@@ -683,6 +791,8 @@ export function mountElementalDuo(root, context) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', clearInput);
+      window.removeEventListener('resize', resizeCanvasViewport);
+      document.removeEventListener('fullscreenchange', resizeCanvasViewport);
       clearInput();
     }
   };

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.24.0 — Elemental Duo platform-puzzle and mobile camera
+- Reworked Elemental Duo objectives into a two-player element platform puzzle: Bara is safe in lava and uses the Bara pressure plate; Nira is safe in water and uses the Air pressure plate. Each character collects only their matching gem.
+- Added a locked shared barrier that opens only after both pressure plates are activated, followed by separate Bara and Air exit doors. Both players must reach their matching door before the next level starts.
+- Added camera-follow and responsive world cropping so narrow phone screens can focus on the players and nearby platforms instead of shrinking the entire 960×560 map.
+- Enlarged mobile playfield and touch controls, added a fullscreen arena button, and compacted the HUD for landscape phones.
+- Updated the Elemental Duo lazy-load cache key and app asset versions to prevent stale v0.22/v0.23 game files from being served after deployment. No Firebase Rules changes.
+- Re-ran the complete Node test suite; all existing and new tests pass. Physical two-device gameplay and orientation checks remain to be completed by the user.
+
 ## v0.23.0 — Photobooth, mobile touch, and game feedback fixes
 - Photobooth solo/couple editor previews now use the exact same canvas renderer as PNG/JPEG export, including the frame artwork, photo filters, and decorations. Invisible interaction hitboxes preserve selecting and dragging decorations without introducing a second visual layout.
 - Solo and couple decoration placement is kept in the same normalized canvas coordinate system from editor preview to final output.

@@ -1,22 +1,22 @@
 # Elemental Duo — Panduan Game
 
-**Elemental Duo** adalah petualangan platformer kooperatif untuk dua pemain. Pemain tidak saling berlomba; keduanya harus bekerja sama untuk membuka jalan dan mencapai gerbang pada setiap level.
+**Elemental Duo** adalah platform-puzzle kooperatif untuk dua pemain. Pola permainan menekankan kerja sama dua karakter elemen: melewati jalur platform, menghindari bahaya yang berlawanan, mengumpulkan permata milik karakter sendiri, mengaktifkan pijakan, lalu mencapai pintu masing-masing.
 
-## Karakter
+## Karakter dan aturan elemen
 
-- **Bara** dimainkan oleh host/pembuat sesi. Bara mengaktifkan simpul bara dan aman melewati zona api.
-- **Nira** dimainkan oleh guest/pemain yang bergabung. Nira mengaktifkan simpul air dan aman melewati zona air.
+- **Bara** dimainkan oleh host/pembuat sesi. Bara aman melewati lava/api, tetapi akan jatuh jika menyentuh air. Bara mengumpulkan permata bara dan mengaktifkan pijakan Bara.
+- **Nira** dimainkan oleh guest/pemain yang bergabung. Nira aman melewati air, tetapi akan jatuh jika menyentuh lava/api. Nira mengumpulkan permata air dan mengaktifkan pijakan Air.
+- Permata karakter lain tidak dapat dikumpulkan. Permata bersifat opsional untuk meningkatkan penilaian bintang.
+- Menyentuh bahaya yang tidak sesuai akan mengembalikan karakter ke titik aman dan menambah jumlah jatuh.
 
-Zona elemen yang tidak sesuai akan mengembalikan karakter ke titik aman dan menambah jumlah jatuh.
+## Tujuan setiap level
 
-## Tujuan level
-
-1. Jelajahi arena dan temukan simpul Bara serta simpul Nira.
-2. Tekan aksi saat karakter berada dekat simpul yang sesuai.
-3. Kumpulkan serpihan energi sesuai karakter (opsional, untuk meningkatkan bintang).
-4. Setelah kedua simpul aktif, gerbang terbuka.
-5. Kedua pemain harus menyentuh gerbang. Jika salah satu sudah tiba lebih dulu, ia menunggu pasangannya.
-6. Setelah keduanya tiba, level berikutnya terbuka otomatis.
+1. Jelajahi arena platform dan gunakan tombol kiri/kanan serta lompat untuk berpindah antarpijakan.
+2. Hindari bahaya yang tidak cocok dengan elemen karakter. Bara boleh melewati lava tetapi tidak air; Nira boleh melewati air tetapi tidak lava.
+3. Kumpulkan permata sesuai elemen masing-masing untuk memperoleh bintang tambahan.
+4. Injak pijakan Bara dan pijakan Air. Kedua pijakan harus aktif agar penghalang bersama terbuka. Pijakan tetap aktif setelah diinjak.
+5. Setelah penghalang terbuka, Bara masuk ke pintu Bara dan Nira masuk ke pintu Air.
+6. Pemain yang lebih dahulu mencapai pintunya akan menunggu pasangannya. Level berikutnya terbuka otomatis setelah keduanya tiba.
 
 ## Struktur petualangan
 
@@ -28,7 +28,7 @@ Zona elemen yang tidak sesuai akan mengembalikan karakter ke titik aman dan mena
 | Reruntuhan Langit | 31–40 | Pulau melayang dan arus angin |
 | Jantung Kuno | 41–50 | Ujian gabungan seluruh kemampuan |
 
-Setiap level memiliki konfigurasi platform, zona bahaya, simpul, dan dua serpihan yang berbeda. Satu engine menangani seluruh level agar mudah dirawat.
+Setiap level memiliki konfigurasi platform, bahaya elemen, pijakan, permata, titik aman, penghalang, dan sepasang pintu. Satu engine menangani seluruh level agar mudah dirawat.
 
 ## Kontrol
 
@@ -37,22 +37,25 @@ Setiap level memiliki konfigurasi platform, zona bahaya, simpul, dan dua serpiha
 | Bergerak kiri | A atau ← | Tombol ← |
 | Bergerak kanan | D atau → | Tombol → |
 | Melompat | Space atau W/↑ | Tombol LOMPAT |
-| Berinteraksi | E atau Enter | Tombol AKSI |
+| Interaksi alternatif | E atau Enter | Tombol AKSI |
+| Perbesar arena | Tombol layar penuh | Tombol ⛶ |
+
+Pada HP, arena menggunakan kamera yang mengikuti area pemain dan memperbesar bagian level yang relevan. Putar perangkat ke mode landscape untuk area pandang yang lebih lebar. Tombol arah dan lompat dibuat lebih besar untuk layar sentuh.
 
 ## Penilaian
 
-- **3 bintang:** dua serpihan terkumpul dan kedua pemain menyelesaikan level tanpa jatuh.
+- **3 bintang:** dua permata terkumpul dan kedua pemain menyelesaikan level tanpa jatuh.
 - **2 bintang:** jumlah jatuh gabungan pada level tidak lebih dari dua.
 - **1 bintang:** level selesai dengan jumlah jatuh yang lebih banyak.
 
-Hasil bintang dan serpihan direkap setelah menyelesaikan level 50.
+Hasil bintang dan permata direkap setelah menyelesaikan level 50.
 
 ## Sinkronisasi dan batasan
 
-Game menyimpan status pemain, posisi, tombol siap, status simpul, serpihan, dan hasil level pada Firebase Realtime Database di `roomGames/{kode}/{sessionId}/elementalDuo`. Data berada pada node khusus dan hanya dapat dibaca/ditulis oleh anggota ruang ketika sesi aktif bertipe `elementalduo`.
+Game menyimpan status pemain, posisi, kesiapan, status pijakan, permata, dan hasil level pada Firebase Realtime Database di `roomGames/{kode}/{sessionId}/elementalDuo`. Data berada pada node khusus dan hanya dapat dibaca/ditulis oleh anggota ruang ketika sesi aktif bertipe `elementalduo`.
 
 - Tidak menggunakan Cloud Storage, Cloud Functions, server khusus, atau TURN berbayar.
-- Memerlukan Rules v0.22 dipublikasikan satu kali untuk memasukkan `elementalduo` ke daftar ID game yang diizinkan.
+- Firebase Rules tidak berubah pada revisi v0.24.0; Rules v0.22 yang sudah dipasang tetap berlaku.
 - Gerak pemain dikirim berkala melalui RTDB; kualitas gerak jarak jauh dipengaruhi koneksi masing-masing perangkat.
 - Progres permainan mengikuti sesi aktif. Ketika host mengakhiri sesi dan kembali ke lobi, data game sesi tersebut dibersihkan sesuai mekanisme proyek.
-- Belum ada uji end-to-end pada Firebase aktif dengan dua perangkat pengguna; gunakan checklist di `REVIEW-BUILD-QA.md`.
+- Belum ada uji end-to-end pada Firebase aktif dengan dua perangkat pengguna; gunakan checklist terbaru di `REVIEW-BUILD-QA.md`.

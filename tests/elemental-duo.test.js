@@ -125,3 +125,41 @@ test('Setiap simpul dan titik checkpoint dapat didekati tanpa berada di zona ele
     assert.equal(overlapsHazard, false, `level ${level.id} checkpoint`);
   }
 });
+
+test('Setiap level memiliki dua pijakan aman, penghalang bersama, dan pintu khusus Bara serta Air', () => {
+  for (const level of ELEMENTAL_LEVELS) {
+    assert.deepEqual(level.switches.map(item => item.element).sort(), ['fire','water']);
+    assert.ok(level.switches.every(item => item.y >= 500 && item.w >= 48));
+    assert.ok(level.gate && level.gate.w > 0 && level.gate.h >= 100);
+    assert.ok(level.doors.fire && level.doors.water);
+    assert.notEqual(level.doors.fire.x, level.doors.water.x);
+    assert.equal(level.doors.fire.element, 'fire');
+    assert.equal(level.doors.water.element, 'water');
+  }
+});
+
+test('Elemental Duo mengaktifkan pijakan otomatis dan mewajibkan pintu yang sesuai elemen pemain', () => {
+  const game = readSource('../js/games/elemental-duo.js');
+  assert.match(game, /function checkPressurePlate\(\)/);
+  assert.match(game, /attemptSwitch\(plate\)/);
+  assert.match(game, /const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
+  assert.match(game, /const gateLaneOverlap = localPlayer\.x \+ halfW > level\.gate\.x/);
+  assert.match(game, /if \(gateIsOpen\(\) && rectsOverlap\(body, ownDoor\)/);
+  assert.match(game, /function drawExit\(level, time\)/);
+});
+
+test('Elemental Duo memakai kamera responsif, kontrol sentuh lebih besar, dan tombol fullscreen', () => {
+  const game = readSource('../js/games/elemental-duo.js');
+  const css = readSource('../css/elemental-duo.css');
+  const index = readSource('../index.html');
+  const app = readSource('../js/app.js');
+  assert.match(game, /function resizeCanvasViewport\(\)/);
+  assert.match(game, /function updateCamera\(\)/);
+  assert.match(game, /ctx\.setTransform\(z,0,0,z/);
+  assert.match(game, /requestFullscreen/);
+  assert.match(css, /height:clamp\(260px,74vw,370px\)/);
+  assert.match(css, /min-height:58px/);
+  assert.match(css, /\.ed-game-panel:fullscreen/);
+  assert.match(index, /elemental-duo\.css\?v=0\.24\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.24\.0/);
+});

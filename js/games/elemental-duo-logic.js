@@ -100,14 +100,15 @@ function makeLevel(index) {
     type: (i + localIndex + worldIndex) % 2 === 0 ? 'water' : 'fire'
   }));
   const switchShift = (localIndex % 3) * 18;
-  const fireSwitchX = findSafeFloorPoint(255 + switchShift, hazards, 'fire');
-  let waterSwitchX = findSafeFloorPoint(690 - switchShift, hazards, 'water');
+  // Matching pressure plates are placed on safe ground, well apart from each other.
+  const fireSwitchX = findSafeFloorPoint(255 + switchShift, hazards, null);
+  let waterSwitchX = findSafeFloorPoint(690 - switchShift, hazards, null);
   if (Math.abs(waterSwitchX - fireSwitchX) < 300) {
-    waterSwitchX = findSafeFloorPoint(fireSwitchX < 480 ? 820 : 140, hazards, 'water');
+    waterSwitchX = findSafeFloorPoint(fireSwitchX < 480 ? 820 : 140, hazards, null);
   }
   const switches = [
-    { id:'fire', element:'fire', x: fireSwitchX, y: 474 },
-    { id:'water', element:'water', x: waterSwitchX, y: 474 }
+    { id:'fire', element:'fire', x: fireSwitchX, y: 510, w:52, h:10 },
+    { id:'water', element:'water', x: waterSwitchX, y: 510, w:52, h:10 }
   ];
   const firePlatform = PLATFORM_LAYOUTS[localIndex][Math.min(1, PLATFORM_LAYOUTS[localIndex].length - 1)];
   const waterPlatform = PLATFORM_LAYOUTS[localIndex][Math.max(0, PLATFORM_LAYOUTS[localIndex].length - 2)];
@@ -139,7 +140,14 @@ function makeLevel(index) {
     gems,
     checkpoint: { x: checkpointX, y: 482 },
     spawn: { host: { x: 58, y: 468 }, guest: { x: 112, y: 468 } },
-    exit: { x: 900, y: 440, w: 42, h: 82 }
+    // A shared barrier protects the twin doors until both elemental plates are held.
+    gate: { x: 838, y: 360, w: 20, h: 160 },
+    doors: {
+      fire: { x: 870, y: 418, w: 36, h: 102, element:'fire' },
+      water: { x: 916, y: 418, w: 36, h: 102, element:'water' }
+    },
+    // Kept as a combined exit area for older integrations and level checks.
+    exit: { x: 870, y: 418, w: 82, h: 102 }
   };
 }
 

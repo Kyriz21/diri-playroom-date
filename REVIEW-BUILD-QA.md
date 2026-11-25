@@ -360,3 +360,20 @@ Temuan:
 - Balloon Pop uses pixel-based hit-testing and prevents the active touch board from becoming a scroll gesture. Re-test with two physical phones because Firebase connectivity and touch hardware are not available in this local test run.
 - Bomb Storm local collisions trigger the local character effect immediately and synchronize the observed baseline to avoid duplicate animation.
 - Guess Partner synonym/inflection canonicalization covers the requested pelukan/berpelukan and shopping/belanja examples.
+
+
+## Elemental Duo v0.24 — platform puzzle dan tampilan HP
+- [ ] Host menjadi Bara dan guest menjadi Nira.
+- [ ] Bara aman melewati lava/api tetapi kembali ke checkpoint ketika menyentuh air.
+- [ ] Nira aman melewati air tetapi kembali ke checkpoint ketika menyentuh lava/api.
+- [ ] Bara hanya mengaktifkan pijakan Bara dan mengumpulkan permata Bara.
+- [ ] Nira hanya mengaktifkan pijakan Air dan mengumpulkan permata Air.
+- [ ] Penghalang tetap tertutup sampai kedua pijakan diinjak.
+- [ ] Setelah penghalang terbuka, Bara harus masuk ke pintu Bara dan Nira ke pintu Air.
+- [ ] Pemain pertama yang mencapai pintu menunggu pemain kedua; level baru terbuka setelah keduanya tiba.
+- [ ] Pada HP portrait, kamera mengikuti karakter dan menampilkan area level yang lebih dekat tanpa mengecilkan keseluruhan arena.
+- [ ] Pada HP landscape, area permainan lebih lebar dan kontrol sentuh tetap dapat dijangkau.
+- [ ] Tombol ⛶ membuka layar penuh ketika browser mendukung Fullscreen API; tombol keluar browser mengembalikan tampilan normal.
+- [ ] Ulangi pada dua perangkat yang terhubung ke Firebase aktif.
+
+**Pemasangan v0.24:** unggah seluruh isi folder proyek. Firebase Rules tidak berubah dari versi sebelumnya sehingga tidak perlu dipublikasikan ulang. Pastikan file `js/app.js` terbaru terunggah karena versi lazy-load Elemental Duo diperbarui dari v0.22.0 ke v0.24.0.

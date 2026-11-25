@@ -1,4 +1,4 @@
-# Diri. Playroom Date v0.22 — Photobooth, Empat Mini-game & Elemental Duo
+# Diri. Playroom Date v0.24 — Photobooth, Mini-game & Elemental Duo
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini lima game aktif tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, dan Elemental Duo.
 
@@ -10,7 +10,7 @@ Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur 
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (platformer kooperatif 50 level dengan Bara dan Nira). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (platform-puzzle kooperatif 50 level dengan Bara dan Nira). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 
@@ -217,11 +217,12 @@ Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `n
 - Catatan historis: perubahan transisi hasil ini pertama kali diperkenalkan di v0.21. Untuk deployment saat ini, gunakan Rules lengkap v0.22 dari paket terbaru.
 
 
-## Mini-game 05 — Elemental Duo (v0.22)
+## Mini-game 05 — Elemental Duo (v0.24)
 
 - Platformer kooperatif dua pemain dengan karakter orisinal Bara (host) dan Nira (guest); visual, cerita, nama, dan level dibuat khusus untuk Diri. Playroom Date.
-- Lima dunia berisi 10 level masing-masing. Setiap level dibangun dari konfigurasi platform, zona elemen, dua simpul, dua serpihan, checkpoint, dan gerbang yang harus dicapai bersama.
-- Bara mengaktifkan simpul bara dan aman melewati zona api; Nira mengaktifkan simpul air dan aman melewati zona air. Kedua pemain harus mengaktifkan simpul masing-masing dan menyentuh gerbang.
+- Lima dunia berisi 10 level masing-masing. Setiap level menggunakan platform, bahaya lava/air, permata khusus elemen, dua pijakan tekanan, penghalang bersama, serta dua pintu akhir yang berbeda untuk Bara dan Nira.
+- Bara aman melewati lava/api tetapi tidak air; Nira aman melewati air tetapi tidak lava/api. Masing-masing menginjak pijakan sesuai elemen dan mengumpulkan permata berwarna sendiri. Kedua pijakan membuka penghalang, lalu setiap pemain harus masuk ke pintu elemennya sendiri.
+- Pada HP, kamera mengikuti area pemain dan memperbesar bagian level yang relevan; tombol sentuh lebih besar, layout landscape lebih ringkas, dan tersedia tombol layar penuh.
 - Kontrol desktop: A/D atau panah kiri/kanan, Space atau W/↑ untuk melompat, E/Enter untuk interaksi. Pada HP tersedia tombol arah, lompat, dan aksi.
 - Posisi serta progres tersinkron melalui Firebase Realtime Database pada node `roomGames/{kode}/{sessionId}/elementalDuo`, dengan akses dibatasi ke anggota sesi aktif.
-- Baca `ELEMENTAL-DUO.md`. Deploy v0.22 membutuhkan publikasi seluruh Firebase Rules v0.22.
+- Baca `ELEMENTAL-DUO.md`. Firebase Rules v0.22 yang sudah dipublikasikan tetap berlaku; v0.24 tidak mengubah Rules.
