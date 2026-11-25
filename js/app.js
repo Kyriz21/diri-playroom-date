@@ -311,7 +311,7 @@ function renderActiveSession(room, current) {
   const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isElementalDuo
-    ? import('./games/elemental-duo.js?v=0.32.0').then(module => ({ mount: module.mountElementalDuo }))
+    ? import('./games/elemental-duo.js?v=0.33.0').then(module => ({ mount: module.mountElementalDuo }))
     : isBalloonPop
     ? import('./games/balloon-pop.js?v=0.23.0').then(module => ({ mount: module.mountBalloonPop }))
     : isDrawTogether

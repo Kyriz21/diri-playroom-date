@@ -1,20 +1,24 @@
-# Diri. Playroom Date v0.32.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.33.0 — Photobooth, Mini-game & Elemental Duo
 
 Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini lima game aktif tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, dan Elemental Duo.
 
-## Pembaruan terbaru v0.32.0 — Peta rapi dan kontrol mobile Elemental Duo
+## Pembaruan terbaru v0.33.0 — Perbaikan mobile, kontrol dan tingkat kesulitan
 
 - Arena bukan lagi koridor lurus: setiap level adalah ruang 2D bertingkat untuk menjelajah ke kiri, kanan, atas, dan bawah.
 - Tiap level berisi 13 pijakan utama, 5 jalur cabang, dan 4 jembatan pintas/loop. Pintu Bara dan Nira dapat ditemukan di sisi atau ketinggian berbeda.
 - Lima geometri ruang berulang dengan variasi koordinat: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno.
 - Peta mini menampilkan jalur, hazard, sakelar, permata, posisi kedua pemain, pintu elemen, dan area kamera; penunjuk arah membantu ketika pintu tidak terlihat di layar.
 - Geometri semua peta dipisahkan dengan jarak visual minimum agar platform utama, cabang, dan shortcut tidak tampak menumpuk.
-- Landscape memakai fullscreen native atau fallback aplikasi yang memindahkan panel game langsung ke body; tombol HUD mengambang dan arena mengisi viewport.
-- Kontrol analog transparan otomatis dipilih pada landscape, tersedia pilihan untuk kembali ke tombol atau mengaktifkan analog saat Potret.
-- Stabilitas layar ditingkatkan dengan viewport `svh/dvh`, resize yang dijadwalkan, serta penghapusan listener `visualViewport.resize` yang sebelumnya dapat memicu canvas berkedip/loncat.
-- Kamera follow dan lima dunia/50 level tetap dipertahankan. Firebase Rules tidak berubah.
+- Mode Potret kini memakai layout edge-to-edge dengan panel game setinggi viewport, toolbar satu baris, arena fleksibel, dan kontrol yang tidak keluar dari lebar HP.
+- Mode Layar Penuh/landscape memakai arena penuh sebagai latar, HUD ringkas, analog di kiri, serta lompat/interaksi di kanan. Fallback mengisi viewport aplikasi jika Fullscreen API ditolak browser.
+- Analog benar-benar menggantikan tombol kiri/kanan dan dapat menggerakkan horizontal; dorongan joystick ke atas juga memicu lompatan. Analog dapat dipilih pada Potret atau otomatis pada Layar Penuh.
+- Tombol INTERAKSI hanya muncul ketika karakter dekat katup/tuas. Pijakan elemen aktif otomatis saat diinjak; tidak memerlukan tombol aksi.
+- Fisika platform dibuat lebih ramah: gravitasi lebih ringan, lompatan sedikit lebih tinggi, jump buffer 170 ms, coyote time 140 ms, serta pijakan utama lebih lebar.
+- Kurva kesulitan diturunkan. Dunia 1 bertahan di tingkat Mudah hingga level 8, dan dunia final dibatasi pada tingkat Sulit, bukan Expert.
+- Peta Menara Kembar diperbaiki agar tidak ada platform utama saling menumpuk. Jarak antarpijakan diperiksa pada 50 level.
+- MapVersion naik ke 9. Posisi pada level aktif dimigrasikan ke spawn; progres, serpihan, dan jumlah jatuh dipertahankan. Firebase Rules tidak berubah.
 
-Lihat `ELEMENTAL-EXPLORATION-MAPS.md` untuk penjelasan pola peta dan `BUILD-VERIFICATION.md` untuk hasil pengujian v0.32.0.
+Lihat `ELEMENTAL-EXPLORATION-MAPS.md` dan `BUILD-VERIFICATION.md` untuk rincian serta hasil pengujian v0.33.0.
 
 ## Keputusan produk
 
@@ -276,7 +280,7 @@ Pemeriksaan lokal v0.14: 94/94 unit test lulus, seluruh file JavaScript lolos `n
 - **Kerajaan Bara (level 21–30)** menggunakan 10 blueprint khusus: Napas Lava, Uap Panas, Gerbang Panas, Jembatan Bara, Sungai Pendingin, Sakelar Berantai, Lorong Uap, Lava Meninggi, Dua Katup, dan Jantung Tungku.
 - Lava memiliki fase aktif/nonaktif dan dapat bergerak naik-turun; fase dihitung dari jam level bersama Firebase.
 - Semburan uap merupakan hazard yang berbahaya bagi kedua pemain. Ventilasi aktif dan padam secara berkala.
-- Katup dioperasikan memakai tombol AKSI saat pemain mendekat. Pemilik elemen yang sesuai harus mengaktifkannya; katup mematikan hazard terhubung dan dapat menjadi syarat pembukaan gerbang.
+- Katup dioperasikan memakai tombol INTERAKSI saat pemain mendekat. Pemilik elemen yang sesuai harus mengaktifkannya; katup mematikan hazard terhubung dan dapat menjadi syarat pembukaan gerbang.
 - Level 26 dan 30 mewajibkan urutan pijakan Nira lalu Bara. Progress urutan ditulis atomik di node `switches` agar kedua perangkat membaca langkah yang sama.
 - Pressure plate dan katup berada pada platform stabil dan diperiksa keterjangkauannya.
 - Firebase Rules tidak berubah. Lihat `ELEMENTAL-WORLD-3.md` dan checklist terbaru di `REVIEW-BUILD-QA.md`.

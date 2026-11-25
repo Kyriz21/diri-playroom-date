@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.32.0';
+} from './elemental-duo-logic.js?v=0.33.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -37,6 +37,7 @@ export function mountElementalDuo(root, context) {
   const serverClockReadyPromise = new Promise(resolve => { resolveServerClockReady = resolve; });
   let rafId = 0;
   let lastFrame = 0;
+  let lastHudFrameAt = 0;
   let lastWriteAt = 0;
   let writingPlayer = false;
   let pendingPlayerPayload = null;
@@ -58,13 +59,18 @@ export function mountElementalDuo(root, context) {
   let lastCanvasWidth = 0;
   let lastCanvasHeight = 0;
   let canvasNotice = '';
-  let canvasResizeObserver = null;
+  let analogHandlers = null;
+  let lastHudRefreshAt = 0;
+  let viewportMeasureForce = false;
   let viewportResizeFrame = 0;
   let gamePanel = null;
   let gamePanelPlaceholder = null;
   let displayMode = 'portrait';
   let controlMode = 'buttons';
   let analogPointerId = null;
+  let analogJumping = false;
+  let coyoteTimeRemaining = 0;
+  let jumpBufferRemaining = 0;
   let noticeUntil = 0;
   let starsEarned = 0;
   const input = { left:false, right:false, jump:false, interact:false, jumpQueued:false, interactQueued:false };
@@ -121,12 +127,26 @@ export function mountElementalDuo(root, context) {
       const label = button.querySelector('[data-ed-control-mode-label]');
       if (label) label.textContent = controlMode === 'analog' ? 'Analog' : 'Tombol';
     }
+    // Use the actual hidden state as well as CSS so one control system can
+    // never remain on top of the other after entering native fullscreen.
+    const moveControls = queryUI('.ed-move-controls');
+    const analogPad = queryUI('[data-ed-analog-pad]');
+    if (moveControls) {
+      moveControls.hidden = controlMode === 'analog';
+      moveControls.style.setProperty('display', controlMode === 'analog' ? 'none' : 'flex', 'important');
+    }
+    if (analogPad) {
+      analogPad.hidden = controlMode !== 'analog';
+      analogPad.style.setProperty('display', controlMode === 'analog' ? 'grid' : 'none', 'important');
+    }
     resetAnalogStick();
   }
 
   function resetAnalogStick() {
     input.left = false;
     input.right = false;
+    if (analogJumping) input.jump = false;
+    analogJumping = false;
     analogPointerId = null;
     const knob = queryUI('[data-ed-analog-knob]');
     if (knob) knob.style.transform = 'translate(-50%, -50%)';
@@ -146,31 +166,41 @@ export function mountElementalDuo(root, context) {
     const y = dy * scale;
     input.left = x < -.2;
     input.right = x > .2;
+    const wantsJump = y < -.42;
+    if (wantsJump && !analogJumping) input.jumpQueued = true;
+    analogJumping = wantsJump;
+    input.jump = wantsJump;
     if (knob) knob.style.transform = `translate(calc(-50% + ${x*radius*.72}px), calc(-50% + ${y*radius*.72}px))`;
   }
 
   function bindAnalogStick() {
     const pad = queryUI('[data-ed-analog-pad]');
     if (!pad) return;
-    pad.addEventListener('pointerdown', event => {
+    const onDown = event => {
+      if (controlMode !== 'analog' || pad.hidden) return;
+      if (analogPointerId !== null) return;
       event.preventDefault();
       analogPointerId = event.pointerId;
       try { pad.setPointerCapture(event.pointerId); } catch {}
       updateAnalogStick(event);
-    });
-    pad.addEventListener('pointermove', event => {
+    };
+    const onMove = event => {
       if (analogPointerId !== event.pointerId) return;
       event.preventDefault();
       updateAnalogStick(event);
-    });
-    const release = event => {
+    };
+    const onUp = event => {
       if (analogPointerId !== event.pointerId) return;
       event.preventDefault();
       resetAnalogStick();
     };
-    pad.addEventListener('pointerup', release);
-    pad.addEventListener('pointercancel', release);
-    pad.addEventListener('lostpointercapture', release);
+    pad.addEventListener('pointerdown', onDown, { passive:false });
+    // Listen on window as a fallback for mobile browsers that retarget or
+    // cancel pointer capture when their fullscreen chrome changes.
+    window.addEventListener('pointermove', onMove, { passive:false });
+    window.addEventListener('pointerup', onUp, { passive:false });
+    window.addEventListener('pointercancel', onUp, { passive:false });
+    analogHandlers = { pad, onDown, onMove, onUp };
   }
 
   function notify(message, type = 'default') {
@@ -232,7 +262,7 @@ export function mountElementalDuo(root, context) {
           <div class="ed-touch-controls" aria-label="Kontrol permainan">
             <div class="ed-move-controls"><button type="button" data-ed-control="left" aria-label="Bergerak ke kiri">←</button><button type="button" data-ed-control="right" aria-label="Bergerak ke kanan">→</button></div>
             <div class="ed-analog-pad" data-ed-analog-pad role="application" aria-label="Analog virtual untuk bergerak"><div class="ed-analog-ring"><div class="ed-analog-knob" data-ed-analog-knob></div></div><span>GERAK</span></div>
-            <div class="ed-action-controls"><button type="button" data-ed-control="interact" class="ed-interact-control">AKSI <small>E</small></button><button type="button" data-ed-control="jump" class="ed-jump-control">LOMPAT <small>SPACE</small></button></div>
+            <div class="ed-action-controls"><button type="button" data-ed-control="interact" class="ed-interact-control" hidden>INTERAKSI <small>E</small></button><button type="button" data-ed-control="jump" class="ed-jump-control">LOMPAT <small>SPACE</small></button></div>
           </div>
           <div class="ed-instruction-row"><span>Gerak: A/D atau ←/→ · Lompat: Space · Tekan pijakan sesuai elemen</span><span data-ed-deaths>Jatuh: 0</span></div>
           <div class="ed-bottom-tip"><b>Petunjuk level</b><span data-ed-mechanic>Perhatikan kemampuan masing-masing karakter.</span></div>
@@ -253,23 +283,29 @@ export function mountElementalDuo(root, context) {
     if (currentView === view) return;
     if (view !== 'game') restoreFullPagePortal();
     currentView = view;
+    document.documentElement.classList.toggle('ed-game-active', view === 'game');
+    document.body.classList.toggle('ed-game-active', view === 'game');
     queryUIAll('[data-ed-view]').forEach(element => { element.hidden = element.dataset.edView !== view; });
     if (view === 'game') {
       canvas = queryUI('.ed-canvas');
       ctx = canvas?.getContext('2d') || null;
-      scheduleViewportMeasure();
+      scheduleViewportMeasure(true);
       updateHud();
     }
     if (view === 'finish') updateFinish();
   }
 
-  function resizeCanvasViewport() {
+  function resizeCanvasViewport(force = false) {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 2 || rect.height < 2) return;
     const roundedWidth = Math.round(rect.width);
     const roundedHeight = Math.round(rect.height);
-    if (Math.abs(roundedWidth-lastCanvasWidth) < 2 && Math.abs(roundedHeight-lastCanvasHeight) < 2) return;
+    // Ignore small viewport-height oscillations caused by Android browser bars.
+    if (!force && lastCanvasWidth && Math.abs(roundedWidth-lastCanvasWidth) < 9 && Math.abs(roundedHeight-lastCanvasHeight) < 22) return;
+    const hadViewport = lastCanvasWidth > 0 && lastCanvasHeight > 0;
+    const previousCenterX = canvasView.cameraX + canvasView.viewWidth / 2;
+    const previousCenterY = canvasView.cameraY + canvasView.viewHeight / 2;
     const viewport = getElementalViewport(rect.width,rect.height);
     const backingHeight = Math.max(260,Math.round(ELEMENTAL_WORLD_WIDTH / viewport.aspect));
     if (canvas.width !== ELEMENTAL_WORLD_WIDTH) canvas.width = ELEMENTAL_WORLD_WIDTH;
@@ -280,18 +316,26 @@ export function mountElementalDuo(root, context) {
     canvasView.zoom = viewport.zoom;
     canvasView.viewWidth = viewport.viewWidth;
     canvasView.viewHeight = viewport.viewHeight;
-    // Keep the camera centered on the local spirit after a genuine orientation change.
-    const target = getElementalCameraTarget(localPlayer,remoteRender,canvasView.viewWidth,canvasView.viewHeight);
-    canvasView.cameraX = Math.max(0,Math.min(ELEMENTAL_WORLD_WIDTH-canvasView.viewWidth,target.x));
-    canvasView.cameraY = Math.max(0,Math.min(ELEMENTAL_WORLD_HEIGHT-canvasView.viewHeight,target.y));
+    if (hadViewport) {
+      // Preserve the viewed world center so resizing cannot snap the camera.
+      canvasView.cameraX = Math.max(0,Math.min(ELEMENTAL_WORLD_WIDTH-canvasView.viewWidth,previousCenterX-canvasView.viewWidth/2));
+      canvasView.cameraY = Math.max(0,Math.min(ELEMENTAL_WORLD_HEIGHT-canvasView.viewHeight,previousCenterY-canvasView.viewHeight/2));
+    } else {
+      const target = getElementalCameraTarget(localPlayer,remoteRender,canvasView.viewWidth,canvasView.viewHeight);
+      canvasView.cameraX = Math.max(0,Math.min(ELEMENTAL_WORLD_WIDTH-canvasView.viewWidth,target.x));
+      canvasView.cameraY = Math.max(0,Math.min(ELEMENTAL_WORLD_HEIGHT-canvasView.viewHeight,target.y));
+    }
   }
 
-  function scheduleViewportMeasure() {
+  function scheduleViewportMeasure(force = false) {
+    if (force) viewportMeasureForce = true;
     if (viewportResizeFrame || destroyed) return;
     viewportResizeFrame = requestAnimationFrame(() => {
       viewportResizeFrame = 0;
       updateDisplayModeUI();
-      resizeCanvasViewport();
+      const shouldForce = viewportMeasureForce;
+      viewportMeasureForce = false;
+      resizeCanvasViewport(shouldForce);
     });
   }
 
@@ -329,7 +373,7 @@ export function mountElementalDuo(root, context) {
     setControlMode('buttons');
     if (panel) panel.dataset.displayMode = 'portrait';
     updateDisplayModeUI();
-    scheduleViewportMeasure();
+    scheduleViewportMeasure(true);
   }
 
   async function enterLandscapeMode() {
@@ -359,7 +403,7 @@ export function mountElementalDuo(root, context) {
     if (!window.matchMedia?.('(orientation: landscape)').matches) {
       notify('Layar penuh aktif. Putar HP ke posisi mendatar jika belum berputar otomatis.');
     }
-    scheduleViewportMeasure();
+    scheduleViewportMeasure(true);
   }
 
   function handleFullscreenChange() {
@@ -373,7 +417,7 @@ export function mountElementalDuo(root, context) {
       try { screen.orientation?.unlock?.(); } catch {}
     }
     updateDisplayModeUI();
-    scheduleViewportMeasure();
+    scheduleViewportMeasure(true);
   }
 
   function bindControls() {
@@ -402,21 +446,17 @@ export function mountElementalDuo(root, context) {
     window.addEventListener('keyup',handleKeyUp);
     window.addEventListener('blur',clearInput);
     window.addEventListener('resize',handleViewportChange,{passive:true});
-    window.addEventListener('orientationchange',handleViewportChange,{passive:true});
+    window.addEventListener('orientationchange',handleOrientationChange,{passive:true});
     // Deliberately do not observe visualViewport resize: mobile browser chrome
     // expands/collapses it while scrolling, which used to reset the canvas each time.
-    screen.orientation?.addEventListener?.('change',handleViewportChange);
+    screen.orientation?.addEventListener?.('change',handleOrientationChange);
     document.addEventListener('fullscreenchange',handleFullscreenChange);
-    const canvasWrap = queryUI('.ed-canvas-wrap');
-    if (canvasWrap && 'ResizeObserver' in window) {
-      canvasResizeObserver = new ResizeObserver(handleViewportChange);
-      canvasResizeObserver.observe(canvasWrap);
-    }
+    // No ResizeObserver on the playfield: mobile viewport chrome can otherwise
+    // create a resize feedback loop and make the camera jump while playing.
   }
 
-  function handleViewportChange() {
-    scheduleViewportMeasure();
-  }
+  function handleViewportChange() { scheduleViewportMeasure(false); }
+  function handleOrientationChange() { scheduleViewportMeasure(true); }
 
   function clearInput() {
     input.left = input.right = input.jump = input.interact = false;
@@ -464,6 +504,29 @@ export function mountElementalDuo(root, context) {
     if (action === 'back') { await enterPortraitMode(); onBack?.(); }
   }
 
+  function updateInteractControl(level) {
+    const button = queryUI('[data-ed-control="interact"]');
+    if (!button) return;
+    const element = CHARACTER[role].element;
+    const candidates = [
+      ...(level.valves || []).filter(item => !valveIsOpen(item.id)).map(item => ({ ...item, actionType:'valve', actionLabel:'PUTAR KATUP' })),
+      ...(level.windLevers || []).filter(item => !windLeverIsOn(item.id)).map(item => ({ ...item, actionType:'lever', actionLabel:'UBAH ANGIN' }))
+    ];
+    const nearby = candidates
+      .map(item => ({ ...item, distance:Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) }))
+      .filter(item => item.distance <= (item.radius || 58))
+      .sort((a,b) => a.distance-b.distance)[0];
+    button.hidden = !nearby;
+    button.disabled = Boolean(nearby && nearby.element && nearby.element !== element);
+    if (nearby) {
+      button.innerHTML = `${nearby.actionLabel} <small>E</small>`;
+      button.setAttribute('aria-label', `${nearby.actionLabel.toLowerCase()} dengan tombol E`);
+      button.title = nearby.element && nearby.element !== element
+        ? `Hanya ${nearby.element === 'fire' ? 'Bara' : 'Nira'} yang dapat menggunakan ini`
+        : nearby.actionLabel;
+    }
+  }
+
   function updateHud() {
     const meta = data.meta || {};
     const level = getElementalLevel(meta.level || 1);
@@ -478,6 +541,7 @@ export function mountElementalDuo(root, context) {
     setText('[data-ed-level-title]', `${String(level.id).padStart(2,'0')} · ${level.name}`);
     setText('[data-ed-level-note]', `${level.mapName || 'Jelajah arena'} · ${level.difficultyLabel || 'Petualangan'} · ${level.note}`);
     setText('[data-ed-level-number]', String(level.id).padStart(2,'0'));
+    updateInteractControl(level);
     const sequence = level.switchSequence || [];
     const sequenceIndex = Math.max(0, Number(levelState().switches?.sequenceIndex) || 0);
     const nextSequenceElement = sequence[sequenceIndex];
@@ -708,6 +772,8 @@ export function mountElementalDuo(root, context) {
     localPlayer.levelDeaths = (Number(localPlayer.levelDeaths)||0) + 1;
     localPlayer.complete = false;
     localPlayer.supportPlatformId = null;
+    coyoteTimeRemaining = 0;
+    jumpBufferRemaining = 0;
     notify('Ups! Coba jalur yang lain. Kamu kembali ke titik aman.');
     saveLocalPlayer(true);
   }
@@ -868,10 +934,18 @@ export function mountElementalDuo(root, context) {
       if (Math.abs(localPlayer.vx) < 3) localPlayer.vx = 0;
     }
 
-    if (input.jumpQueued && localPlayer.grounded) {
-      localPlayer.vy = -(level.modifier === 'bouncy' ? ELEMENTAL_JUMP_SPEED * 1.08 : ELEMENTAL_JUMP_SPEED);
+    // Forgiving platform controls: a small input buffer and coyote window make
+    // narrow mobile touch presses register even a fraction before/after landing.
+    if (input.jumpQueued) jumpBufferRemaining = 0.17;
+    else jumpBufferRemaining = Math.max(0, jumpBufferRemaining - dt);
+    if (localPlayer.grounded) coyoteTimeRemaining = 0.14;
+    else coyoteTimeRemaining = Math.max(0, coyoteTimeRemaining - dt);
+    if (jumpBufferRemaining > 0 && (localPlayer.grounded || coyoteTimeRemaining > 0)) {
+      localPlayer.vy = -(level.modifier === 'bouncy' ? ELEMENTAL_JUMP_SPEED * 1.06 : ELEMENTAL_JUMP_SPEED);
       localPlayer.grounded = false;
       localPlayer.supportPlatformId = null;
+      coyoteTimeRemaining = 0;
+      jumpBufferRemaining = 0;
     }
     input.jumpQueued = false;
     if (input.interactQueued) attemptSwitch();
@@ -1593,7 +1667,7 @@ export function mountElementalDuo(root, context) {
       remoteRender.y += (remoteTarget.y-remoteRender.y)*.24;
       remoteRender.dir = remoteTarget.dir;
       remoteRender.complete = remoteTarget.complete;
-      updateHud();
+      if (timestamp-lastHudFrameAt >= 180) { updateHud(); lastHudFrameAt = timestamp; }
     }
     drawScene(timestamp, dt);
     rafId = requestAnimationFrame(frame);
@@ -1634,6 +1708,8 @@ export function mountElementalDuo(root, context) {
         try { const exitRequest = document.exitFullscreen(); exitRequest?.catch?.(() => {}); } catch {}
       }
       restoreFullPagePortal();
+      document.documentElement.classList.remove('ed-game-active');
+      document.body.classList.remove('ed-game-active');
       try { screen.orientation?.unlock?.(); } catch {}
       destroyed = true;
       if (unsubscribe) unsubscribe();
@@ -1651,7 +1727,12 @@ export function mountElementalDuo(root, context) {
 
       screen.orientation?.removeEventListener?.('change', handleViewportChange);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      canvasResizeObserver?.disconnect();
+      if (analogHandlers) {
+        analogHandlers.pad.removeEventListener('pointerdown', analogHandlers.onDown);
+        window.removeEventListener('pointermove', analogHandlers.onMove);
+        window.removeEventListener('pointerup', analogHandlers.onUp);
+        window.removeEventListener('pointercancel', analogHandlers.onUp);
+      }
       clearInput();
     }
   };

@@ -1,11 +1,11 @@
 export const ELEMENTAL_WORLD_WIDTH = 1440;
 export const ELEMENTAL_WORLD_HEIGHT = 960;
 export const ELEMENTAL_FLOOR_Y = 900;
-export const ELEMENTAL_MAP_VERSION = 6;
+export const ELEMENTAL_MAP_VERSION = 9;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
-export const ELEMENTAL_GRAVITY = 1480;
-export const ELEMENTAL_MOVE_SPEED = 250;
-export const ELEMENTAL_JUMP_SPEED = 590;
+export const ELEMENTAL_GRAVITY = 1100;
+export const ELEMENTAL_MOVE_SPEED = 270;
+export const ELEMENTAL_JUMP_SPEED = 690;
 
 /** Calculate a closer, aspect-aware world window so the camera always has room to follow. */
 export function getElementalViewport(width, height, worldWidth = ELEMENTAL_WORLD_WIDTH, worldHeight = ELEMENTAL_WORLD_HEIGHT) {
@@ -38,6 +38,15 @@ export function getElementalCameraTarget(localPlayer, remotePlayer, viewWidth, v
     y: Math.max(0, Math.min(Math.max(0, worldHeight - viewHeight), focusY - viewHeight * 0.62))
   };
 }
+
+const WORLD_DIFFICULTY_CURVE = [
+  // World 1 is a real tutorial: seven gentle stages before normal timing begins.
+  [1,1,1,1,1,1,1,1,2,2],
+  [1,1,1,1,1,2,2,2,2,3],
+  [2,2,2,2,2,2,3,3,3,3],
+  [2,2,2,2,3,3,3,3,3,4],
+  [3,3,3,3,3,3,3,4,4,4]
+];
 
 const WORLD_CONFIG = [
   {
@@ -527,7 +536,7 @@ const WORLD_THREE_BLUEPRINTS = [
   },
   {
     difficulty:3, mechanic:'Katup pengendali magma',
-    note:'Dekati katup Bara dan tekan AKSI untuk menutup aliran magma. Setelah jalur aman, aktifkan kedua pijakan elemen.',
+    note:'Dekati katup Bara dan tekan INTERAKSI untuk menutup aliran magma. Setelah jalur aman, aktifkan kedua pijakan elemen.',
     features:['valve-interaction','valve-controlled-lava','co-op-gate'],
     platforms:[
       {id:'ember-23-a',x:155,y:455,w:150,kind:'stone'},
@@ -1360,17 +1369,17 @@ function findSafeFloorPoint(preferred, hazards, element = null, min = 70, max = 
 
 const ADVENTURE_ROUTE_XS = [
   [150,350,550,750,950,1150,1300,1000,950,750,550,350,170],
-  [150,370,590,810,1030,1250,1320,1110,900,690,460,180,160],
+  [150,370,590,810,1030,1250,1320,1210,850,690,440,180,160],
   [150,380,610,840,1070,1300,1240,1020,800,580,360,300,470],
   [170,390,610,830,1050,1270,1200,980,760,540,260,150,420],
   [150,370,590,810,1030,1250,1320,1100,880,660,440,220,160]
 ];
 const ADVENTURE_MAPS = [
   { name:'Jalur Zigzag', y:[790,690,590,490,390,290,190,300,470,560,660,760,650], switches:[2,9], doors:[6,9], gems:[4,10], gate:{orientation:'vertical'}, links:[[1,3,65],[3,5,65],[7,9,28],[9,11,28]] },
-  { name:'Menara Kembar', y:[790,690,590,490,390,290,190,350,450,550,650,730,620], switches:[1,10], doors:[5,10], gems:[6,9], gate:{orientation:'vertical'}, links:[[0,2],[2,4],[6,8],[8,10]] },
+  { name:'Menara Kembar', y:[790,690,590,490,390,290,190,350,410,640,600,730,620], switches:[1,10], doors:[5,10], gems:[6,9], gate:{orientation:'vertical'}, links:[[0,2],[2,4],[6,8],[8,10]] },
   { name:'Jalur Berbalik', y:[790,750,650,550,450,350,250,360,470,580,620,810,700], switches:[3,9], doors:[4,0], gems:[5,11], gate:{orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] },
-  { name:'Persimpangan Awan', y:[790,690,590,490,390,290,190,290,390,490,590,690,640], switches:[1,10], doors:[11,6], gems:[4,8], gate:{orientation:'vertical'}, links:[[0,2],[2,4],[6,8],[8,10]] },
-  { name:'Lingkaran Kuno', y:[790,700,610,520,430,340,250,350,450,550,650,680,580], switches:[2,10], doors:[7,10], gems:[5,9], gate:{orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] }
+  { name:'Persimpangan Awan', y:[790,690,590,490,390,290,190,290,390,490,590,690,590], switches:[1,10], doors:[11,6], gems:[4,8], gate:{orientation:'vertical'}, links:[[0,2],[2,4],[6,8],[8,10]] },
+  { name:'Lingkaran Kuno', y:[790,700,610,520,430,340,250,350,450,550,600,680,580], switches:[2,10], doors:[7,10], gems:[5,9], gate:{orientation:'vertical'}, links:[[1,3],[3,5],[7,9],[9,11]] }
 ];
 
 // Branches are optional routes. Their final positions are nudged away from
@@ -1384,7 +1393,7 @@ const ADVENTURE_BRANCHES = [
 ];
 
 function routePlatform(node, id, kind = 'stone') {
-  return { id, x:node.x-58, y:node.y, w:116, h:17, kind };
+  return { id, x:node.x-64, y:node.y, w:128, h:20, kind };
 }
 
 function mapRectAroundNode(source, node, index, kind = 'zone') {
@@ -1405,7 +1414,15 @@ function mapRectAroundNode(source, node, index, kind = 'zone') {
 function createExplorationMap(level, index) {
   const map = ADVENTURE_MAPS[index % ADVENTURE_MAPS.length];
   const routeX = ADVENTURE_ROUTE_XS[index % ADVENTURE_ROUTE_XS.length];
-  const nodes = routeX.map((x, nodeIndex) => ({ x, y:map.y[nodeIndex] }));
+  const difficulty = Math.max(1, Math.min(5, Number(level.difficulty) || 1));
+  const heightScale = [0.84,0.88,0.91,0.94,0.97][difficulty-1];
+  // The first route platform sits just above the spawn floor. Each authored
+  // 100-unit step becomes an 84–97-unit rise, leaving generous jump margin.
+  // Later nodes reach the upper third of the room without extreme vertical gaps.
+  const nodes = routeX.map((x, nodeIndex) => ({
+    x,
+    y:Math.round(820 - (790 - map.y[nodeIndex]) * heightScale)
+  }));
   const reserved = new Set([...map.switches, ...map.doors, ...map.gems]);
   const stablePlatforms = nodes.map((node, nodeIndex) => routePlatform(
     node,
@@ -1419,31 +1436,40 @@ function createExplorationMap(level, index) {
   sideSpecs.forEach((branch, branchIndex) => {
     const node = nodes[branch.from];
     const source = specialSources[branchIndex];
-    const width = 96;
-    const candidateSigns = [branch.side || 1, -(branch.side || 1)];
-    const baseYs = [node.y-branch.rise,node.y-branch.rise-38,node.y-branch.rise+38,node.y+Math.min(68,branch.rise*.62),node.y+Math.min(68,branch.rise*.62)+36];
-    const candidateYs = [...new Set(baseYs.map(y=>Math.max(112,Math.min(ELEMENTAL_FLOOR_Y-88,y))))];
+    const width = 100;
+    const preferredSide = branch.side || (branchIndex % 2 ? -1 : 1);
+    const branchRise = Math.min(58, Math.max(34, branch.rise * (0.34 + (difficulty-1)*0.018)));
+    const desiredCenterX = Math.max(width/2+18, Math.min(ELEMENTAL_WORLD_WIDTH-width/2-18, node.x + preferredSide*160));
+    const desiredY = Math.max(130, Math.min(ELEMENTAL_FLOOR_Y-110, node.y-branchRise));
+    const candidates = [];
+    for (const dx of [0,preferredSide*44,-preferredSide*44,preferredSide*88,-preferredSide*88]) {
+      for (const dy of [0,-34,34,-58,58,-82,82,-108,108,-132,132]) candidates.push({dx,dy});
+    }
     let best = null;
     let bestScore = Infinity;
-    for (const sign of candidateSigns) for (const y of candidateYs) {
-      const centerX = Math.max(width/2+16,Math.min(ELEMENTAL_WORLD_WIDTH-width/2-16,node.x+sign*148));
-      const candidate = { x:centerX-width/2,y,w:width,h:15 };
-      let score = 0;
+    for (const offset of candidates) {
+      const centerX = Math.max(width/2+18, Math.min(ELEMENTAL_WORLD_WIDTH-width/2-18, desiredCenterX+offset.dx));
+      const candidate = {
+        x:Math.round(centerX-width/2),
+        y:Math.round(Math.max(130,Math.min(ELEMENTAL_FLOOR_Y-110,desiredY+offset.dy))),
+        w:width,h:16
+      };
+      let nearestGap = Infinity;
       for (const other of [...stablePlatforms,...sidePlatforms]) {
         const gapX = Math.max(0,candidate.x-(other.x+other.w),other.x-(candidate.x+candidate.w));
         const gapY = Math.max(0,candidate.y-(other.y+other.h),other.y-(candidate.y+candidate.h));
-        const separation = Math.hypot(gapX,gapY);
-        if (separation < 22) score += (22-separation)*1800;
+        nearestGap = Math.min(nearestGap,Math.hypot(gapX,gapY));
       }
+      const score = Math.abs(offset.dx)*0.018 + Math.abs(offset.dy)*0.035 + Math.max(0,30-nearestGap)*5000;
       if (score < bestScore) { bestScore=score; best=candidate; }
     }
-    const chosen = best || {x:node.x+branch.side*148-width/2,y:node.y-branch.rise,w:width,h:15};
-    const motion = source?.motion ? { ...source.motion, amplitude:Math.min(18,Number(source.motion.amplitude)||0) } : undefined;
+    const motion = source?.motion ? { ...source.motion, amplitude:Math.min(12,Number(source.motion.amplitude)||0) } : undefined;
     sidePlatforms.push({
       id:`map-${level.id}-side-${branchIndex+1}`,
-      ...chosen,
+      ...best,
       kind:source?.kind === 'bounce' ? 'bounce' : branchIndex%2 ? 'crystal' : 'stone',
       branchOf:branch.from,
+      routeLabel:`Cabang ${branchIndex+1}`,
       ...(motion ? {motion} : {}),
       ...(source?.cycle ? {cycle:{...source.cycle}} : {})
     });
@@ -1452,25 +1478,26 @@ function createExplorationMap(level, index) {
   const shortcutPlatforms = [];
   (map.links || []).forEach(([from,to,preferredOffset = 28], linkIndex) => {
     const a = nodes[from], b = nodes[to];
-    const width = 92;
+    const width = 96;
     const centerX = (a.x+b.x)/2;
-    const xOffsets = [0,-28,28,-56,56,-82,82];
-    const yOffsets = [preferredOffset,preferredOffset+38,preferredOffset-38,preferredOffset+76,preferredOffset-76,preferredOffset+112,preferredOffset-112];
+    const preferredY = Math.max(-18, Math.min(18, Number(preferredOffset)*0.22));
+    const xOffsets = [0,-16,16,-32,32,-48,48];
+    const yOffsets = [preferredY,-30,30,-48,48,-68,68,-86,86,-108,108,-132,132];
     const existing = [...stablePlatforms,...sidePlatforms,...shortcutPlatforms];
     let best = null;
     let bestScore = Infinity;
     for (const xOffset of xOffsets) for (const yOffset of yOffsets) {
       const candidate = {
-        x:Math.max(8,Math.min(ELEMENTAL_WORLD_WIDTH-width-8,centerX-width/2+xOffset)),
-        y:Math.max(112,Math.min(ELEMENTAL_FLOOR_Y-88,(a.y+b.y)/2+yOffset)),
-        w:width,h:13
+        x:Math.max(8,Math.min(ELEMENTAL_WORLD_WIDTH-width-8,Math.round(centerX-width/2+xOffset))),
+        y:Math.max(130,Math.min(ELEMENTAL_FLOOR_Y-110,Math.round((a.y+b.y)/2+yOffset))),
+        w:width,h:14
       };
-      let score = Math.abs(xOffset)*.025 + Math.abs(yOffset-preferredOffset)*.01;
+      let score = Math.abs(xOffset)*0.10 + Math.abs(yOffset-preferredY)*0.24;
       for (const other of existing) {
         const gapX = Math.max(0,candidate.x-(other.x+other.w),other.x-(candidate.x+candidate.w));
         const gapY = Math.max(0,candidate.y-(other.y+other.h),other.y-(candidate.y+candidate.h));
         const separation = Math.hypot(gapX,gapY);
-        if (separation < 20) score += (20-separation)*2200;
+        if (separation < 26) score += (26-separation)*2800;
       }
       if (score < bestScore) { bestScore=score; best=candidate; }
     }
@@ -1478,9 +1505,30 @@ function createExplorationMap(level, index) {
       id:`map-${level.id}-shortcut-${linkIndex+1}`,
       ...best,
       kind:linkIndex%2 ? 'cloud' : 'crystal',
-      connects:[from,to]
+      connects:[from,to],
+      routeLabel:`Pintas ${linkIndex+1}`
     });
   });
+
+  // Nudge each optional bridge vertically to keep a visible gap from every
+  // neighboring ledge. The search is bounded so a shortcut stays within a
+  // reasonable jump of its connected route while no longer appearing fused.
+  for (const shortcut of shortcutPlatforms) {
+    const others = [...stablePlatforms,...sidePlatforms,...shortcutPlatforms.filter(item => item !== shortcut)];
+    let bestY = shortcut.y;
+    let bestScore = -Infinity;
+    for (let y = Math.max(130,shortcut.y-100); y <= Math.min(ELEMENTAL_FLOOR_Y-110,shortcut.y+100); y += 2) {
+      let nearestGap = Infinity;
+      for (const other of others) {
+        const gapX = Math.max(0,shortcut.x-(other.x+other.w),other.x-(shortcut.x+shortcut.w));
+        const gapY = Math.max(0,y-(other.y+other.h),other.y-(y+shortcut.h));
+        nearestGap = Math.min(nearestGap,Math.hypot(gapX,gapY));
+      }
+      const score = nearestGap*1000 - Math.abs(y-shortcut.y)*0.55;
+      if (score > bestScore) { bestScore=score; bestY=y; }
+    }
+    shortcut.y = bestY;
+  }
 
   level.platforms = [...stablePlatforms,...sidePlatforms,...shortcutPlatforms];
   level.floorY = ELEMENTAL_FLOOR_Y;
@@ -1608,6 +1656,7 @@ function makeLevel(index) {
   const note = blueprint?.note || (localIndex === 9
     ? `Penutup dunia ${world.name}. Gabungkan seluruh kemampuan.`
     : CHALLENGE_NOTES[(localIndex + worldIndex) % CHALLENGE_NOTES.length]);
+  const difficulty = WORLD_DIFFICULTY_CURVE[worldIndex][localIndex];
   const level = {
     id: index + 1,
     worldId: world.id,
@@ -1619,8 +1668,8 @@ function makeLevel(index) {
     mechanic: blueprint?.mechanic || world.mechanic,
     modifier,
     note,
-    difficulty: blueprint?.difficulty ?? Math.min(5, 1 + worldIndex + Math.floor(localIndex / 4)),
-    difficultyLabel: getElementalDifficultyLabel(blueprint?.difficulty ?? Math.min(5, 1 + worldIndex + Math.floor(localIndex / 4))),
+    difficulty,
+    difficultyLabel: getElementalDifficultyLabel(difficulty),
     features: blueprint?.features || [],
     iceZones: blueprint?.iceZones || [],
     currents: blueprint?.currents || [],

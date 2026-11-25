@@ -1,4 +1,4 @@
-# Elemental Duo — Adventure Map Design (v0.32.0)
+# Elemental Duo — Adventure Map Design (v0.33.0)
 
 ## Sasaran desain
 Mengubah pengalaman dari koridor kiri-ke-kanan menjadi platform-puzzle eksplorasi dua dimensi, dengan pemain harus naik, turun, berbalik, memilih cabang, dan menemukan pintu Bara/Nira yang tersebar pada arena.
@@ -35,8 +35,15 @@ Mengubah pengalaman dari koridor kiri-ke-kanan menjadi platform-puzzle eksploras
 ## Batas verifikasi
 188 tes otomatis mencakup struktur map, posisi pintu, jalur geometri dari dua spawn ke semua platform, gate vertikal dan minimap. Tes otomatis tidak menggantikan playtest dua HP dengan Firebase aktif maupun pemeriksaan visual fisik di berbagai ukuran layar.
 
-## Kerapian geometri peta — v0.32.0
+## Kerapian geometri peta — v0.33.0
 - Lima arketipe disetel ulang pada koordinat vertikal agar lintasan zigzag/loop tidak menghasilkan dua platform yang hampir menempel.
 - Penempatan cabang dan shortcut menilai jarak terhadap platform yang sudah dibuat, bukan hanya menghindari rectangle overlap.
 - Seluruh pasangan platform pada 50 level diuji dengan clearance minimum 18 unit; tes geometri tetap memeriksa batas dunia dan reachability dari kedua spawn.
 - `ELEMENTAL_MAP_VERSION=6`; posisi dari mapVersion sebelumnya dipindahkan ke spawn saat level aktif dimuat.
+
+
+## Keseimbangan dan mobile v0.33.0
+- Main path platforms diperlebar menjadi 128 px.
+- Jump speed 690 dan gravity 1100; jump buffer 170 ms dan coyote time 140 ms menambah toleransi kontrol sentuh.
+- Kurva kesulitan: Dunia 1 mudah hingga level 8; Dunia 2 maksimal Menengah; Dunia 3 maksimal Menengah; Dunia 4 dan 5 meningkat bertahap hingga Sulit. Tidak ada label Expert.
+- Pola Menara Kembar diperbaiki untuk menghilangkan tumpang tindih platform utama.

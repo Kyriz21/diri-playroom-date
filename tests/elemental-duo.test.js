@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ELEMENTAL_LEVELS, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, getElementalLevel,
+  ELEMENTAL_LEVELS, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED, getElementalLevel,
   createElementalPlayer, clampElementalPlayer, rectsOverlap, getElementalStars,
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState, getElementalDifficultyLabel,
@@ -29,7 +29,7 @@ test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan are
     assert.equal(level.worldWidth, ELEMENTAL_WORLD_WIDTH);
     assert.equal(level.worldHeight, ELEMENTAL_WORLD_HEIGHT);
     assert.equal(level.mapVersion, ELEMENTAL_MAP_VERSION);
-    assert.ok(level.platforms.some(platform => platform.y < 350), `level ${level.id} must explore an upper area`);
+    assert.ok(level.platforms.some(platform => platform.y < 400), `level ${level.id} must explore an upper area`);
     assert.ok(level.spawn.host.x < level.spawn.guest.x);
     assert.ok(level.difficulty >= 1 && level.difficulty <= 5);
   }
@@ -64,7 +64,7 @@ test('Seluruh 50 level memiliki peta eksplorasi bercabang, jembatan pintas, dan 
 });
 
 test('Pemain dapat menjangkau jalur utama, cabang samping, dan jembatan pintas dari spawn', () => {
-  const gravity=1480, jumpSpeed=590, horizontalSpeed=250;
+  const gravity=ELEMENTAL_GRAVITY, jumpSpeed=ELEMENTAL_JUMP_SPEED, horizontalSpeed=ELEMENTAL_MOVE_SPEED;
   const jumpRange=rise=>{
     if (rise > jumpSpeed*jumpSpeed/(2*gravity)) return -1;
     const time=(jumpSpeed+Math.sqrt(jumpSpeed*jumpSpeed-2*gravity*Math.max(0,rise)))/gravity;
@@ -118,7 +118,7 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:6, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:9, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
@@ -196,10 +196,10 @@ test('State pemain menyimpan jumlah jatuh total dan jumlah jatuh pada level berj
 
 test('Lompatan cukup tinggi untuk mencapai platform dasar dari lantai utama', () => {
   const logic = readSource('../js/games/elemental-duo-logic.js');
-  assert.match(logic, /ELEMENTAL_GRAVITY = 1480/);
-  assert.match(logic, /ELEMENTAL_JUMP_SPEED = 590/);
-  const gravity = 1480;
-  const jumpSpeed = 590;
+  assert.match(logic, /ELEMENTAL_GRAVITY = 1100/);
+  assert.match(logic, /ELEMENTAL_JUMP_SPEED = 690/);
+  const gravity = ELEMENTAL_GRAVITY;
+  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
   assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) > 100);
 });
 
@@ -280,7 +280,7 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   const css = readSource('../css/elemental-duo.css');
   const index = readSource('../index.html');
   const app = readSource('../js/app.js');
-  assert.match(game, /function resizeCanvasViewport\(\)/);
+  assert.match(game, /function resizeCanvasViewport\(force = false\)/);
   assert.match(game, /function updateCamera\(dt = 1 \/ 60\)/);
   assert.match(game, /getElementalCameraTarget\(localPlayer, remoteRender/);
   assert.match(game, /ctx\.setTransform\(z,0,0,z/);
@@ -296,9 +296,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.32\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.32\.0/);
-  assert.match(index, /app\.js\?v=0\.32\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.33\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.33\.0/);
+  assert.match(index, /app\.js\?v=0\.33\.0/);
 });
 
 
@@ -338,7 +338,7 @@ test('Objektif dan notifikasi tidak lagi menutupi arena permainan', () => {
 test('Sepuluh level Hutan Berbisik memakai blueprint dengan tujuan dan layout berbeda', () => {
   const firstWorld = ELEMENTAL_LEVELS.slice(0, 10);
   assert.equal(new Set(firstWorld.map(level => JSON.stringify({ platforms:level.platforms, hazards:level.hazards, switches:level.switches, gems:level.gems }))).size, 10);
-  assert.deepEqual(firstWorld.map(level => level.difficulty), [1,1,1,2,2,2,3,3,3,3]);
+  assert.deepEqual(firstWorld.map(level => level.difficulty), [1,1,1,1,1,1,1,1,2,2]);
   assert.deepEqual(firstWorld.map(level => level.name), [
     'Jejak Cahaya','Batu Bertunas','Akar Berliku','Jembatan Pucuk','Dua Lentera',
     'Lompatan Lumut','Gerbang Embun','Akar Berayun','Ruang Kunang-kunang','Jantung Hutan'
@@ -409,9 +409,9 @@ test('Mesin game menjalankan platform bergerak, siklus platform, pantulan, dan p
 });
 
 test('Pijakan khusus Bara dan Nira di Dunia 1 dapat dicapai melalui rangkaian lompatan yang masuk akal', () => {
-  const jumpSpeed = 590;
-  const gravity = 1480;
-  const horizontalSpeed = 250;
+  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
+  const gravity = ELEMENTAL_GRAVITY;
+  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
   const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
   const horizontalRange = rise => {
     if (rise > maximumRise) return -1;
@@ -457,7 +457,7 @@ test('Sepuluh level Kedalaman Kristal memakai blueprint unik dan tantangan berta
     platforms:level.platforms, hazards:level.hazards, switches:level.switches,
     gems:level.gems, iceZones:level.iceZones, currents:level.currents
   }))).size, 10);
-  assert.deepEqual(worldTwo.map(level => level.difficulty), [1,1,2,2,2,3,3,3,4,4]);
+  assert.deepEqual(worldTwo.map(level => level.difficulty), [1,1,1,1,1,2,2,2,2,3]);
   assert.deepEqual(worldTwo.map(level => level.name), [
     'Retakan Pertama','Gema Biru','Lorong Pecahan','Cermin Es','Jembatan Prismatik',
     'Arus Terbalik','Menara Kristal','Ruang Resonansi','Badai Serpihan','Penjaga Geode'
@@ -532,9 +532,9 @@ test('Hazard kristal dapat menyala dan padam mengikuti siklus bersama', () => {
 });
 
 test('Kedua pijakan Dunia 2 berada pada platform aman yang dapat dijangkau dari spawn', () => {
-  const jumpSpeed = 590;
-  const gravity = 1480;
-  const horizontalSpeed = 250;
+  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
+  const gravity = ELEMENTAL_GRAVITY;
+  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
   const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
   const horizontalRange = rise => {
     if (rise > maximumRise) return -1;
@@ -581,7 +581,7 @@ test('Sepuluh level Kerajaan Bara memakai blueprint unik dengan eskalasi tantang
     platforms:level.platforms, hazards:level.hazards, switches:level.switches,
     gems:level.gems, valves:level.valves, sequence:level.switchSequence
   }))).size, 10);
-  assert.deepEqual(worldThree.map(level => level.difficulty), [3,3,3,3,3,4,4,4,4,5]);
+  assert.deepEqual(worldThree.map(level => level.difficulty), [2,2,2,2,2,2,3,3,3,3]);
   assert.deepEqual(worldThree.map(level => level.name), [
     'Napas Lava','Uap Panas','Gerbang Panas','Jembatan Bara','Sungai Pendingin',
     'Sakelar Berantai','Lorong Uap','Lava Meninggi','Dua Katup','Jantung Tungku'
@@ -595,7 +595,7 @@ test('Sepuluh level Kerajaan Bara memakai blueprint unik dengan eskalasi tantang
   assert.ok(worldThree[6].hazards.filter(hazard => hazard.type === 'steam').length >= 3);
   assert.ok(worldThree[7].hazards.some(hazard => hazard.visual === 'lava' && hazard.motion?.axis === 'y'));
   assert.equal(worldThree[8].requiredValves.length, 2);
-  assert.equal(worldThree[9].difficulty, 5);
+  assert.equal(worldThree[9].difficulty, 3);
   assert.deepEqual(worldThree[9].switchSequence, ['water','fire']);
   for (const level of worldThree) {
     assert.ok(level.features.length > 0, `level ${level.id} must have authored mechanics`);
@@ -656,9 +656,9 @@ test('Sakelar berurutan disimpan atomik pada satu simpul state dan diperiksa saa
 });
 
 test('Kedua pijakan dan katup dunia Bara berada pada platform stabil yang dapat dijangkau dari spawn', () => {
-  const jumpSpeed = 590;
-  const gravity = 1480;
-  const horizontalSpeed = 250;
+  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
+  const gravity = ELEMENTAL_GRAVITY;
+  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
   const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
   const horizontalRange = rise => {
     if (rise > maximumRise) return -1;
@@ -709,7 +709,7 @@ test('Sepuluh level Reruntuhan Langit memakai blueprint unik dengan kesulitan be
     platforms:level.platforms, hazards:level.hazards, switches:level.switches,
     windZones:level.windZones, windLevers:level.windLevers
   }))).size, 10);
-  assert.deepEqual(worldFour.map(level => level.difficulty), [4,4,4,4,4,4,5,5,5,5]);
+  assert.deepEqual(worldFour.map(level => level.difficulty), [2,2,2,2,3,3,3,3,3,4]);
   assert.deepEqual(worldFour.map(level => level.name), [
     'Tangga Awan','Pulau Melayang','Lorong Angin','Menara Terbalik','Kunci Badai',
     'Jembatan Awan','Kubah Senyap','Portal Kembar','Labirin Langit','Penjaga Angin'
@@ -724,7 +724,7 @@ test('Sepuluh level Reruntuhan Langit memakai blueprint unik dengan kesulitan be
   assert.ok(worldFour[6].windZones.length >= 3);
   assert.equal(worldFour[7].requiredWindLevers.length, 2);
   assert.ok(worldFour[8].windZones.some(zone => zone.reversePeriodMs));
-  assert.equal(worldFour[9].difficulty, 5);
+  assert.equal(worldFour[9].difficulty, 4);
   assert.equal(worldFour[9].requiredWindLevers.length, 2);
   for (const level of worldFour) {
     assert.ok(level.features.length > 0);
@@ -784,9 +784,9 @@ test('Tuas angin tersinkron, hanya elemen pemilik dapat mengaktifkannya, dan men
 });
 
 test('Pijakan Dunia 4 berada di platform stabil yang terjangkau dari spawn dan tuas tidak berada di balik gerbang', () => {
-  const jumpSpeed = 590;
-  const gravity = 1480;
-  const horizontalSpeed = 250;
+  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
+  const gravity = ELEMENTAL_GRAVITY;
+  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
   const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
   const horizontalRange = rise => {
     if (rise > maximumRise) return -1;
@@ -832,7 +832,7 @@ test('Sepuluh level Jantung Kuno memakai blueprint khusus dan tantangan final be
     iceZones:level.iceZones, currents:level.currents, windZones:level.windZones,
     valves:level.valves, windLevers:level.windLevers, sequence:level.switchSequence
   }))).size, 10);
-  assert.deepEqual(worldFive.map(level => level.difficulty), [4,4,5,5,5,5,5,5,5,5]);
+  assert.deepEqual(worldFive.map(level => level.difficulty), [3,3,3,3,3,3,3,4,4,4]);
   assert.deepEqual(worldFive.map(level => level.name), [
     'Simpul Pertama','Gerbang Lima','Kristal Kembar','Ruang Sinkron','Jalur Terpilih',
     'Pilar Harmoni','Ujian Bara','Ujian Arus','Pintu Purba','Penyatuan Elemen'
@@ -851,7 +851,7 @@ test('Sepuluh level Jantung Kuno memakai blueprint khusus dan tantangan final be
   assert.equal(worldFive[8].requiredWindLevers.length, 2);
   assert.deepEqual(worldFive[8].switchSequence, ['water','fire']);
   const finale = worldFive[9];
-  assert.equal(finale.difficulty, 5);
+  assert.equal(finale.difficulty, 4);
   assert.equal(finale.requiredValves.length, 2);
   assert.equal(finale.requiredWindLevers.length, 2);
   assert.deepEqual(finale.switchSequence, ['water','fire']);
@@ -862,9 +862,9 @@ test('Sepuluh level Jantung Kuno memakai blueprint khusus dan tantangan final be
 });
 
 test('Semua kontrol wajib Jantung Kuno berada pada pijakan stabil dan terjangkau dari kedua spawn', () => {
-  const jumpSpeed = 590;
-  const gravity = 1480;
-  const horizontalSpeed = 250;
+  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
+  const gravity = ELEMENTAL_GRAVITY;
+  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
   const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
   const horizontalRange = rise => {
     if (rise > maximumRise) return -1;
@@ -940,8 +940,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Adventure map v6 keeps platform geometry separated across all 50 levels', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,6);
+test('Adventure map v9 keeps platform geometry separated across all 50 levels', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,9);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {
@@ -964,6 +964,33 @@ test('Adventure map v6 keeps platform geometry separated across all 50 levels', 
   }
 });
 
+test('Kontrol analog benar-benar mengganti tombol arah dan bisa memicu lompatan vertikal', () => {
+  const game=readSource('../js/games/elemental-duo.js');
+  assert.match(game,/moveControls\.style\.setProperty\('display', controlMode === 'analog' \? 'none' : 'flex', 'important'\)/);
+  assert.match(game,/analogPad\.style\.setProperty\('display', controlMode === 'analog' \? 'grid' : 'none', 'important'\)/);
+  assert.match(game,/const wantsJump = y < -\.42/);
+  assert.match(game,/if \(wantsJump && !analogJumping\) input\.jumpQueued = true/);
+  assert.match(game,/window\.addEventListener\('pointermove', onMove, \{ passive:false \}\)/);
+});
+
+test('Tombol interaksi hanya muncul dekat katup atau tuas, sedangkan pijakan otomatis', () => {
+  const game=readSource('../js/games/elemental-duo.js');
+  assert.match(game,/function updateInteractControl\(level\)/);
+  assert.match(game,/button\.hidden = !nearby/);
+  assert.match(game,/actionLabel:'PUTAR KATUP'/);
+  assert.match(game,/actionLabel:'UBAH ANGIN'/);
+  assert.match(game,/function checkPressurePlate\(\)/);
+});
+
+test('Lompatan mobile lebih toleran dengan coyote time dan jump buffer', () => {
+  const game=readSource('../js/games/elemental-duo.js');
+  assert.match(game,/let coyoteTimeRemaining = 0/);
+  assert.match(game,/let jumpBufferRemaining = 0/);
+  assert.match(game,/jumpBufferRemaining = 0\.17/);
+  assert.match(game,/coyoteTimeRemaining = 0\.14/);
+  assert.match(game,/jumpBufferRemaining > 0 && \(localPlayer\.grounded \|\| coyoteTimeRemaining > 0\)/);
+});
+
 test('Fullscreen landscape is portalled to body, uses stable viewport and exposes translucent analog controls', () => {
   const game=readSource('../js/games/elemental-duo.js');
   const css=readSource('../css/elemental-duo.css');
@@ -976,10 +1003,12 @@ test('Fullscreen landscape is portalled to body, uses stable viewport and expose
   assert.match(game,/function bindAnalogStick\(\)/);
   assert.match(game,/pointercancel/);
   assert.match(game,/setControlMode\('analog'\)/);
-  assert.match(game,/scheduleViewportMeasure\(\)/);
+  assert.match(game,/scheduleViewportMeasure\(force = false\)/);
   assert.doesNotMatch(game,/visualViewport\?\.addEventListener\?\.\('resize'/);
   assert.match(css,/height:100svh/);
-  assert.match(css,/ed-game-panel:fullscreen \{[\s\S]*?height:100dvh/);
+  assert.match(css,/ed-game-panel:fullscreen[\s\S]*?height:100dvh/);
+  assert.match(css,/body\.ed-game-active #app\.page-content[\s\S]*?position:fixed/);
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
   assert.match(css,/html\.ed-fullpage-active/);
   assert.match(css,/body\.ed-fullpage-active/);
   assert.match(css,/rgba\(255,255,255,\.075\)/);

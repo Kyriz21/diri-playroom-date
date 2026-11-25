@@ -1,3 +1,16 @@
+## v0.33.0 — Mobile Repair, Analog Input & Difficulty Balance
+
+- Mode Potret sekarang memakai panel game edge-to-edge setinggi viewport dengan title satu baris, HUD terkompresi, canvas fleksibel, dan kontrol yang tetap berada di dalam lebar layar.
+- Mode landscape/fullscreen memakai canvas sebagai latar penuh, HUD melayang, analog transparan di kiri, dan tombol lompat/interaksi di kanan. Fallback aplikasi memakai fixed viewport ketika Fullscreen API tidak tersedia.
+- Kontrol analog sekarang benar-benar menggantikan tombol arah. Sumbu horizontal bergerak kiri/kanan; dorongan ke atas memicu lompatan. Pointer Event diproses melalui window untuk menjaga input saat pointer capture berubah.
+- Tombol INTERAKSI bersifat kontekstual: hanya muncul dekat katup atau tuas. Pijakan otomatis diaktifkan saat karakter menginjaknya.
+- Fisika dipermudah: gravity 1100, jump speed 690, platform utama 128 px, jump buffer 170 ms, dan coyote time 140 ms.
+- Kurva kesulitan diseimbangkan ulang di kelima dunia. Dunia 1 tetap tutorial mudah hingga level 8; level akhir berada pada Sulit (4/5), tanpa tingkat Expert.
+- Menara Kembar diperbaiki agar platform utama tidak bertumpuk; seluruh geometri 50 level dan jangkauan platform diuji.
+- MapVersion dinaikkan ke 9. Posisi pada level aktif kembali ke spawn saat migrasi; progres dan statistik pemain dipertahankan.
+- Firebase Rules tidak berubah.
+- Verifikasi: 191/191 tes otomatis lulus; semua file JavaScript lolos `node --check`.
+
 ## v0.32.0 — Elemental Duo Mobile, Map Clarity & Stability
 - Merapikan geometri peta untuk seluruh 50 level: jarak visual minimum antarplatform kini diperiksa, termasuk cabang dan shortcut, agar platform tidak terlihat menyatu/bertumpuk.
 - Menata ulang koordinat vertikal lima arketipe peta; variasi eksplorasi kiri/kanan/atas/bawah dan pintu di lokasi berbeda tetap dipertahankan.

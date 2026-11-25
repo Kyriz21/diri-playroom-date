@@ -1,8 +1,8 @@
-# Elemental Duo — Panduan Game (build v0.32.0)
+# Elemental Duo — Panduan Game (build v0.33.0)
 
 **Elemental Duo** adalah platform-puzzle kooperatif untuk dua pemain. Pola permainan menekankan kerja sama dua karakter elemen: melewati jalur platform, menghindari bahaya yang berlawanan, mengumpulkan permata milik karakter sendiri, mengaktifkan pijakan, lalu mencapai pintu masing-masing.
 
-## Peta eksplorasi multi-arah — v0.32.0
+## Peta eksplorasi multi-arah — v0.33.0
 
 Tidak semua level berakhir di ujung kanan. Setiap arena memakai ruang 1440×960 dan jaringan platform bertingkat yang mendorong gerak horizontal serta vertikal.
 
@@ -19,12 +19,12 @@ Lima bentuk ruang adalah Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpang
 `ELEMENTAL_MAP_VERSION` saat ini adalah 6. Saat build baru dibuka, koordinat pemain dari layout lama dipindahkan ke spawn yang valid; progres jumlah jatuh dan serpihan tetap dibawa, sedangkan status selesai lama dibersihkan agar pemain tidak terkunci.
 
 
-## Kontrol dan tampilan mobile — v0.32.0
+## Kontrol dan tampilan mobile — v0.33.0
 - Mode Potret mempertahankan tata letak vertikal dan tombol arah seperti sebelumnya.
 - Mode Layar Penuh meminta fullscreen dan orientasi landscape; bila browser menolak Fullscreen API, panel dipindahkan sementara ke `document.body` sebagai fallback aplikasi.
-- Landscape memakai kontrol analog virtual transparan di kiri bawah, dengan tombol AKSI/LOMPAT di kanan bawah. Tombol pada HUD dapat mengganti Analog ↔ Tombol; analog juga dapat dipilih pada Mode Potret.
+- Landscape memakai kontrol analog virtual transparan di kiri bawah, dengan tombol INTERAKSI/LOMPAT di kanan bawah. Tombol pada HUD dapat mengganti Analog ↔ Tombol; analog juga dapat dipilih pada Mode Potret.
 - Mode fullscreen native memakai viewport dinamis `100dvh`; fallback memakai `100svh` agar perubahan address bar tidak terus mengubah ukuran arena. Listener `visualViewport.resize` tidak digunakan agar browser chrome tidak memicu canvas berkedip/loncat.
-- Build mapVersion 6 memindahkan posisi aktif ke spawn baru, sambil mempertahankan progres level, shards, dan jumlah jatuh.
+- Build mapVersion 9 memindahkan posisi aktif ke spawn baru, sambil mempertahankan progres level, shards, dan jumlah jatuh.
 
 ## Karakter dan aturan elemen
 
@@ -61,7 +61,7 @@ Setiap level memiliki konfigurasi platform, bahaya elemen, pijakan, permata, tit
 | Bergerak kiri | A atau ← | Tombol ← |
 | Bergerak kanan | D atau → | Tombol → |
 | Melompat | Space atau W/↑ | Tombol LOMPAT |
-| Interaksi alternatif | E atau Enter | Tombol AKSI |
+| Interaksi alternatif | E atau Enter | Tombol INTERAKSI |
 | Perbesar arena | Tombol layar penuh | Tombol ⛶ |
 
 Pada HP, arena menggunakan kamera yang mengikuti area pemain dan memperbesar bagian level yang relevan. Putar perangkat ke mode landscape untuk area pandang yang lebih lebar. Tombol arah dan lompat dibuat lebih besar untuk layar sentuh.
@@ -127,7 +127,7 @@ Kerajaan Bara level 21–30 telah menerima blueprint khusus. Mekanik aktif menca
 
 ## Implementasi Dunia 4 — v0.28.0
 
-Reruntuhan Langit (level 31–40) memiliki zona angin dengan gaya horizontal/vertikal, updraft, crosswind, fase hembusan berdenyut, dan pembalikan arah berkala. Tuas angin dapat diaktifkan melalui tombol AKSI saat pemain berada di dekatnya; tuas elemen hanya dapat diaktifkan oleh karakter yang sesuai. Aktivasi tuas disinkronkan melalui Firebase dan dapat menjadi syarat pembukaan gerbang. Platform `cloud` menggunakan collision platform normal dan dapat bergerak seperti platform lainnya. Lihat `ELEMENTAL-WORLD-4.md` untuk rincian setiap level.
+Reruntuhan Langit (level 31–40) memiliki zona angin dengan gaya horizontal/vertikal, updraft, crosswind, fase hembusan berdenyut, dan pembalikan arah berkala. Tuas angin dapat diaktifkan melalui tombol INTERAKSI saat pemain berada di dekatnya; tuas elemen hanya dapat diaktifkan oleh karakter yang sesuai. Aktivasi tuas disinkronkan melalui Firebase dan dapat menjadi syarat pembukaan gerbang. Platform `cloud` menggunakan collision platform normal dan dapat bergerak seperti platform lainnya. Lihat `ELEMENTAL-WORLD-4.md` untuk rincian setiap level.
 
 
 ## Implementasi Dunia 5 — v0.29.0
@@ -137,3 +137,12 @@ Jantung Kuno (level 41–50) kini memakai 10 blueprint khusus. Dunia final menya
 Level 42, 46, 49, dan 50 memiliki katup wajib; level 43, 48, 49, dan 50 memiliki tuas angin wajib. Level 44, 49, dan 50 meminta Nira mengaktifkan pijakan lebih dahulu, lalu Bara. Level 50, Penyatuan Elemen, menggabungkan seluruh mekanik dan menjadi final petualangan.
 
 Semua state interaksi disimpan di bawah `levels/{level}` dan memakai jam level bersama Firebase untuk fase hazard/platform/arus/angin. Firebase Rules tidak berubah. Lihat `ELEMENTAL-WORLD-5.md` dan checklist bagian K di `REVIEW-BUILD-QA.md`.
+
+
+## Perbaikan mobile v0.33.0
+
+- Potret mengisi viewport HP dan mengatur ulang header, HUD, arena, serta kontrol agar tidak terpotong horizontal.
+- Layar Penuh memakai arena penuh sebagai latar; analog di kiri, LOMPAT di kanan, dan INTERAKSI hanya tampil dekat katup/tuas. Pijakan elemen aktif otomatis.
+- Fisika lebih toleran: gravity 1100, jump speed 690, jump buffer 170 ms, coyote time 140 ms. Platform utama diperlebar menjadi 128 px.
+- Tingkat kesulitan diturunkan dan diatur ulang pada seluruh dunia; Dunia 1 adalah tutorial mudah dan tidak ada level Expert.
+- MapVersion 9 memindahkan posisi pada level aktif ke spawn saat pembaruan, tanpa menghapus progres, serpihan, atau statistik jatuh.

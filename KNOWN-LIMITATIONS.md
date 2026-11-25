@@ -1,9 +1,16 @@
-## Elemental Duo build v0.32.0 — mobile stability dan map spacing
+## Diri Playroom Date v0.33.0 — batasan yang masih perlu diuji
+- Tes otomatis memeriksa geometri dan jangkauan lompat, tetapi tidak menggantikan playtest manusia untuk ritme puzzle, rasa kontrol, dan tingkat kesulitan.
+- Fullscreen native, orientation lock, safe-area dan bilah sistem Android bergantung dukungan browser/OS. Fallback mengisi viewport web, tetapi tidak dapat menyembunyikan status bar Android atau notifikasi sistem.
+- Analog dan tombol diuji melalui tes kode, belum divalidasi langsung pada layar sentuh HP pengguna.
+- Sinkronisasi dua HP dengan Firebase aktif dan seluruh urutan 50 level tetap perlu diuji setelah deployment.
+- MapVersion 9 memindahkan posisi karakter di level aktif ke spawn saat migrasi; progres level, serpihan, dan jumlah jatuh dipertahankan.
+
+## Elemental Duo build v0.32.0 — catatan historis map spacing
 - Tes otomatis memverifikasi jarak geometris antarpijakan, tetapi tidak menjamin setiap layout terasa seimbang setelah hazard bergerak dan fase puzzle berjalan; playtest tetap diperlukan.
 - Fullscreen native dan orientation lock tetap bergantung dukungan browser/OS. Fallback portal mengisi viewport web yang tersedia, tetapi tidak dapat menyembunyikan chrome browser jika browser tidak memberikan Fullscreen API.
 - Perbaikan viewport menghindari listener `visualViewport.resize` dan memakai ukuran stabil; perilaku browser tertentu serta keyboard sistem dapat tetap memicu perubahan viewport. Perlu validasi pada HP yang digunakan.
 - Analog virtual, sensitivitas, fullscreen, frame rate, dan sinkronisasi dua HP dengan Firebase aktif belum diuji secara fisik.
-- MapVersion 6 memindahkan koordinat sesi aktif ke spawn level saat migrasi; progres level dan statistik tetap dipertahankan.
+- MapVersion 9 memindahkan koordinat sesi aktif ke spawn level saat migrasi; progres level dan statistik tetap dipertahankan.
 
 # Keterbatasan yang diketahui — Diri. Playroom Date v0.19
 
@@ -63,6 +70,6 @@
 ## Elemental Duo build v0.29.0
 - Blueprint khusus sekarang mencakup seluruh level 01–50 pada lima dunia. Ini belum membuktikan semua rute terasa seimbang atau menyenangkan; playtest dua perangkat tetap diperlukan.
 - Gameplay end-to-end dengan Firebase aktif pada dua HP belum dilakukan dari lingkungan build ini, termasuk transisi level 40–41, interaksi empat segel level 49–50, reconnect, dan sinkronisasi fase mekanik.
-- Kontrol katup dan tuas menggunakan tombol AKSI/E/Enter ketika karakter berada dekat objek. Ketepatan jangkauan dan kenyamanan sentuh perlu diuji pada perangkat fisik.
+- Kontrol katup dan tuas menggunakan tombol INTERAKSI/E/Enter ketika karakter berada dekat objek. Ketepatan jangkauan dan kenyamanan sentuh perlu diuji pada perangkat fisik.
 - Tes unit dan pemeriksaan sintaks tidak membuktikan frame rate, respons kamera, orientasi fullscreen, atau collision terasa benar di semua browser/perangkat.
 - Fase hazard/platform/arus/angin memakai jam level bersama Firebase; bila inisialisasi koneksi/time offset gagal, permainan menunggu kesiapan jam bersama sebelum menjalankan simulasi lokal.

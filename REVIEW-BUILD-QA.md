@@ -1,4 +1,4 @@
-# QA — Diri. Playroom Date v0.32.0
+# QA — Diri. Playroom Date v0.33.0
 
 ## Elemental Duo — full exploration map regression
 - [ ] Level 01–50 dibuka dari room Firebase dengan kedua pemain siap.
@@ -12,12 +12,12 @@
 - [ ] Refresh salah satu HP saat bermain; verifikasi versi map 6 memindahkan posisi lama ke spawn tanpa menghapus progres level.
 - [ ] Mainkan beberapa level sampai transisi dan penyelesaian bersama terkonfirmasi pada kedua perangkat.
 - [ ] Uji jarak antarpijakan pada semua bentuk peta; pastikan platform tidak bersentuhan atau terlihat menyatu.
-- [ ] Uji mode landscape pada browser HP: panel mengisi layar, kontrol analog transparan dapat digeser, tombol AKSI/LOMPAT berfungsi.
+- [ ] Uji mode landscape pada browser HP: panel mengisi layar, kontrol analog transparan dapat digeser, tombol INTERAKSI/LOMPAT berfungsi.
 - [ ] Ganti Analog ↔ Tombol dari kontrol mode dan pastikan input kiri/kanan tidak tertahan.
 - [ ] Gulir/biarkan browser menyembunyikan bilah alamat; canvas tidak berkedip atau mengubah framing berulang.
 
-## Hasil verifikasi otomatis v0.32.0
-- 188/188 tests passed.
+## Hasil verifikasi otomatis v0.33.0
+- 191/191 tests passed.
 - Semua file JavaScript lolos `node --check`.
 - Semua platform pada 50 map lolos uji reachability geometri dari kedua spawn.
 - Firebase Rules tidak berubah.
@@ -456,7 +456,7 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 
 - [ ] Level 21: pastikan lava berdenyut terlihat; Nira terkena saat aktif, Bara aman.
 - [ ] Level 22: pastikan semburan uap aktif/padam dan berbahaya bagi kedua karakter.
-- [ ] Level 23: Bara mendekati Katup Bara, menekan AKSI, lalu pastikan aliran lava terkait mati dan gerbang baru bisa dibuka setelah dua pijakan aktif.
+- [ ] Level 23: Bara mendekati Katup Bara, menekan INTERAKSI, lalu pastikan aliran lava terkait mati dan gerbang baru bisa dibuka setelah dua pijakan aktif.
 - [ ] Level 24: pastikan karakter terbawa platform horizontal bergerak saat berdiri di atasnya.
 - [ ] Level 25: pastikan jalur air/lava dan arus pendingin berjalan; kedua pemain memilih jalur elemen masing-masing.
 - [ ] Level 26: coba aktifkan pijakan Bara lebih dahulu; harus ditolak. Aktifkan Nira dahulu, lalu pastikan pijakan Bara dapat aktif.
@@ -475,7 +475,7 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - [ ] Level 32: tunggu pulau bergerak mendekat; pastikan karakter yang berdiri ikut terbawa.
 - [ ] Level 33: masuk ke dua lorong angin dan pastikan dorongan berlawanan terasa.
 - [ ] Level 34: naiki menara melalui lift vertikal dan updraft; pastikan kedua switch tetap berada di pijakan stabil.
-- [ ] Level 35: dekati Tuas Badai dan tekan AKSI; pastikan arah hembusan berubah pada kedua perangkat dan gerbang tetap terkunci sebelum tuas serta dua pijakan aktif.
+- [ ] Level 35: dekati Tuas Badai dan tekan INTERAKSI; pastikan arah hembusan berubah pada kedua perangkat dan gerbang tetap terkunci sebelum tuas serta dua pijakan aktif.
 - [ ] Level 36: seberangi dua platform awan bergerak; pastikan keduanya membawa karakter ketika diinjak.
 - [ ] Level 37: manfaatkan zona tenang untuk mengatur lompatan di antara dua gust.
 - [ ] Level 38: Bara mengaktifkan Tuas Bara dan Nira mengaktifkan Tuas Air; tuas milik elemen lain harus menolak interaksi.
@@ -483,7 +483,7 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - [ ] Level 40: aktifkan kedua tuas sesuai elemen, lewati gust berbalik dan lift awan, lalu selesaikan dua pijakan dan pintu masing-masing.
 - [ ] Ubah jam lokal salah satu HP beberapa menit; fase angin/platform harus tetap sama karena memakai jam Firebase bersama.
 - [ ] Putus-sambungkan jaringan sebentar; status tuas yang sudah aktif harus tetap tersimpan di kedua perangkat.
-- [ ] Pastikan AKSI pada desktop (E/Enter) dan tombol AKSI pada mode Potret/Layar Penuh dapat mengoperasikan tuas.
+- [ ] Pastikan INTERAKSI pada desktop (E/Enter) dan tombol INTERAKSI pada mode Potret/Layar Penuh dapat mengoperasikan tuas.
 
 **Pemasangan v0.28.0:** unggah seluruh isi ZIP ke root repository GitHub Pages dan timpa file lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, dan folder `css/` ikut terganti agar cache v0.28.0 terpakai. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
 
@@ -506,3 +506,11 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - [ ] Uji mode Potret dan Layar Penuh pada level dengan platform bergerak; pastikan kamera lokal tetap mengikuti karakter dan kontrol tidak menutupi pijakan.
 
 **Pemasangan v0.29.0:** unggah seluruh isi ZIP ke root repository GitHub Pages dan timpa file lama. Pastikan `index.html`, `js/app.js`, `js/games/elemental-duo.js`, `js/games/elemental-duo-logic.js`, `css/elemental-duo.css`, serta `ELEMENTAL-WORLD-5.md` ikut terganti agar cache v0.29.0 terpakai. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
+
+
+## QA tambahan v0.33.0
+- Periksa Potret di viewport 360×800, 390×844, dan perangkat lebih pendek; tidak boleh ada scroll horizontal.
+- Periksa Layar Penuh landscape: analog kiri, tombol lompat kanan, INTERAKSI hanya saat dekat katup/tuas.
+- Pastikan joystick kiri/kanan menggerakkan karakter dan joystick ke atas melompat.
+- Pastikan menekan pijakan elemen tidak membutuhkan tombol INTERAKSI.
+- Mainkan level 1–10 untuk memverifikasi lompatan tutorial dan kurva kesulitan sebelum mencoba dunia berikutnya.

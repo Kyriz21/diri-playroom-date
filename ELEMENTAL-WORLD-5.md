@@ -31,7 +31,7 @@ Cakupan: level 41–50
 ### Katup dan tuas wajib
 - `requiredValves` menjadi syarat tambahan pembukaan gerbang. Setiap katup diwajibkan memiliki hazard yang dikendalikan melalui `valveId`.
 - `requiredWindLevers` menjadi syarat tambahan pembukaan gerbang. Setiap tuas diwajibkan mengendalikan minimal satu zona angin melalui `leverId`.
-- Katup dan tuas yang terikat elemen hanya dapat diaktifkan karakter pemiliknya melalui tombol AKSI.
+- Katup dan tuas yang terikat elemen hanya dapat diaktifkan karakter pemiliknya melalui tombol INTERAKSI.
 - Status katup dan tuas tersimpan di bawah `levels/{level}` pada Firebase RTDB; Firebase Rules tidak berubah.
 
 ### Urutan pijakan

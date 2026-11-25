@@ -30,7 +30,7 @@ Cakupan: level 31–40
 
 ### Tuas pengubah arah angin
 - Tuas memiliki `id`, posisi, label, radius interaksi, dan elemen pemilik opsional.
-- Pemain mendekati tuas dan menggunakan **AKSI** (E/Enter pada desktop, tombol AKSI pada HP).
+- Pemain mendekati tuas dan menggunakan **INTERAKSI** (E/Enter pada desktop, tombol INTERAKSI pada HP).
 - Jika tuas memiliki `element`, hanya karakter dengan elemen tersebut yang dapat mengaktifkannya.
 - Status tuas disimpan pada `levels/{level}/windLevers/{id}` melalui transaksi Firebase RTDB.
 - Zona angin dengan `leverId` membalik gaya horizontal dan vertikal setelah tuas terkait aktif.

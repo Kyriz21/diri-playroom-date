@@ -34,7 +34,7 @@ Cakupan: level 21–30
 
 ### Katup yang tersinkron
 - Tiap katup punya `id`, posisi, label, dan elemen pemilik.
-- Pemain mendekati katup lalu menggunakan **AKSI** (E/Enter) untuk mengaktifkannya.
+- Pemain mendekati katup lalu menggunakan **INTERAKSI** (E/Enter) untuk mengaktifkannya.
 - Hanya karakter dengan elemen yang cocok yang dapat memutar katup.
 - Status katup disimpan pada `levels/{level}/valves/{id}` melalui Firebase RTDB.
 - Hazard dengan `valveId` dinonaktifkan dari renderer dan collision setelah katup terkait terbuka.
