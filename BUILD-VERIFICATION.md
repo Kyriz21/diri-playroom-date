@@ -1,7 +1,16 @@
-# Build Verification — Diri. Playroom Date v0.39.0
+# Build Verification — Diri. Playroom Date v0.39.1
+
+## v0.39.1 — Classic Temple Layout & Jump Repair
+- `npm test`: **194/194 tes lulus**.
+- Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
+- Lima level prototype sekarang memakai lima pola ruang berbeda (dipilih dari 10 layout hand-authored). Platform disusun dengan jarak vertikal sekitar 80–95 unit, jalur dua sisi, dan pintu pasangan di galeri atas.
+- Tinggi lompatan teoretis `560² / (2 × 1500) ≈ 104,5` unit; jangkauan horizontal sekitar 139 unit pada kenaikan 85 unit.
+- Ketebalan visual platform menjadi 22 unit (collision tetap 8 unit).
+- `ELEMENTAL_MAP_VERSION=16` dan `prototypeVersion=2` memindahkan pemain/sesi lama ke posisi dan puzzle layout baru; statistik pemain dipertahankan.
+- Cache key `index.html`, `js/app.js`, modul Elemental Duo, dan logic engine memakai v0.39.1. Firebase Rules tidak berubah.
 
 ## v0.39.0 — Classic Temple Prototype
-- `npm test`: **193/193 tes lulus**.
+- `npm test`: **194/194 tes lulus**.
 - Pemeriksaan sintaks seluruh file JavaScript menggunakan `node --check` lulus.
 - 5 level aktif memakai lima tema berbeda; 45 blueprint lain tetap tersimpan tetapi tidak masuk jalur permainan prototype.
 - Renderer Canvas menggunakan dinding bata gelap, relief, vine, platform batu bertekstur, hazard cairan, permata faceted, portal batu dan karakter yang diperbarui.

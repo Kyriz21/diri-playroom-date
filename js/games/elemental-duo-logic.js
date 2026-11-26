@@ -4,13 +4,13 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 15;
+export const ELEMENTAL_MAP_VERSION = 16;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
-export const ELEMENTAL_GRAVITY = 1300;
+export const ELEMENTAL_GRAVITY = 1500;
 export const ELEMENTAL_MOVE_SPEED = 260;
-// Compact classic-platformer jump arc: ~30 units of height.
-// Short 24-unit room tiers keep jumps deliberate and comfortably reachable.
-export const ELEMENTAL_JUMP_SPEED = 280;
+// Responsive classic-platformer jump: ~105 units of height.
+// This gives enough lift and air time to reach separated stone ledges.
+export const ELEMENTAL_JUMP_SPEED = 560;
 
 /** Fit the whole puzzle room in landscape; follow the player horizontally in portrait. */
 export function getElementalViewport(width, height, worldWidth = ELEMENTAL_WORLD_WIDTH, worldHeight = ELEMENTAL_WORLD_HEIGHT) {
@@ -1380,43 +1380,33 @@ function findSafeFloorPoint(preferred, hazards, element = null, min = 70, max = 
 }
 
 
-// Ten authored temple rooms. Their geometry follows a clear puzzle grammar:
-// two elemental approach lanes, a shared mechanism room, upper side galleries,
-// and a pair of exits. The pattern changes by room, but gaps and tier heights
-// stay inside the normal-jump envelope so the route feels intentional.
+// Ten hand-authored temple rooms with real negative space between tiers.
+// Each route climbs in readable steps (roughly 80–95 world units), then
+// branches to the paired upper doors before reconnecting at the crown.
+// The prototype selects a different room grammar for each of its five worlds.
 const ELEMENTAL_ROOM_LAYOUTS = [
-  // Two symmetrical elemental lanes rise toward a shared upper bridge.
-  { name:'Balairung Dua Sayap', platforms:[[40,522,160],[960,522,160],[230,498,145],[785,498,145],[405,474,145],[610,474,145],[490,450,180],[230,450,145],[785,450,145],[405,426,145],[610,426,145],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Side exits sit one step below the two upper galleries.
-  { name:'Tangga Teras', platforms:[[40,522,160],[960,522,160],[220,498,150],[790,498,150],[405,474,145],[610,474,145],[490,450,180],[210,450,150],[800,450,150],[390,426,150],[620,426,150],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[7,8],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Both characters meet at the center crown, then enter split doors.
-  { name:'Ruang Silang', platforms:[[40,522,160],[960,522,160],[230,498,145],[785,498,145],[405,474,145],[610,474,145],[460,450,240],[230,450,145],[785,450,145],[370,426,150],[640,426,150],[470,402,220],[490,522,180]], switches:[2,3],gems:[4,5],doors:[11,11],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Twin towers use a clear left/right stair with a shared bridge between them.
-  { name:'Menara Empat Pilar', platforms:[[35,522,170],[955,522,170],[215,498,150],[795,498,150],[390,474,145],[625,474,145],[490,450,180],[205,450,150],[805,450,150],[375,426,150],[635,426,150],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[8,9],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // A central seal divides two short galleries; the exit pair is offset.
-  { name:'Gerbang Tengah', platforms:[[40,522,160],[960,522,160],[235,498,145],[780,498,145],[410,474,140],[610,474,140],[490,450,180],[240,450,145],[775,450,145],[400,426,145],[615,426,145],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[7,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Lower side shelves create an optional return route beneath the upper bridge.
-  { name:'Lorong Dua Lantai', platforms:[[40,522,160],[960,522,160],[225,498,150],[785,498,150],[405,474,145],[610,474,145],[490,450,180],[215,450,150],[795,450,150],[395,426,145],[620,426,145],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Four stable pillars form two staircases that reconnect at the crown.
-  { name:'Halaman Empat Pilar', platforms:[[35,522,170],[955,522,170],[225,498,150],[785,498,150],[400,474,145],[615,474,145],[490,450,180],[195,450,150],[815,450,150],[375,426,150],[635,426,150],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[7,8],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // The upper bridge is the central meeting point; exits share its platform.
-  { name:'Jembatan Kristal', platforms:[[40,522,160],[960,522,160],[230,498,145],[785,498,145],[405,474,145],[610,474,145],[490,450,180],[230,450,145],[785,450,145],[405,426,145],[610,426,145],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[11,11],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Offset galleries require a short drop and a return jump, never a blind maze.
-  { name:'Ruang Resonansi', platforms:[[40,522,160],[960,522,160],[230,498,145],[785,498,145],[405,474,145],[610,474,145],[475,450,210],[210,450,150],[800,450,150],[385,426,145],[625,426,145],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[11,11],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  // Final room keeps the same readable language but asks both sides to reconnect overhead.
-  { name:'Kubah Kuno', platforms:[[40,522,160],[960,522,160],[225,498,150],[785,498,150],[400,474,145],[615,474,145],[490,450,180],[225,450,150],[785,450,150],[390,426,145],[625,426,145],[490,402,180],[490,522,180]], switches:[2,3],gems:[4,5],doors:[10,7],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} }
+  { name:'Balairung Dua Sayap', platforms:[[35,500,155],[970,500,155],[200,415,145],[815,415,145],[365,330,140],[655,330,140],[490,245,180],[200,245,145],[815,245,145],[365,160,140],[655,160,140],[490,75,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Tangga Teras', platforms:[[25,500,160],[975,500,160],[200,412,145],[815,412,145],[365,324,140],[655,324,140],[490,236,180],[200,236,145],[815,236,145],[170,148,140],[850,148,140],[300,60,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:300,w:18,h:100} },
+  { name:'Ruang Silang', platforms:[[20,500,160],[980,500,160],[190,408,150],[820,408,150],[360,316,145],[655,316,145],[485,224,190],[190,224,150],[820,224,150],[360,132,145],[655,132,145],[485,48,190],[485,500,190]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Menara Empat Pilar', platforms:[[30,500,160],[970,500,160],[205,420,140],[815,420,140],[365,340,140],[655,340,140],[490,260,180],[205,260,140],[815,260,140],[365,180,140],[655,180,140],[490,100,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Gerbang Tengah', platforms:[[25,500,160],[975,500,160],[195,410,145],[820,410,145],[355,320,145],[660,320,145],[490,230,180],[195,230,145],[820,230,145],[355,140,145],[660,140,145],[490,60,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Lorong Dua Lantai', platforms:[[35,500,155],[970,500,155],[205,418,140],[815,418,140],[365,336,140],[655,336,140],[490,254,180],[205,254,140],[815,254,140],[365,172,140],[655,172,140],[490,90,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Halaman Empat Pilar', platforms:[[20,500,160],[980,500,160],[190,414,150],[820,414,150],[355,328,145],[660,328,145],[490,242,180],[190,242,150],[820,242,150],[355,156,145],[660,156,145],[490,70,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Jembatan Kristal', platforms:[[30,500,160],[970,500,160],[205,416,140],[815,416,140],[365,332,140],[655,332,140],[490,248,180],[205,248,140],[815,248,140],[365,164,140],[655,164,140],[490,80,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Ruang Resonansi', platforms:[[30,500,160],[970,500,160],[220,412,140],[800,412,140],[380,324,130],[650,324,150],[480,236,200],[190,236,140],[830,236,140],[320,148,140],[700,148,140],[480,60,200],[480,500,200]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
+  { name:'Kubah Kuno', platforms:[[35,500,155],[970,500,155],[205,420,140],[815,420,140],[365,340,140],[655,340,140],[490,260,180],[205,260,140],[815,260,140],[365,180,140],[655,180,140],[490,100,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} }
 ];
 
 function roomPlatform(levelId, slot, spec, source = null) {
   const [x,y,w] = spec;
   const safeMotion = source?.motion ? {
     ...source.motion,
-    // The room tiers are intentionally short; moving platforms stay gentle.
-    amplitude: Math.min(10, Number(source.motion.amplitude) || 0)
+    // Moving ledges remain subtle so the larger room geometry stays readable.
+    amplitude: Math.min(12, Number(source.motion.amplitude) || 0)
   } : null;
   return {
     id:`room-${levelId}-ledge-${slot+1}`,
-    x,y,w,h:8,visualH:16,
+    x,y,w,h:8,visualH:22,
     kind:source?.kind || (slot % 3 === 1 ? 'crystal' : 'stone'),
     ...(safeMotion ? {motion:safeMotion} : {}),
     ...(source?.cycle ? {cycle:{...source.cycle}} : {}),
@@ -1437,10 +1427,11 @@ function mapZoneToPlatform(source, platform, index, kind) {
 }
 
 /** Convert one level blueprint into a fixed-screen co-op puzzle room. */
-function createExplorationMap(level, index) {
-  const worldIndex = Math.floor(index / 10);
-  const localIndex = index % 10;
-  const room = ELEMENTAL_ROOM_LAYOUTS[localIndex];
+function createExplorationMap(level, sourceIndex) {
+  const worldIndex = Math.floor(sourceIndex / 10);
+  const localIndex = sourceIndex % 10;
+  const roomIndex = (worldIndex * 2 + localIndex) % ELEMENTAL_ROOM_LAYOUTS.length;
+  const room = ELEMENTAL_ROOM_LAYOUTS[roomIndex];
   const specs = room.platforms;
   const switchSlots = [...room.switches];
   const gemSlots = [...room.gems];
@@ -1583,7 +1574,7 @@ function createExplorationMap(level, index) {
   level.mapName = room.name;
   level.mapTopology = {
     route:'fixed-screen-coop-puzzle',
-    tiers:[522,498,474,450,426,402],
+    tiers:[...new Set(platforms.map(platform=>platform.y))].sort((a,b)=>a-b),
     platformCount:platforms.length,
     sideRoutes:2,
     randomBranches:0,
@@ -1677,7 +1668,7 @@ function makeLevel(index, sourceIndex = index) {
     },
     exit: { x: 870, y: 418, w: 82, h: 102 }
   };
-  return createExplorationMap(level, index);
+  return createExplorationMap(level, sourceIndex);
 }
 
 export const ELEMENTAL_LEVELS = Object.freeze(Array.from({ length:50 }, (_, index) => Object.freeze(makeLevel(index))));

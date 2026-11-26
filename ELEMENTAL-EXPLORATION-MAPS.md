@@ -1,4 +1,4 @@
-# Elemental Duo — Classic Temple Prototype (v0.39.0)
+# Elemental Duo — Classic Temple Prototype (v0.39.1)
 
 ## Prototype 5 level lintas tema
 
@@ -10,7 +10,7 @@ Peta dirancang sebagai ruang puzzle layar-tetap, bukan maze acak atau koridor sa
 - **Jalur Bara dan Nira:** Bara dan Nira memulai dari sisi berbeda dan melewati hazard yang aman untuk elemennya sendiri.
 - **Pijakan dan gerbang:** dua pijakan karakter mengaktifkan penghalang bersama. Katup/tuas tambahan hanya menjadi syarat pada level yang memang memperkenalkannya.
 - **Permata:** permata merah dan biru berada pada jalur karakter masing-masing. Mengambil permata mendorong eksplorasi, tetapi tidak membuat pintu mustahil dicapai bila tertinggal.
-- **Rute bertingkat:** tier utama berada pada y `[522, 498, 474, 450, 426, 402]`, selisih 24 unit.
+- **Rute bertingkat:** tier utama terpisah sekitar 80–95 unit; lompatan memiliki puncak teoretis sekitar 104,5 unit.
 - **Pintu keluar:** dapat berada di sisi kiri/kanan, galeri atas, atau ruang tengah; pemain tetap harus mencapai pintu elemen sendiri.
 - **Platform khusus:** platform bergerak/berkala dialokasikan ke slot samping yang tidak dipakai spawn, pintu, pijakan, permata, atau kontrol wajib.
 
@@ -81,5 +81,11 @@ Mengubah pengalaman dari koridor kiri-ke-kanan menjadi platform-puzzle eksploras
 - Pola Menara Kembar diperbaiki untuk menghilangkan tumpang tindih platform utama.
 
 
-## Visual v0.39.0
+## Visual v0.39.1
 Renderer menggambar latar batu bata gelap, sambungan batu, aksen lumut, tanaman rambat, relief kuil, dan partikel. Warna dasar tiap tema dibedakan namun seluruh level mempertahankan bahasa visual dungeon klasik. Platform batu, hazard air/lava, permata, pintu dan karakter menggunakan gambar Canvas prosedural sehingga tidak memerlukan aset eksternal tambahan.
+
+## Revisi v0.39.1 — ruang dan fisika lompatan
+- Lima prototype memakai lima layout ruang berbeda; sepuluh template tetap tersedia untuk variasi fase pengembangan berikutnya.
+- Platform diberi jarak vertikal yang cukup untuk lompatan penuh dan tidak lagi tersusun rapat dalam barisan 24 unit.
+- Lompatan menggunakan `jumpSpeed=560` dan `gravity=1500`, dengan tinggi puncak sekitar 104,5 unit.
+- `ELEMENTAL_MAP_VERSION=16`; `prototypeVersion=2` memulai ulang puzzle lama untuk menghindari posisi karakter tersangkut pada layout baru.

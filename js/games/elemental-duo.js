@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.39.0';
+} from './elemental-duo-logic.js?v=0.39.1';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -591,14 +591,14 @@ export function mountElementalDuo(root, context) {
       let needsPrototypeMigration = false;
       await runTransaction(metaRef, current => {
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:1
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:2
         };
-        if (Number(current.prototypeVersion) === 1) return current;
+        if (Number(current.prototypeVersion) === 2) return current;
         needsPrototypeMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, prototypeVersion:1
+          results:{}, prototypeVersion:2
         };
       });
       if (needsPrototypeMigration) {
@@ -1867,7 +1867,7 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 1)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 2)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {

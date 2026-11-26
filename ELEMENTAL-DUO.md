@@ -1,4 +1,11 @@
-# Elemental Duo — Panduan Game (build v0.39.0)
+# Elemental Duo — Panduan Game (build v0.39.1)
+
+## Pembaruan v0.39.1 — layout dan lompatan
+- Lima level prototype sekarang memakai lima tata letak ruang berbeda, satu untuk setiap tema. Sepuluh layout tersusun dalam jalur dua sisi yang naik ke galeri atas.
+- Platform tidak lagi rapat dengan selisih 24 unit; ruang antartingkat kini sekitar 80–95 unit.
+- Lompatan memakai `ELEMENTAL_JUMP_SPEED=560` dan `ELEMENTAL_GRAVITY=1500`, dengan puncak sekitar 104,5 unit.
+- Tebal visual platform menjadi 22 unit, tetapi collision fisik tetap 8 unit.
+- `ELEMENTAL_MAP_VERSION=16` dan `prototypeVersion=2` memulai ulang posisi serta state puzzle lama agar sesuai geometri baru. Statistik pemain dan keanggotaan room dipertahankan.
 
 ## Prinsip gameplay puzzle klasik
 Elemental Duo menggunakan ruang puzzle dua karakter yang dirancang untuk kolaborasi. Bara melewati jalur lava tetapi menghindari air; Nira melewati air tetapi menghindari lava; keduanya menghindari rawa beracun. Setiap pemain mencari permata elemennya, mengaktifkan pijakan/sakelar, membantu membuka rute, dan mencapai pintu yang sesuai warna karakter.
@@ -178,7 +185,7 @@ Semua state interaksi disimpan di bawah `levels/{level}` dan memakai jam level b
 - MapVersion 9 memindahkan posisi pada level aktif ke spawn saat pembaruan, tanpa menghapus progres, serpihan, atau statistik jatuh.
 
 
-# Prototype v0.39.0 — lima dunia, lima level aktif
+# Prototype v0.39.1 — lima dunia, lima level aktif
 
 Build ini sengaja membatasi jalur permainan menjadi lima level percontohan. Urutannya memakai blueprint level pertama dari setiap dunia, bukan lima level pertama dari Dunia 1:
 
@@ -199,4 +206,4 @@ Build ini sengaja membatasi jalur permainan menjadi lima level percontohan. Urut
 - Permata berbentuk berlian bersegi; portal keluar berupa pintu batu persegi dengan simbol Bara/Nira.
 - Karakter mendapat siluet kepala, badan, tangan, kaki, wajah, dan animasi langkah sederhana.
 
-`ELEMENTAL_MAP_VERSION=15` memaksa posisi pemain dari peta lama kembali ke spawn. `prototypeVersion=1` pada metadata sesi memulai ulang sesi lama ke level 1 dan membersihkan state puzzle per-level yang dibuat dengan urutan sebelumnya. Firebase Rules tidak berubah.
+`ELEMENTAL_MAP_VERSION=16` memaksa posisi pemain dari peta lama kembali ke spawn. `prototypeVersion=2` pada metadata sesi memulai ulang sesi lama ke level 1 dan membersihkan state puzzle per-level yang dibuat dengan urutan sebelumnya. Firebase Rules tidak berubah.

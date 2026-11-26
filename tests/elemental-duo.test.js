@@ -25,6 +25,8 @@ test('Prototype 5 level menyajikan satu level pembuka dari setiap tema dunia', (
   ]);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.worldIndex), [1,2,3,4,5]);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.id), [1,2,3,4,5]);
+  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.mapName)).size, 5, 'each theme uses a distinct room layout');
+  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => JSON.stringify(level.platforms.map(p => [p.x,p.y,p.w])))).size, 5, 'each prototype arena has its own platform composition');
   assert.equal(getElementalPrototypeLevel(0).worldIndex,1);
   assert.equal(getElementalPrototypeLevel(5).worldIndex,5);
   assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].iceZones.length || ELEMENTAL_PROTOTYPE_LEVELS[1].currents.length);
@@ -39,8 +41,8 @@ test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertah
   assert.match(game,/getElementalPrototypeLevel/);
   assert.match(game,/if \(level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT\)/);
   assert.match(game,/<small>\/ 05<\/small>/);
-  assert.match(game,/prototypeVersion:1/);
-  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 1\)/);
+  assert.match(game,/prototypeVersion:2/);
+  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 2\)/);
   assert.match(game,/await update\(baseRef, \{ levels:null \}\)/);
   assert.match(game,/drawVine\(/);
   assert.match(game,/const brickW = 54, brickH = 27/);
@@ -63,6 +65,20 @@ test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan are
     assert.ok(level.platforms.some(platform => platform.y < 600), `level ${level.id} must explore an upper area`);
     assert.ok(level.spawn.host.x < level.spawn.guest.x);
     assert.ok(level.difficulty >= 1 && level.difficulty <= 5);
+  }
+});
+
+test('Arena prototype memiliki ruang antartingkat yang lega dan lompatan mampu melewatinya', () => {
+  const apex = ELEMENTAL_JUMP_SPEED * ELEMENTAL_JUMP_SPEED / (2 * ELEMENTAL_GRAVITY);
+  assert.ok(apex >= 100 && apex <= 110, `jump apex should be about 105 units, got ${apex}`);
+  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
+    const tiers = [...new Set(level.platforms.map(platform => platform.y))].sort((a,b)=>a-b);
+    assert.ok(tiers.length >= 5, `level ${level.id} should use multiple vertical tiers`);
+    for (let i=1;i<tiers.length;i++) {
+      assert.ok(tiers[i]-tiers[i-1] >= 60, `level ${level.id} should leave clear vertical space between tiers`);
+      assert.ok(tiers[i]-tiers[i-1] <= apex, `level ${level.id} next tier should fit inside a normal jump`);
+    }
+    assert.ok(level.platforms.every(platform => platform.visualH === 22), `level ${level.id} ledges should have the thicker classic stone look`);
   }
 });
 
@@ -144,7 +160,7 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:15, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:16, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
@@ -222,12 +238,12 @@ test('State pemain menyimpan jumlah jatuh total dan jumlah jatuh pada level berj
 
 test('Lompatan cukup tinggi untuk mencapai platform dasar dari lantai utama', () => {
   const logic = readSource('../js/games/elemental-duo-logic.js');
-  assert.match(logic, /ELEMENTAL_GRAVITY = 1300/);
-  assert.match(logic, /ELEMENTAL_JUMP_SPEED = 280/);
+  assert.match(logic, /ELEMENTAL_GRAVITY = 1500/);
+  assert.match(logic, /ELEMENTAL_JUMP_SPEED = 560/);
   const gravity = ELEMENTAL_GRAVITY;
   const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) > 29);
-  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) < 31, 'normal jump height should stay low and controlled');
+  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) > 100);
+  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) < 110, 'normal jump should clear a full separated room tier');
 });
 
 test('Setiap simpul dan titik checkpoint dapat didekati tanpa berada di zona elemen yang berbahaya', () => {
@@ -325,9 +341,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.39\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.39\.0/);
-  assert.match(index, /app\.js\?v=0\.39\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.39\.1/);
+  assert.match(app, /elemental-duo\.js\?v=0\.39\.1/);
+  assert.match(index, /app\.js\?v=0\.39\.1/);
 });
 
 
@@ -969,8 +985,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Room map v15 keeps coherent platform geometry and reachable exits across all 50 authored levels', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,15);
+test('Room map v16 keeps coherent platform geometry and reachable exits across all 50 authored levels', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,16);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {

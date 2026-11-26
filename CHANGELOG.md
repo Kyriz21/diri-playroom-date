@@ -1,3 +1,11 @@
+## v0.39.1 — Classic Temple Layout & Jump Repair
+
+- Memperbaiki arena yang sebelumnya terlalu rapat: lima level prototype kini memilih lima pola ruang berbeda, dengan jarak vertikal lebih lega dan jalur bertingkat yang terbaca.
+- Seluruh 10 pola ruang disusun ulang sebagai rute dua sisi yang naik menuju galeri atas dan pintu Bara/Nira. Ketebalan visual platform dinaikkan menjadi 22 unit, sementara collision tetap 8 unit.
+- Menaikkan lompatan dari `280 / 1300` (puncak ±30,2 unit) menjadi `560 / 1500` (puncak ±104,5 unit), sehingga kenaikan platform 80–95 unit dapat dicapai.
+- Menaikkan `ELEMENTAL_MAP_VERSION` menjadi 16 dan `prototypeVersion` menjadi 2 agar posisi dan state puzzle dari layout sebelumnya dimigrasikan dengan aman. Statistik pemain, keanggotaan room, dan Firebase Rules tidak berubah.
+- Cache key diperbarui ke v0.39.1. Verifikasi: 193/193 tes otomatis lulus dan seluruh JavaScript lolos `node --check`.
+
 ## v0.39.0 — Classic Temple Prototype (5 tema)
 
 - Mengubah cakupan permainan aktif menjadi **5 level prototype**; masing-masing memakai satu blueprint pembuka dari Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno.

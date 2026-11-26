@@ -1,10 +1,10 @@
-## v0.39.0 — batasan prototype yang masih perlu diuji
+## v0.39.1 — batasan prototype yang masih perlu diuji
 - 10 pola ruang terstruktur digunakan pada 50 level dengan variasi mekanik per dunia; pengujian rasa tiap level tetap perlu playtest manusia.
 - Sistem kotak dorong dan tombol yang harus ditahan seperti pada beberapa puzzle Fireboy and Watergirl belum diimplementasikan pada revisi ini; interaksi yang ada adalah pijakan, katup, dan tuas.
-- Tinggi lompatan teoretis sekitar 30,2 unit dengan tier 24 unit; rasa lompatan pada skala fisik HP tetap perlu dinilai langsung.
+- Tinggi lompatan teoretis sekitar 104,5 unit dengan tier arena sekitar 80–95 unit; feel kontrol dan tinggi lompatan pada skala fisik HP tetap perlu dinilai langsung.
 - Analog memang hanya gerak horizontal; tombol LOMPAT digunakan terpisah.
 - Mode landscape dipertahankan, tetapi kompatibilitas fullscreen dan area aman tergantung browser/OS.
-- `ELEMENTAL_MAP_VERSION=15` memindahkan posisi pemain pada level aktif ke spawn saat migrasi, tetapi mempertahankan progres level, serpihan, dan statistik jatuh.
+- `ELEMENTAL_MAP_VERSION=16` memindahkan posisi pemain pada level aktif ke spawn saat migrasi, tetapi mengatur ulang puzzle aktif ke layout baru sambil mempertahankan statistik pemain dan keanggotaan room.
 - Firebase Rules tidak berubah. Pengujian dua perangkat dengan Firebase aktif tetap diperlukan.
 
 ---

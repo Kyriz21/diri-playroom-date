@@ -1,17 +1,18 @@
-# Mulai di sini — Diri. Playroom Date v0.39.0
+# Mulai di sini — Diri. Playroom Date v0.39.1
 
 ## Yang berubah pada Elemental Duo
 - Prototype hanya membuka 5 level aktif, satu dari setiap tema dunia.
-- Visual arena diperbarui menjadi dungeon batu klasik dengan bata gelap, lumut, akar, platform batu, permata, pintu dan karakter yang lebih dekat ke referensi.
+- Lima tema memakai tata letak arena yang berbeda dengan ruang vertikal lebih lega, cabang platform bertingkat, dan permukaan batu yang lebih tebal.
+- Lompatan dinaikkan menjadi sekitar 104,5 unit agar pemain bisa mencapai pijakan berikutnya dengan kontrol udara yang sama.
 - Engine tetap menyimpan 45 blueprint lanjutan untuk ekspansi setelah lima prototype diuji.
 - Firebase Rules dan mini-game lain tidak berubah.
 
-## Memasang v0.39.0
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.0_Classic_Temple_Prototype.zip`.
+## Memasang v0.39.1
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.1_Classic_Temple_Prototype.zip`.
 2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
 3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
-4. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=1`; state puzzle lama dibersihkan.
-5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=15`. Firebase Rules tidak perlu dipublikasikan ulang.
+4. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=2`; state puzzle lama dibersihkan.
+5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=16`. Firebase Rules tidak perlu dipublikasikan ulang.
 
 ## Urutan 5 prototype
 1. Hutan Berbisik — Jejak Cahaya.
@@ -21,7 +22,7 @@
 5. Jantung Kuno — Simpul Pertama.
 
 ## Verifikasi lokal
-- `npm test`: **193/193 lulus**.
+- `npm test`: **194/194 lulus**.
 - JavaScript lolos `node --check`.
 - Uji dua HP dengan Firebase aktif dan pemeriksaan visual browser tetap diperlukan.
 

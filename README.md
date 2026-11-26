@@ -1,14 +1,14 @@
-# Diri. Playroom Date v0.39.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.39.1 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.39.0 — Elemental Duo Classic Temple Prototype
+## Pembaruan terbaru v0.39.1 — Classic Temple Layout & Jump Repair
 
 - Prototype Elemental Duo kini berisi **5 level aktif**, satu level pembuka dari masing-masing tema: Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno.
 - 45 blueprint lanjutan tetap disimpan pada engine untuk fase pengembangan berikutnya, tetapi tidak dapat dimainkan pada build prototype ini.
 - Visual Canvas diarahkan ke puzzle platformer klasik: dinding bata kuil gelap, batu bertekstur, lumut, akar/tanaman rambat, relief, partikel, cairan hazard, permata bersegi, portal batu, serta karakter Bara dan Nira yang lebih terbaca.
 - Progress bar, nomor level, dan halaman hasil akhir kini memakai hitungan prototype 5 level.
-- Metadata sesi versi lama dimigrasikan ke level 1 prototype dan state puzzle per-level lama dibersihkan. Posisi karakter dimulai ulang karena `ELEMENTAL_MAP_VERSION=15`; statistik dasar pemain dipertahankan.
-- GitHub Pages cache key menggunakan v0.39.0. Firebase Rules dan fitur selain Elemental Duo tidak diubah.
-- Verifikasi: 193/193 tes otomatis lulus; semua file JavaScript lolos `node --check`.
+- Tata letak lima arena kini berbeda per tema, jarak antartingkat dibuat lebih lega, tinggi visual platform ditambah, dan tinggi lompatan menjadi sekitar 104,5 unit. Metadata sesi versi lama dimigrasikan ke prototype baru; posisi karakter dimulai ulang karena `ELEMENTAL_MAP_VERSION=16`, sementara statistik dasar pemain dipertahankan.
+- GitHub Pages cache key menggunakan v0.39.1. Firebase Rules dan fitur selain Elemental Duo tidak diubah.
+- Verifikasi: 194/194 tes otomatis lulus; semua file JavaScript lolos `node --check`.
 
 Lihat `ELEMENTAL-DUO.md`, `ELEMENTAL-EXPLORATION-MAPS.md`, `BUILD-VERIFICATION.md`, dan `REVIEW-BUILD-QA.md` untuk detail build.
 

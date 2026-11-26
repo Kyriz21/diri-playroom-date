@@ -1,10 +1,10 @@
-# QA — Diri. Playroom Date v0.39.0
+# QA — Diri. Playroom Date v0.39.1
 
 ## Hasil verifikasi otomatis v0.39.0
 - 193/193 tes lulus.
 - JavaScript syntax check lulus pada seluruh folder `js/`.
 - 5 level prototype memakai 10 pola ruang terstruktur; platform, spawn, pijakan, permata, pintu, dan checkpoint diperiksa.
-- Jump speed 280/gravity 1300 dan tier gap24 diperiksa menggunakan jump envelope.
+- Jump speed 560/gravity 1500 dan tier 80–95 unit diperiksa menggunakan jump envelope; puncak lompatan sekitar 104,5 unit.
 - Analog diuji hanya mengubah kiri/kanan; input vertikal tidak memicu jump buffer; tombol LOMPAT tetap menjadi jalur lompat.
 - MapVersion 14; Firebase Rules tidak berubah.
 - Landscape CSS/UI dipertahankan.
