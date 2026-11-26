@@ -1,24 +1,17 @@
-# Diri. Playroom Date v0.33.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.38.0 — Photobooth, Mini-game & Elemental Duo
 
-Diri. Playroom Date adalah website aktivitas pasangan. Photobooth menjadi fitur pertama; kini lima game aktif tersedia: Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, dan Elemental Duo.
+## Pembaruan terbaru v0.38.0 — Elemental Duo Classic Room Rework
 
-## Pembaruan terbaru v0.33.0 — Perbaikan mobile, kontrol dan tingkat kesulitan
+- Menyusun ulang 10 pola ruang menjadi puzzle-room kooperatif yang terarah: dua jalur elemen kiri/kanan, pijakan Bara dan Nira, permata masing-masing, jembatan tengah, platform atas, serta pintu yang dapat berada di sayap atau ruang tengah. Bukan lorong lurus dan bukan labirin acak.
+- Seluruh 50 level memakai tata bahasa ruang yang konsisten dengan variasi posisi pintu, platform bergerak/berkala, katup, tuas, angin, arus, es, uap, dan lava sesuai blueprint tiap dunia.
+- Menurunkan lompatan menjadi `ELEMENTAL_JUMP_SPEED = 280` dan `ELEMENTAL_GRAVITY = 1300` (tinggi puncak teoretis sekitar 30,2 unit). Jarak tier utama 24 unit; celah horizontal antarbagian jalur diuji dengan jump envelope.
+- Analog virtual hanya menggerakkan kiri/kanan. Sumbu vertikal analog tidak melompat; tombol LOMPAT/Space tetap terpisah.
+- Tampilan landscape/fullscreen yang disukai dipertahankan; revisi ini tidak mengubah komposisi landscape.
+- Checkpoint ditempatkan pada platform stabil yang tidak menimpa hazard, pintu, atau objek interaksi. Platform lift/berkala dipertahankan pada slot yang tidak mengganggu spawn dan tujuan.
+- `ELEMENTAL_MAP_VERSION` menjadi 14. Posisi karakter di level aktif kembali ke spawn saat migrasi; progres level, serpihan, dan jumlah jatuh dipertahankan. Firebase Rules tidak berubah.
+- Verifikasi: 191/191 tes otomatis lulus; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
 
-- Arena bukan lagi koridor lurus: setiap level adalah ruang 2D bertingkat untuk menjelajah ke kiri, kanan, atas, dan bawah.
-- Tiap level berisi 13 pijakan utama, 5 jalur cabang, dan 4 jembatan pintas/loop. Pintu Bara dan Nira dapat ditemukan di sisi atau ketinggian berbeda.
-- Lima geometri ruang berulang dengan variasi koordinat: Jalur Zigzag, Menara Kembar, Jalur Berbalik, Persimpangan Awan, dan Lingkaran Kuno.
-- Peta mini menampilkan jalur, hazard, sakelar, permata, posisi kedua pemain, pintu elemen, dan area kamera; penunjuk arah membantu ketika pintu tidak terlihat di layar.
-- Geometri semua peta dipisahkan dengan jarak visual minimum agar platform utama, cabang, dan shortcut tidak tampak menumpuk.
-- Mode Potret kini memakai layout edge-to-edge dengan panel game setinggi viewport, toolbar satu baris, arena fleksibel, dan kontrol yang tidak keluar dari lebar HP.
-- Mode Layar Penuh/landscape memakai arena penuh sebagai latar, HUD ringkas, analog di kiri, serta lompat/interaksi di kanan. Fallback mengisi viewport aplikasi jika Fullscreen API ditolak browser.
-- Analog benar-benar menggantikan tombol kiri/kanan dan dapat menggerakkan horizontal; dorongan joystick ke atas juga memicu lompatan. Analog dapat dipilih pada Potret atau otomatis pada Layar Penuh.
-- Tombol INTERAKSI hanya muncul ketika karakter dekat katup/tuas. Pijakan elemen aktif otomatis saat diinjak; tidak memerlukan tombol aksi.
-- Fisika platform dibuat lebih ramah: gravitasi lebih ringan, lompatan sedikit lebih tinggi, jump buffer 170 ms, coyote time 140 ms, serta pijakan utama lebih lebar.
-- Kurva kesulitan diturunkan. Dunia 1 bertahan di tingkat Mudah hingga level 8, dan dunia final dibatasi pada tingkat Sulit, bukan Expert.
-- Peta Menara Kembar diperbaiki agar tidak ada platform utama saling menumpuk. Jarak antarpijakan diperiksa pada 50 level.
-- MapVersion naik ke 9. Posisi pada level aktif dimigrasikan ke spawn; progres, serpihan, dan jumlah jatuh dipertahankan. Firebase Rules tidak berubah.
-
-Lihat `ELEMENTAL-EXPLORATION-MAPS.md` dan `BUILD-VERIFICATION.md` untuk rincian serta hasil pengujian v0.33.0.
+Lihat `ELEMENTAL-EXPLORATION-MAPS.md`, `ELEMENTAL-DUO.md`, dan `BUILD-VERIFICATION.md` untuk rincian v0.38.0.
 
 ## Keputusan produk
 

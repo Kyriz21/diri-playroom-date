@@ -1,3 +1,24 @@
+# QA — Diri. Playroom Date v0.38.0
+
+## Hasil verifikasi otomatis v0.38.0
+- 191/191 tes lulus.
+- JavaScript syntax check lulus pada seluruh folder `js/`.
+- 50 level memakai 10 pola ruang terstruktur; platform, spawn, pijakan, permata, pintu, dan checkpoint diperiksa.
+- Jump speed 280/gravity 1300 dan tier gap24 diperiksa menggunakan jump envelope.
+- Analog diuji hanya mengubah kiri/kanan; input vertikal tidak memicu jump buffer; tombol LOMPAT tetap menjadi jalur lompat.
+- MapVersion 14; Firebase Rules tidak berubah.
+- Landscape CSS/UI dipertahankan.
+
+## Playtest manual yang tetap diperlukan
+- Coba level 1 dan 2 pada dua HP; pastikan kedua karakter bisa melompat antarplatform dengan tinggi yang terasa wajar.
+- Coba analog: gerakkan kiri/kanan, geser jari ke atas/bawah dan pastikan karakter tidak melompat; tekan tombol LOMPAT untuk lompat.
+- Uji pijakan, katup/tuas, permata, pintu pasangan, checkpoint, dan transisi level.
+- Uji mode landscape/fullscreen pada perangkat aktual dan periksa kontrol tidak tertutup UI sistem.
+
+---
+
+---
+
 # QA — Diri. Playroom Date v0.33.0
 
 ## Elemental Duo — full exploration map regression

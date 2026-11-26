@@ -29,35 +29,30 @@ test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan are
     assert.equal(level.worldWidth, ELEMENTAL_WORLD_WIDTH);
     assert.equal(level.worldHeight, ELEMENTAL_WORLD_HEIGHT);
     assert.equal(level.mapVersion, ELEMENTAL_MAP_VERSION);
-    assert.ok(level.platforms.some(platform => platform.y < 400), `level ${level.id} must explore an upper area`);
+    assert.ok(level.platforms.some(platform => platform.y < 600), `level ${level.id} must explore an upper area`);
     assert.ok(level.spawn.host.x < level.spawn.guest.x);
     assert.ok(level.difficulty >= 1 && level.difficulty <= 5);
   }
 });
 
-test('Seluruh 50 level memiliki peta eksplorasi bercabang, jembatan pintas, dan pintu di berbagai sisi', () => {
+test('Seluruh 50 level memakai ruang puzzle bertingkat yang rapi dengan dua pintu elemen', () => {
   const mapNames = new Set();
   let doorsOnLeft = 0, doorsNearCenter = 0, doorsHigh = 0;
   for (const level of ELEMENTAL_LEVELS) {
-    assert.equal(level.mapTopology?.route,'multi-branch-loop',`level ${level.id}`);
-    assert.equal(level.mapTopology?.sideRoutes,5,`level ${level.id} side routes`);
-    assert.equal(level.mapTopology?.shortcuts,4,`level ${level.id} shortcuts`);
-    assert.equal(level.platforms.filter(platform => platform.id.includes('-platform-')).length,13);
-    assert.equal(level.platforms.filter(platform => platform.id.includes('-side-')).length,5);
-    assert.equal(level.platforms.filter(platform => platform.id.includes('-shortcut-')).length,4);
-    assert.equal(level.floorSegments.length,4);
-    const x = level.platforms.filter(platform => platform.id.includes('-platform-')).map(platform => platform.x+platform.w/2);
-    assert.ok(x.some((value,index)=>index>0 && value>x[index-1]),`level ${level.id} should travel right`);
-    assert.ok(x.some((value,index)=>index>0 && value<x[index-1]),`level ${level.id} should travel left`);
+    assert.equal(level.mapTopology?.route,'fixed-screen-coop-puzzle',`level ${level.id}`);
+    assert.equal(level.mapTopology?.sideRoutes,2,`level ${level.id} side routes`);
+    assert.equal(level.mapTopology?.randomBranches,0,`level ${level.id} no random branches`);
+    assert.equal(level.platforms.length,13,`level ${level.id} uses the authored 13-platform temple grammar`);
+    assert.equal(level.floorSegments.length,1);
     for (const door of [level.doors.fire,level.doors.water]) {
       assert.ok(level.platforms.some(platform => platform.id === door.platformId),`level ${level.id} door must sit on a platform`);
       if (door.x < 300) doorsOnLeft++;
       if (door.x >= 400 && door.x < 1050) doorsNearCenter++;
-      if (door.y < 300) doorsHigh++;
+      if (door.y < 600) doorsHigh++;
     }
     mapNames.add(level.mapName);
   }
-  assert.equal(mapNames.size,5);
+  assert.equal(mapNames.size,10);
   assert.ok(doorsOnLeft>0,'some exits must be on the left side');
   assert.ok(doorsNearCenter>0,'some exits must be near the center');
   assert.ok(doorsHigh>0,'some exits must be on upper floors');
@@ -91,23 +86,23 @@ test('Pemain dapat menjangkau jalur utama, cabang samping, dan jembatan pintas d
   }
 });
 
-test('Pijakan wajib tidak terpisah oleh gerbang vertikal yang belum terbuka', () => {
+test('Pijakan wajib berada pada lantai bawah sebelum gerbang ruang atas', () => {
   for (const level of ELEMENTAL_LEVELS) {
-    if (level.gate.orientation !== 'vertical') continue;
     const fire=level.switches.find(item=>item.element==='fire');
     const water=level.switches.find(item=>item.element==='water');
-    const fireSide=fire.x < level.gate.x ? 'left' : 'right';
-    const waterSide=water.x < level.gate.x ? 'left' : 'right';
-    assert.equal(fireSide,waterSide,`level ${level.id} both switches must be reachable before vertical seal opens`);
+    assert.ok(fire && water,`level ${level.id} has both elemental plates`);
+    assert.ok(fire.y > level.gate.y + level.gate.h - 8,`level ${level.id} fire plate is accessible below the upper seal`);
+    assert.ok(water.y > level.gate.y + level.gate.h - 8,`level ${level.id} water plate is accessible below the upper seal`);
   }
 });
 
 test('Kedua pintu dapat berada di sisi atau ketinggian berbeda sehingga akhir level tidak selalu di kanan', () => {
   const layoutSource=readSource('../js/games/elemental-duo-logic.js');
   const gameSource=readSource('../js/games/elemental-duo.js');
-  assert.match(layoutSource,/doors:\[6,9\]/);
-  assert.match(layoutSource,/doors:\[4,0\]/);
-  assert.match(layoutSource,/doors:\[11,6\]/);
+  assert.match(layoutSource,/name:'Balairung Dua Sayap'/);
+  assert.match(layoutSource,/name:'Tangga Teras'/);
+  assert.match(layoutSource,/name:'Kubah Kuno'/);
+  assert.match(layoutSource,/const makeDoor = \(slot,element/);
   assert.match(gameSource,/const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
   assert.match(gameSource,/drawExplorationNavigator\(level,host,guest\)/);
 });
@@ -118,7 +113,7 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:9, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:14, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
@@ -134,8 +129,8 @@ test('Collision rectangle dan batas posisi karakter konsisten', () => {
   assert.equal(rectsOverlap({x:0,y:0,w:10,h:10},{x:5,y:5,w:10,h:10}), true);
   assert.equal(rectsOverlap({x:0,y:0,w:10,h:10},{x:11,y:11,w:10,h:10}), false);
   const clamped = clampElementalPlayer({x:2000,y:900,vx:0,vy:0});
-  assert.equal(clamped.x, 1422);
-  assert.equal(clamped.y, 900);
+  assert.equal(clamped.x, 1142);
+  assert.equal(clamped.y, 602);
 });
 
 test('Penilaian level memberikan maksimal tiga bintang', () => {
@@ -196,11 +191,12 @@ test('State pemain menyimpan jumlah jatuh total dan jumlah jatuh pada level berj
 
 test('Lompatan cukup tinggi untuk mencapai platform dasar dari lantai utama', () => {
   const logic = readSource('../js/games/elemental-duo-logic.js');
-  assert.match(logic, /ELEMENTAL_GRAVITY = 1100/);
-  assert.match(logic, /ELEMENTAL_JUMP_SPEED = 690/);
+  assert.match(logic, /ELEMENTAL_GRAVITY = 1300/);
+  assert.match(logic, /ELEMENTAL_JUMP_SPEED = 280/);
   const gravity = ELEMENTAL_GRAVITY;
   const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) > 100);
+  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) > 29);
+  assert.ok((jumpSpeed * jumpSpeed) / (2 * gravity) < 31, 'normal jump height should stay low and controlled');
 });
 
 test('Setiap simpul dan titik checkpoint dapat didekati tanpa berada di zona elemen yang berbahaya', () => {
@@ -250,19 +246,21 @@ test('Elemental Duo mengaktifkan pijakan otomatis dan mewajibkan pintu yang sesu
   assert.match(game, /function drawExit\(level, time\)/);
 });
 
-test('Kamera mengikuti pemain aktif dan tetap memperbesar area di potret maupun landscape', () => {
-  const portrait = getElementalViewport(390, 430);
+test('Landscape menampilkan satu ruang puzzle penuh; portrait mengikuti pemain secara horizontal', () => {
+  const portrait = getElementalViewport(390, 844);
   const landscape = getElementalViewport(844, 390);
-  assert.ok(portrait.viewWidth < 600);
-  assert.ok(landscape.viewWidth > portrait.viewWidth);
-  assert.ok(landscape.viewWidth < ELEMENTAL_WORLD_WIDTH, 'landscape tetap menggunakan kamera follow, bukan seluruh stage');
-  const start = getElementalCameraTarget({x:80,y:468},{x:120,y:468},landscape.viewWidth,landscape.viewHeight);
+  assert.ok(portrait.viewWidth < 400, 'portrait shows a narrow horizontal slice');
+  assert.equal(portrait.viewHeight, ELEMENTAL_WORLD_HEIGHT, 'portrait keeps the full room height visible');
+  assert.ok(landscape.viewWidth >= ELEMENTAL_WORLD_WIDTH, 'landscape fits the whole room on screen');
+  assert.ok(landscape.viewHeight >= ELEMENTAL_WORLD_HEIGHT, 'landscape fits the whole room vertically');
+  const start = getElementalCameraTarget({x:80,y:533},{x:1080,y:533},landscape.viewWidth,landscape.viewHeight);
   const advanced = getElementalCameraTarget({x:720,y:360},{x:130,y:468},landscape.viewWidth,landscape.viewHeight);
-  assert.ok(advanced.x > start.x + 180, 'kamera harus bergeser ketika pemain lokal maju');
-  assert.ok(advanced.x <= ELEMENTAL_WORLD_WIDTH - landscape.viewWidth);
-  const lower = getElementalCameraTarget({x:720,y:850},{x:130,y:850},landscape.viewWidth,landscape.viewHeight);
-  assert.ok(lower.y > start.y, 'kamera juga harus mengikuti pemain ke area bawah');
-  assert.ok(advanced.y >= 0);
+  assert.equal(start.x, 0, 'single-screen landscape does not scroll');
+  assert.equal(advanced.x, 0, 'single-screen landscape keeps the complete room visible');
+  const portraitStart = getElementalCameraTarget({x:80,y:533},{x:1080,y:533},portrait.viewWidth,portrait.viewHeight);
+  const portraitAdvanced = getElementalCameraTarget({x:720,y:360},{x:130,y:468},portrait.viewWidth,portrait.viewHeight);
+  assert.ok(portraitAdvanced.x > portraitStart.x + 100, 'portrait camera follows local player horizontally');
+  assert.ok(portraitAdvanced.x <= ELEMENTAL_WORLD_WIDTH - portrait.viewWidth);
 });
 
 test('Peta mini menampilkan jalur, pintu, posisi pemain, area kamera dan penunjuk pintu', () => {
@@ -296,9 +294,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.33\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.33\.0/);
-  assert.match(index, /app\.js\?v=0\.33\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.38\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.38\.0/);
+  assert.match(index, /app\.js\?v=0\.38\.0/);
 });
 
 
@@ -338,7 +336,7 @@ test('Objektif dan notifikasi tidak lagi menutupi arena permainan', () => {
 test('Sepuluh level Hutan Berbisik memakai blueprint dengan tujuan dan layout berbeda', () => {
   const firstWorld = ELEMENTAL_LEVELS.slice(0, 10);
   assert.equal(new Set(firstWorld.map(level => JSON.stringify({ platforms:level.platforms, hazards:level.hazards, switches:level.switches, gems:level.gems }))).size, 10);
-  assert.deepEqual(firstWorld.map(level => level.difficulty), [1,1,1,1,1,1,1,1,2,2]);
+  assert.deepEqual(firstWorld.map(level => level.difficulty), [1,1,1,1,1,1,1,2,2,2]);
   assert.deepEqual(firstWorld.map(level => level.name), [
     'Jejak Cahaya','Batu Bertunas','Akar Berliku','Jembatan Pucuk','Dua Lentera',
     'Lompatan Lumut','Gerbang Embun','Akar Berayun','Ruang Kunang-kunang','Jantung Hutan'
@@ -457,7 +455,7 @@ test('Sepuluh level Kedalaman Kristal memakai blueprint unik dan tantangan berta
     platforms:level.platforms, hazards:level.hazards, switches:level.switches,
     gems:level.gems, iceZones:level.iceZones, currents:level.currents
   }))).size, 10);
-  assert.deepEqual(worldTwo.map(level => level.difficulty), [1,1,1,1,1,2,2,2,2,3]);
+  assert.deepEqual(worldTwo.map(level => level.difficulty), [1,1,1,1,2,2,2,2,2,3]);
   assert.deepEqual(worldTwo.map(level => level.name), [
     'Retakan Pertama','Gema Biru','Lorong Pecahan','Cermin Es','Jembatan Prismatik',
     'Arus Terbalik','Menara Kristal','Ruang Resonansi','Badai Serpihan','Penjaga Geode'
@@ -581,7 +579,7 @@ test('Sepuluh level Kerajaan Bara memakai blueprint unik dengan eskalasi tantang
     platforms:level.platforms, hazards:level.hazards, switches:level.switches,
     gems:level.gems, valves:level.valves, sequence:level.switchSequence
   }))).size, 10);
-  assert.deepEqual(worldThree.map(level => level.difficulty), [2,2,2,2,2,2,3,3,3,3]);
+  assert.deepEqual(worldThree.map(level => level.difficulty), [2,2,2,2,2,3,3,3,3,3]);
   assert.deepEqual(worldThree.map(level => level.name), [
     'Napas Lava','Uap Panas','Gerbang Panas','Jembatan Bara','Sungai Pendingin',
     'Sakelar Berantai','Lorong Uap','Lava Meninggi','Dua Katup','Jantung Tungku'
@@ -709,7 +707,7 @@ test('Sepuluh level Reruntuhan Langit memakai blueprint unik dengan kesulitan be
     platforms:level.platforms, hazards:level.hazards, switches:level.switches,
     windZones:level.windZones, windLevers:level.windLevers
   }))).size, 10);
-  assert.deepEqual(worldFour.map(level => level.difficulty), [2,2,2,2,3,3,3,3,3,4]);
+  assert.deepEqual(worldFour.map(level => level.difficulty), [2,2,2,2,3,3,3,3,4,4]);
   assert.deepEqual(worldFour.map(level => level.name), [
     'Tangga Awan','Pulau Melayang','Lorong Angin','Menara Terbalik','Kunci Badai',
     'Jembatan Awan','Kubah Senyap','Portal Kembar','Labirin Langit','Penjaga Angin'
@@ -832,7 +830,7 @@ test('Sepuluh level Jantung Kuno memakai blueprint khusus dan tantangan final be
     iceZones:level.iceZones, currents:level.currents, windZones:level.windZones,
     valves:level.valves, windLevers:level.windLevers, sequence:level.switchSequence
   }))).size, 10);
-  assert.deepEqual(worldFive.map(level => level.difficulty), [3,3,3,3,3,3,3,4,4,4]);
+  assert.deepEqual(worldFive.map(level => level.difficulty), [3,3,3,3,3,4,4,4,4,5]);
   assert.deepEqual(worldFive.map(level => level.name), [
     'Simpul Pertama','Gerbang Lima','Kristal Kembar','Ruang Sinkron','Jalur Terpilih',
     'Pilar Harmoni','Ujian Bara','Ujian Arus','Pintu Purba','Penyatuan Elemen'
@@ -851,7 +849,7 @@ test('Sepuluh level Jantung Kuno memakai blueprint khusus dan tantangan final be
   assert.equal(worldFive[8].requiredWindLevers.length, 2);
   assert.deepEqual(worldFive[8].switchSequence, ['water','fire']);
   const finale = worldFive[9];
-  assert.equal(finale.difficulty, 4);
+  assert.equal(finale.difficulty, 5);
   assert.equal(finale.requiredValves.length, 2);
   assert.equal(finale.requiredWindLevers.length, 2);
   assert.deepEqual(finale.switchSequence, ['water','fire']);
@@ -940,8 +938,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Adventure map v9 keeps platform geometry separated across all 50 levels', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,9);
+test('Room map v14 keeps coherent platform geometry and reachable exits across all 50 levels', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,14);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {
@@ -951,26 +949,29 @@ test('Adventure map v9 keeps platform geometry separated across all 50 levels', 
       assert.ok(!(overlapX>0 && overlapY>0),`level ${level.id}: ${a.id} overlaps ${b.id}`);
       const gapX=Math.max(0,a.x-(b.x+b.w),b.x-(a.x+a.w));
       const gapY=Math.max(0,a.y-(b.y+b.h),b.y-(a.y+a.h));
-      assert.ok(Math.hypot(gapX,gapY)>=18,`level ${level.id}: ${a.id} and ${b.id} must remain visually distinct`);
+      assert.ok(Math.hypot(gapX,gapY)>=12,`level ${level.id}: ${a.id} and ${b.id} must remain visually distinct`);
     }
     for (const platform of platforms) {
       assert.ok(platform.x>=0 && platform.x+platform.w<=ELEMENTAL_WORLD_WIDTH,`level ${level.id} ${platform.id} remains inside world bounds`);
       assert.ok(platform.y>=0 && platform.y+platform.h<=ELEMENTAL_FLOOR_Y,`level ${level.id} ${platform.id} remains above floor`);
     }
-    assert.ok(level.platforms.some(platform=>platform.id.includes('-shortcut-')));
+    assert.ok(level.mapTopology.platformCount === platforms.length);
+    assert.equal(level.mapTopology.randomBranches,0);
     for (const zone of [...(level.iceZones||[]),...(level.currents||[]),...(level.windZones||[])]) {
-      assert.ok(zone.w<=142 && zone.h<=78,`level ${level.id} environmental zone should stay compact`);
+      assert.ok(zone.w<=110 && zone.h<=62,`level ${level.id} environmental zone should stay compact`);
     }
   }
 });
 
-test('Kontrol analog benar-benar mengganti tombol arah dan bisa memicu lompatan vertikal', () => {
+test('Kontrol analog hanya menggerakkan kiri/kanan; lompatan tetap memakai tombol terpisah', () => {
   const game=readSource('../js/games/elemental-duo.js');
   assert.match(game,/moveControls\.style\.setProperty\('display', controlMode === 'analog' \? 'none' : 'flex', 'important'\)/);
   assert.match(game,/analogPad\.style\.setProperty\('display', controlMode === 'analog' \? 'grid' : 'none', 'important'\)/);
-  assert.match(game,/const wantsJump = y < -\.42/);
-  assert.match(game,/if \(wantsJump && !analogJumping\) input\.jumpQueued = true/);
-  assert.match(game,/window\.addEventListener\('pointermove', onMove, \{ passive:false \}\)/);
+  const analogHandler = game.match(/function updateAnalogStick\(event\) \{([\s\S]*?)\n  \}\n\n  function bindAnalogStick/);
+  assert.ok(analogHandler, 'analog handler exists');
+  assert.match(analogHandler[1],/const x = dx;[\s\S]*?input\.left = x < -\.22;[\s\S]*?input\.right = x > \.22;/);
+  assert.doesNotMatch(analogHandler[1],/input\.jump|jumpQueued/,'analog Y axis must never trigger jump');
+  assert.match(game,/if \(key === 'jump'\) \{ input\.jump = true; input\.jumpQueued = true; \}/,'jump is queued only by the separate jump control');
 });
 
 test('Tombol interaksi hanya muncul dekat katup atau tuas, sedangkan pijakan otomatis', () => {

@@ -1,3 +1,22 @@
+# Build Verification — Diri. Playroom Date v0.38.0
+
+## v0.38.0 — Classic puzzle-room and movement tuning
+- `npm test`: **191/191 tes lulus**.
+- Seluruh file JavaScript diperiksa menggunakan `node --check`.
+- Semua 50 level memakai 13 platform pada 10 pola ruang terstruktur; semua platform diperiksa keterjangkauannya dari spawn kedua peran.
+- Tinggi lompatan teoretis: `280² / (2 × 1300) ≈ 30,2` unit; selisih tier utama 24 unit.
+- Analog mengubah input kiri/kanan saja dan tidak menyentuh `input.jump` atau `jumpQueued`; lompatan hanya diantrekan tombol LOMPAT/Space.
+- Checkpoint diuji agar tidak berimpit dengan hazard; objek kontrol wajib berada pada platform stabil.
+- Landscape CSS/UI tidak diubah pada revisi ini. Cache key memakai v0.38.0.
+- `ELEMENTAL_MAP_VERSION=14`; Firebase Rules JSON valid dan tidak diubah.
+
+## Catatan pengujian
+Tes otomatis memvalidasi logika, geometri, jangkauan, dan input berdasarkan source. Tes tersebut bukan pengganti playtest pada dua HP fisik; fullscreen, sentuhan analog, lompatan, dan sinkronisasi Firebase aktif tetap perlu dikonfirmasi setelah deployment.
+
+---
+
+---
+
 # Build Verification — Diri. Playroom Date v0.33.0
 
 ## v0.33.0 — Mobile repair, control input and difficulty balance

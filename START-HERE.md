@@ -1,3 +1,23 @@
+# Mulai di sini — Diri. Playroom Date v0.38.0
+
+## Yang berubah pada Elemental Duo
+- Peta ditata sebagai puzzle-room dua karakter: jalur elemen terpisah, pijakan dan permata sendiri, pertemuan tengah, galeri atas, serta pintu yang tidak selalu berada di kanan.
+- Lompatan dibuat lebih rendah dan terukur: `jumpSpeed 280`, `gravity 1300` (tinggi puncak sekitar 30,2 unit).
+- Analog hanya untuk kiri/kanan. Tombol LOMPAT/Space tetap terpisah; analog tidak memicu lompat.
+- Tampilan landscape yang disukai dipertahankan.
+- 191/191 tes otomatis lulus; Firebase Rules tidak berubah.
+
+## Memasang v0.38.0
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.38.0_Elemental_Classic_Puzzle_Repair.zip`.
+2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
+3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, dan dokumentasi ikut terunggah.
+4. Refresh kedua perangkat. Karena `ELEMENTAL_MAP_VERSION` naik menjadi 14, posisi kedua pemain pada level aktif kembali ke spawn; progres level, serpihan, dan jumlah jatuh tetap dipertahankan.
+5. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
+
+---
+
+---
+
 # Mulai di sini — Diri. Playroom Date v0.33.0
 
 ## Perubahan terbaru v0.33.0 — Mobile, kontrol dan kesulitan

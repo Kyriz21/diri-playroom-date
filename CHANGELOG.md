@@ -1,3 +1,23 @@
+## v0.38.0 — Elemental Duo Classic Room Rework
+- Mengganti pola eksplorasi yang terlalu acak menjadi 10 pola ruang puzzle kooperatif yang terarah, dengan dua jalur elemen, platform bertingkat, area pertemuan tengah, permata warna, pijakan, dan pintu karakter.
+- Tier vertikal utama disusun pada y `[522, 498, 474, 450, 426, 402]` (selisih 24 unit) dan tiap lompatan rute utama diuji dengan envelope fisika.
+- Fisika lompatan menjadi `jumpSpeed 280` dan `gravity 1300`, tinggi puncak teoretis sekitar 30,2 unit; jump buffer 170 ms dan coyote time 140 ms tetap tersedia.
+- Analog virtual hanya mengatur gerak kiri/kanan; input vertikal analog diabaikan dan tidak mengantrekan jump. Tombol LOMPAT/Space tetap menjadi input lompat.
+- Checkpoint dipilih dari platform stabil yang tidak berimpit dengan hazard, pintu, pijakan, atau kontrol.
+- Platform khusus bergerak/berkala diprioritaskan pada slot samping yang tersedia; landscape UI tidak diubah.
+- Cache key menjadi v0.38.0 dan `ELEMENTAL_MAP_VERSION` menjadi 14. Posisi level aktif kembali ke spawn saat migrasi; progres dan statistik tetap dipertahankan. Firebase Rules tidak berubah.
+- Verifikasi: 191/191 tes otomatis lulus, JavaScript lolos pemeriksaan sintaks, Firebase Rules JSON valid.
+
+## v0.37.0 — Elemental Duo Classic Co-op Puzzle Repair
+- Mengganti 10 pola ruang peta menjadi struktur puzzle yang konsisten: dua jalur bawah untuk Bara/Nira, pijakan elemen, jalur permata, platform kontrol, jembatan tengah, dan pintu yang bervariasi di kiri/tengah/atas.
+- Mengatur jarak tier vertikal menjadi 34 unit dan memvalidasi konektivitas seluruh 13 platform dari kedua spawn pada semua 50 level.
+- Mengurangi tinggi lompatan ke sekitar 38,8 unit (`jumpSpeed 305`, `gravity 1200`), tanpa menghilangkan jump buffer 170 ms dan coyote time 140 ms.
+- Analog virtual hanya menggerakkan kiri/kanan; sumbu vertikal analog tidak mengantrekan lompatan. LOMPAT tetap tombol terpisah.
+- Collision platform menggunakan tinggi 8 unit sementara renderer menampilkan tinggi 16 unit agar visual rapi tanpa mengubah pijakan fisik.
+- Kontrol/tuas dibagi ke platform stabil; vent uap tersebar pada jembatan tengah dan checkpoint berada di area aman.
+- Mode landscape dipertahankan; cache key dinaikkan ke v0.37.0. `ELEMENTAL_MAP_VERSION` menjadi 13.
+- Firebase Rules tidak berubah. Verifikasi: 191/191 tes otomatis lulus; seluruh JavaScript lolos `node --check`.
+
 ## v0.33.0 — Mobile Repair, Analog Input & Difficulty Balance
 
 - Mode Potret sekarang memakai panel game edge-to-edge setinggi viewport dengan title satu baris, HUD terkompresi, canvas fleksibel, dan kontrol yang tetap berada di dalam lebar layar.

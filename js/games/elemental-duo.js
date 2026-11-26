@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.33.0';
+} from './elemental-duo-logic.js?v=0.38.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -55,7 +55,7 @@ export function mountElementalDuo(root, context) {
   let canvas = null;
   let ctx = null;
   let localCheckpoint = null;
-  const canvasView = { zoom:1, cameraX:0, cameraY:0, viewWidth:ELEMENTAL_WORLD_WIDTH, viewHeight:ELEMENTAL_WORLD_HEIGHT };
+  const canvasView = { zoom:1, cameraX:0, cameraY:0, viewWidth:ELEMENTAL_WORLD_WIDTH, viewHeight:ELEMENTAL_WORLD_HEIGHT, offsetX:0, offsetY:0 };
   let lastCanvasWidth = 0;
   let lastCanvasHeight = 0;
   let canvasNotice = '';
@@ -68,7 +68,6 @@ export function mountElementalDuo(root, context) {
   let displayMode = 'portrait';
   let controlMode = 'buttons';
   let analogPointerId = null;
-  let analogJumping = false;
   let coyoteTimeRemaining = 0;
   let jumpBufferRemaining = 0;
   let noticeUntil = 0;
@@ -145,8 +144,6 @@ export function mountElementalDuo(root, context) {
   function resetAnalogStick() {
     input.left = false;
     input.right = false;
-    if (analogJumping) input.jump = false;
-    analogJumping = false;
     analogPointerId = null;
     const knob = queryUI('[data-ed-analog-knob]');
     if (knob) knob.style.transform = 'translate(-50%, -50%)';
@@ -159,18 +156,13 @@ export function mountElementalDuo(root, context) {
     const rect = pad.getBoundingClientRect();
     const radius = Math.max(24, Math.min(rect.width, rect.height) * .34);
     const dx = Math.max(-1, Math.min(1, (event.clientX - (rect.left + rect.width/2)) / radius));
-    const dy = Math.max(-1, Math.min(1, (event.clientY - (rect.top + rect.height/2)) / radius));
-    const magnitude = Math.hypot(dx,dy);
-    const scale = magnitude > 1 ? 1 / magnitude : 1;
-    const x = dx * scale;
-    const y = dy * scale;
-    input.left = x < -.2;
-    input.right = x > .2;
-    const wantsJump = y < -.42;
-    if (wantsJump && !analogJumping) input.jumpQueued = true;
-    analogJumping = wantsJump;
-    input.jump = wantsJump;
-    if (knob) knob.style.transform = `translate(calc(-50% + ${x*radius*.72}px), calc(-50% + ${y*radius*.72}px))`;
+    // The virtual stick is movement-only, matching a conventional platformer:
+    // horizontal input walks left/right; jumping remains a separate jump button.
+    // Vertical finger movement is intentionally ignored and never queues a jump.
+    const x = dx;
+    input.left = x < -.22;
+    input.right = x > .22;
+    if (knob) knob.style.transform = `translate(calc(-50% + ${x*radius*.72}px), -50%)`;
   }
 
   function bindAnalogStick() {
@@ -316,6 +308,8 @@ export function mountElementalDuo(root, context) {
     canvasView.zoom = viewport.zoom;
     canvasView.viewWidth = viewport.viewWidth;
     canvasView.viewHeight = viewport.viewHeight;
+    canvasView.offsetX = viewport.offsetX || 0;
+    canvasView.offsetY = viewport.offsetY || 0;
     if (hadViewport) {
       // Preserve the viewed world center so resizing cannot snap the camera.
       canvasView.cameraX = Math.max(0,Math.min(ELEMENTAL_WORLD_WIDTH-canvasView.viewWidth,previousCenterX-canvasView.viewWidth/2));
@@ -870,7 +864,7 @@ export function mountElementalDuo(root, context) {
     const sequence = level.switchSequence || [];
     const sequenceIndex = Math.max(0, Number(levelState().switches?.sequenceIndex) || 0);
     if (sequence.length && sequence[sequenceIndex] !== element) return;
-    const body = { x:localPlayer.x-14, y:localPlayer.y-17, w:28, h:34 };
+    const body = { x:localPlayer.x-14, y:localPlayer.y-13, w:28, h:26 };
     const plate = level.switches.find(item => {
       if (item.element !== element) return false;
       const plateRect = { x:item.x-(item.w||52)/2, y:item.y-(item.h||10)/2, w:item.w||52, h:item.h||10 };
@@ -941,7 +935,7 @@ export function mountElementalDuo(root, context) {
     if (localPlayer.grounded) coyoteTimeRemaining = 0.14;
     else coyoteTimeRemaining = Math.max(0, coyoteTimeRemaining - dt);
     if (jumpBufferRemaining > 0 && (localPlayer.grounded || coyoteTimeRemaining > 0)) {
-      localPlayer.vy = -(level.modifier === 'bouncy' ? ELEMENTAL_JUMP_SPEED * 1.06 : ELEMENTAL_JUMP_SPEED);
+      localPlayer.vy = -(level.modifier === 'bouncy' ? ELEMENTAL_JUMP_SPEED * 1.04 : ELEMENTAL_JUMP_SPEED);
       localPlayer.grounded = false;
       localPlayer.supportPlatformId = null;
       coyoteTimeRemaining = 0;
@@ -952,7 +946,7 @@ export function mountElementalDuo(root, context) {
     input.interactQueued = false;
 
     const halfW = 14;
-    const halfH = 17;
+    const halfH = 13;
     const flowBody = { x:localPlayer.x-halfW, y:localPlayer.y-halfH, w:halfW*2, h:halfH*2 };
     for (const source of (level.currents || [])) {
       const flow = getElementalCurrentState(source, elapsedMs);
@@ -993,7 +987,7 @@ export function mountElementalDuo(root, context) {
       if (horizontal && localPlayer.vy >= 0 && previousBottom <= platform.y + 5 && bottom >= platform.y) {
         localPlayer.y = platform.y - halfH;
         if (platform.kind === 'bounce') {
-          localPlayer.vy = -ELEMENTAL_JUMP_SPEED * 1.18;
+          localPlayer.vy = -ELEMENTAL_JUMP_SPEED * 1.08;
           localPlayer.grounded = false;
           localPlayer.supportPlatformId = null;
         } else {
@@ -1178,7 +1172,8 @@ export function mountElementalDuo(root, context) {
     }
     for (let i=0;i<18;i++) {
       const drift = time*.009 + i*53;
-      const x = (i*67 + Math.sin(drift*.012)*17 + 960) % 960;
+      const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
+      const x = (i*67 + Math.sin(drift*.012)*17 + width) % width;
       const y = 90 + (i*61)%315 + Math.sin(drift*.02)*7;
       const size = 3 + (i%3)*1.5;
       ctx.globalAlpha = .16 + .1*Math.sin(drift*.018+i);
@@ -1272,6 +1267,7 @@ export function mountElementalDuo(root, context) {
       if (!p.active) continue;
       ctx.save();
       ctx.globalAlpha = p.opacity;
+      const visualH = p.visualH || p.h;
       if (p.kind === 'bounce') {
         ctx.fillStyle = '#6e9870';
         ctx.beginPath(); ctx.ellipse(p.x+p.w/2,p.y+8,p.w/2,13,0,Math.PI,Math.PI*2); ctx.fill();
@@ -1281,20 +1277,20 @@ export function mountElementalDuo(root, context) {
         ctx.beginPath(); ctx.ellipse(p.x+p.w/2,p.y+1,p.w*.3,3,0,Math.PI,Math.PI*2); ctx.fill();
       } else if (p.kind === 'cloud') {
         ctx.fillStyle = 'rgba(255,255,255,.94)';
-        roundedRect(ctx,p.x,p.y+5,p.w,p.h-5,9); ctx.fill();
+        roundedRect(ctx,p.x,p.y+5,p.w,visualH-5,9); ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,.98)';
         ctx.beginPath(); ctx.ellipse(p.x+p.w*.25,p.y+5,p.w*.22,7,0,Math.PI,Math.PI*2); ctx.ellipse(p.x+p.w*.52,p.y+3,p.w*.25,9,0,Math.PI,Math.PI*2); ctx.ellipse(p.x+p.w*.78,p.y+6,p.w*.19,6,0,Math.PI,Math.PI*2); ctx.fill();
-        ctx.strokeStyle='rgba(139,163,218,.48)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(p.x+7,p.y+p.h-2); ctx.lineTo(p.x+p.w-7,p.y+p.h-2); ctx.stroke();
+        ctx.strokeStyle='rgba(139,163,218,.48)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(p.x+7,p.y+visualH-2); ctx.lineTo(p.x+p.w-7,p.y+visualH-2); ctx.stroke();
       } else if (p.kind === 'ice') {
-        const iceGradient = ctx.createLinearGradient(0,p.y,0,p.y+p.h);
+        const iceGradient = ctx.createLinearGradient(0,p.y,0,p.y+visualH);
         iceGradient.addColorStop(0,'#f1fdff'); iceGradient.addColorStop(.42,'#b6edf6'); iceGradient.addColorStop(1,'#6fb8d4');
-        ctx.fillStyle = iceGradient; roundedRect(ctx,p.x,p.y,p.w,p.h,8); ctx.fill();
+        ctx.fillStyle = iceGradient; roundedRect(ctx,p.x,p.y,p.w,visualH,8); ctx.fill();
         ctx.fillStyle='rgba(255,255,255,.92)'; roundedRect(ctx,p.x+5,p.y+3,p.w-10,3,2); ctx.fill();
         ctx.strokeStyle='rgba(80,167,197,.48)'; ctx.lineWidth=1.3;
         ctx.beginPath(); ctx.moveTo(p.x+p.w*.32,p.y+5); ctx.lineTo(p.x+p.w*.42,p.y+11); ctx.lineTo(p.x+p.w*.51,p.y+5); ctx.stroke();
       } else {
         ctx.fillStyle = p.kind === 'crystal' ? 'rgba(230,250,255,.88)' : c.ground;
-        roundedRect(ctx,p.x,p.y,p.w,p.h,8); ctx.fill();
+        roundedRect(ctx,p.x,p.y,p.w,visualH,8); ctx.fill();
         ctx.fillStyle = p.kind === 'crystal' ? '#fff' : 'rgba(255,255,255,.28)';
         roundedRect(ctx,p.x+4,p.y+3,p.w-8,3,2); ctx.fill();
         if (p.kind === 'crystal') {
@@ -1345,6 +1341,16 @@ export function mountElementalDuo(root, context) {
           ctx.beginPath();ctx.moveTo(x,h.y+h.h);ctx.bezierCurveTo(x-7,h.y+h.h*.68,x+8,h.y+h.h*.35,x+Math.sin(time*.004+i)*5,h.y+3);ctx.stroke();
         }
         ctx.fillStyle='rgba(255,205,157,.75)';ctx.fillRect(h.x,h.y+h.h-4,h.w,4);
+      } else if (h.type === 'toxic' || h.visual === 'toxic') {
+        const swamp = ctx.createLinearGradient(0,h.y,0,h.y+h.h);
+        swamp.addColorStop(0,'#c7ef8c'); swamp.addColorStop(.38,'#75b85b'); swamp.addColorStop(1,'#365e43');
+        ctx.shadowColor='#95dc68'; ctx.shadowBlur=12; ctx.fillStyle=swamp;
+        roundedRect(ctx,h.x,h.y,h.w,h.h,7); ctx.fill(); ctx.shadowBlur=0;
+        ctx.strokeStyle='rgba(226,255,169,.9)'; ctx.lineWidth=2;
+        ctx.beginPath();
+        for(let x=0;x<=h.w;x+=5){const y=h.y+6+Math.sin((x+time*.07)/13)*3; if(x===0)ctx.moveTo(h.x+x,y);else ctx.lineTo(h.x+x,y);}
+        ctx.stroke();
+        for(let i=0;i<3;i++){const bx=h.x+16+i*31+Math.sin(time*.003+i)*4;ctx.fillStyle='rgba(220,255,167,.8)';ctx.beginPath();ctx.arc(bx,h.y+11+(i%2)*4,2.5,0,Math.PI*2);ctx.fill();}
       } else {
         const fire = h.type === 'fire';
         const base = fire ? '#dc7959' : '#3e9db8';
@@ -1556,7 +1562,7 @@ export function mountElementalDuo(root, context) {
       if (hazardSource.valveId && valveIsOpen(hazardSource.valveId)) continue;
       const hazard=getElementalHazardState(hazardSource,elapsedMs);
       if (hazard.active===false) continue;
-      ctx.fillStyle=hazard.type==='fire' || hazard.type==='steam' ? '#ff9074' : '#63cbe1';
+      ctx.fillStyle=hazard.type==='toxic' ? '#a6e56c' : (hazard.type==='fire' || hazard.type==='steam' ? '#ff9074' : '#63cbe1');
       ctx.beginPath(); ctx.arc(toMapX(hazard.x+hazard.w/2),toMapY(hazard.y+hazard.h/2),1.7*pixelScale,0,Math.PI*2); ctx.fill();
     }
     for (const element of ['fire','water']) {
@@ -1625,7 +1631,7 @@ export function mountElementalDuo(root, context) {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.save();
     const z = canvasView.zoom;
-    ctx.setTransform(z,0,0,z,-canvasView.cameraX*z,-canvasView.cameraY*z);
+    ctx.setTransform(z,0,0,z,canvasView.offsetX-canvasView.cameraX*z,canvasView.offsetY-canvasView.cameraY*z);
     drawBackground(level,time);
     drawFloorSegments(level);
     drawSkyDecor(level,time);

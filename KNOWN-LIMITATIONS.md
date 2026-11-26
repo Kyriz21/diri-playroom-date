@@ -1,3 +1,16 @@
+## v0.38.0 — batasan yang masih perlu diuji
+- 10 pola ruang terstruktur digunakan pada 50 level dengan variasi mekanik per dunia; pengujian rasa tiap level tetap perlu playtest manusia.
+- Sistem kotak dorong dan tombol yang harus ditahan seperti pada beberapa puzzle Fireboy and Watergirl belum diimplementasikan pada revisi ini; interaksi yang ada adalah pijakan, katup, dan tuas.
+- Tinggi lompatan teoretis sekitar 30,2 unit dengan tier 24 unit; rasa lompatan pada skala fisik HP tetap perlu dinilai langsung.
+- Analog memang hanya gerak horizontal; tombol LOMPAT digunakan terpisah.
+- Mode landscape dipertahankan, tetapi kompatibilitas fullscreen dan area aman tergantung browser/OS.
+- `ELEMENTAL_MAP_VERSION=14` memindahkan posisi pemain pada level aktif ke spawn saat migrasi, tetapi mempertahankan progres level, serpihan, dan statistik jatuh.
+- Firebase Rules tidak berubah. Pengujian dua perangkat dengan Firebase aktif tetap diperlukan.
+
+---
+
+---
+
 ## Diri Playroom Date v0.33.0 — batasan yang masih perlu diuji
 - Tes otomatis memeriksa geometri dan jangkauan lompat, tetapi tidak menggantikan playtest manusia untuk ritme puzzle, rasa kontrol, dan tingkat kesulitan.
 - Fullscreen native, orientation lock, safe-area dan bilah sistem Android bergantung dukungan browser/OS. Fallback mengisi viewport web, tetapi tidak dapat menyembunyikan status bar Android atau notifikasi sistem.

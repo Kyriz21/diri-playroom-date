@@ -1,3 +1,31 @@
+# Elemental Duo — Classic Co-op Puzzle Rooms (v0.38.0)
+
+## Tata letak ruang puzzle yang terarah
+Peta dirancang sebagai ruang puzzle layar-tetap, bukan maze acak atau koridor satu arah. Setiap pola mempertahankan tata bahasa yang mudah dibaca: dua jalur elemen dari area bawah, pijakan dan permata berbeda, area pertemuan di tengah, lalu jalur atas atau sisi menuju dua pintu karakter.
+
+- **Jalur Bara dan Nira:** Bara dan Nira memulai dari sisi berbeda dan melewati hazard yang aman untuk elemennya sendiri.
+- **Pijakan dan gerbang:** dua pijakan karakter mengaktifkan penghalang bersama. Katup/tuas tambahan hanya menjadi syarat pada level yang memang memperkenalkannya.
+- **Permata:** permata merah dan biru berada pada jalur karakter masing-masing. Mengambil permata mendorong eksplorasi, tetapi tidak membuat pintu mustahil dicapai bila tertinggal.
+- **Rute bertingkat:** tier utama berada pada y `[522, 498, 474, 450, 426, 402]`, selisih 24 unit.
+- **Pintu keluar:** dapat berada di sisi kiri/kanan, galeri atas, atau ruang tengah; pemain tetap harus mencapai pintu elemen sendiri.
+- **Platform khusus:** platform bergerak/berkala dialokasikan ke slot samping yang tidak dipakai spawn, pintu, pijakan, permata, atau kontrol wajib.
+
+10 pola ruang dasar digunakan sebagai kerangka bagi 50 level. Variasi tantangan berasal dari hazard dan perangkat dunia: es/arus, lava/uap/katup, angin/tuas, dan kombinasi dunia final. Prinsip puzzle diadaptasi dari Fireboy and Watergirl, tetapi aset, bentuk, posisi, dan desain level tetap orisinal.
+
+## Fisika peta v0.38.0
+- `jumpSpeed = 280`, `gravity = 1300`, tinggi puncak teoretis sekitar 30,2 unit.
+- Jarak vertikal tier utama 24 unit. Celah horizontal platform diperiksa menggunakan waktu lintasan dan kecepatan gerak.
+- Collision platform setinggi 8 unit; renderer menampilkan tinggi visual 16 unit.
+- Pijakan, pintu, permata, kontrol, dan checkpoint ditempatkan pada platform stabil; checkpoint menghindari hazard.
+- Moving/timed platform tetap deterministik dari jam Firebase bersama.
+
+## Kontrol v0.38.0
+Analog hanya mengatur gerakan kiri/kanan. Sumbu vertikal analog diabaikan dan tidak mengantrekan lompatan. Tombol LOMPAT/Space tetap terpisah. Tampilan landscape/fullscreen tidak dirombak.
+
+---
+
+---
+
 # Elemental Duo — Adventure Map Design (v0.33.0)
 
 ## Sasaran desain
