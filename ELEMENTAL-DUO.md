@@ -1,4 +1,4 @@
-# Elemental Duo — Panduan Game (build v0.38.0)
+# Elemental Duo — Panduan Game (build v0.39.0)
 
 ## Prinsip gameplay puzzle klasik
 Elemental Duo menggunakan ruang puzzle dua karakter yang dirancang untuk kolaborasi. Bara melewati jalur lava tetapi menghindari air; Nira melewati air tetapi menghindari lava; keduanya menghindari rawa beracun. Setiap pemain mencari permata elemennya, mengaktifkan pijakan/sakelar, membantu membuka rute, dan mencapai pintu yang sesuai warna karakter.
@@ -176,3 +176,27 @@ Semua state interaksi disimpan di bawah `levels/{level}` dan memakai jam level b
 - Fisika lebih toleran: gravity 1100, jump speed 690, jump buffer 170 ms, coyote time 140 ms. Platform utama diperlebar menjadi 128 px.
 - Tingkat kesulitan diturunkan dan diatur ulang pada seluruh dunia; Dunia 1 adalah tutorial mudah dan tidak ada level Expert.
 - MapVersion 9 memindahkan posisi pada level aktif ke spawn saat pembaruan, tanpa menghapus progres, serpihan, atau statistik jatuh.
+
+
+# Prototype v0.39.0 — lima dunia, lima level aktif
+
+Build ini sengaja membatasi jalur permainan menjadi lima level percontohan. Urutannya memakai blueprint level pertama dari setiap dunia, bukan lima level pertama dari Dunia 1:
+
+| Level aktif | Dunia / tema | Nama blueprint | Fokus tema |
+|---:|---|---|---|
+| 01 | Hutan Berbisik | Jejak Cahaya | Hutan, akar, lumut, jalur dasar dua elemen |
+| 02 | Kedalaman Kristal | Retakan Pertama | Gua kristal, es dan arus |
+| 03 | Kerajaan Bara | Napas Lava | Lava dan panas tungku |
+| 04 | Reruntuhan Langit | Tangga Awan | Angin dan area vertikal |
+| 05 | Jantung Kuno | Simpul Pertama | Kombinasi mekanik lima dunia |
+
+45 blueprint yang lain tetap tersedia dalam `ELEMENTAL_LEVELS` sebagai materi ekspansi, tetapi engine permainan prototype memakai `ELEMENTAL_PROTOTYPE_LEVELS` dan berhenti setelah level 05. Hasil maksimal prototype adalah 15 bintang dan 10 permata.
+
+## Visual klasik
+- Dinding arena memakai pola bata gelap berulang dengan palet khusus setiap dunia.
+- Batu platform dan lantai mendapat gradasi, sambungan balok, lumut, dan retakan.
+- Hutan memakai akar dan tanaman rambat; dunia kristal mendapat serpihan dingin; Kerajaan Bara memakai aksen bara; Reruntuhan Langit memakai aksen angin/awan; Jantung Kuno memakai rune dan relief.
+- Permata berbentuk berlian bersegi; portal keluar berupa pintu batu persegi dengan simbol Bara/Nira.
+- Karakter mendapat siluet kepala, badan, tangan, kaki, wajah, dan animasi langkah sederhana.
+
+`ELEMENTAL_MAP_VERSION=15` memaksa posisi pemain dari peta lama kembali ke spawn. `prototypeVersion=1` pada metadata sesi memulai ulang sesi lama ke level 1 dan membersihkan state puzzle per-level yang dibuat dengan urutan sebelumnya. Firebase Rules tidak berubah.

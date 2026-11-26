@@ -4,7 +4,7 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 14;
+export const ELEMENTAL_MAP_VERSION = 15;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1300;
 export const ELEMENTAL_MOVE_SPEED = 260;
@@ -97,6 +97,7 @@ const WORLD_CONFIG = [
     colors: { sky:'#e5def5', sky2:'#b8a9db', far:'#887cae', near:'#62567f', ground:'#40364f', accent:'#ffe5a8', glow:'#fff0c9' }
   }
 ];
+
 
 const PLATFORM_LAYOUTS = [
   [[190,420,125],[430,365,125],[680,410,125]],
@@ -1596,9 +1597,9 @@ function createExplorationMap(level, index) {
   return level;
 }
 
-function makeLevel(index) {
-  const worldIndex = Math.floor(index / 10);
-  const localIndex = index % 10;
+function makeLevel(index, sourceIndex = index) {
+  const worldIndex = Math.floor(sourceIndex / 10);
+  const localIndex = sourceIndex % 10;
   const world = WORLD_CONFIG[worldIndex];
   const blueprint = worldIndex === 0 ? WORLD_ONE_BLUEPRINTS[localIndex] : worldIndex === 1 ? WORLD_TWO_BLUEPRINTS[localIndex] : worldIndex === 2 ? WORLD_THREE_BLUEPRINTS[localIndex] : worldIndex === 3 ? WORLD_FOUR_BLUEPRINTS[localIndex] : worldIndex === 4 ? WORLD_FIVE_BLUEPRINTS[localIndex] : null;
   const platforms = blueprint
@@ -1679,9 +1680,15 @@ function makeLevel(index) {
   return createExplorationMap(level, index);
 }
 
-export const ELEMENTAL_LEVELS = Object.freeze(Array.from({ length: 50 }, (_, index) => Object.freeze(makeLevel(index))));
+export const ELEMENTAL_LEVELS = Object.freeze(Array.from({ length:50 }, (_, index) => Object.freeze(makeLevel(index))));
+const ELEMENTAL_PROTOTYPE_SOURCE_ORDER = Object.freeze([0,10,20,30,40]);
+export const ELEMENTAL_PROTOTYPE_LEVEL_COUNT = ELEMENTAL_PROTOTYPE_SOURCE_ORDER.length;
+export const ELEMENTAL_PROTOTYPE_LEVELS = Object.freeze(ELEMENTAL_PROTOTYPE_SOURCE_ORDER.map((sourceIndex, displayIndex) =>
+  Object.freeze(makeLevel(displayIndex, sourceIndex))
+));
 export const ELEMENTAL_WORLDS = Object.freeze(WORLD_CONFIG.map((world, index) => Object.freeze({
-  id: world.id, name: world.name, shortName: world.shortName, firstLevel: index * 10 + 1, lastLevel: index * 10 + 10, tagline: world.tagline
+  id:world.id, name:world.name, shortName:world.shortName,
+  firstLevel:index*10+1, lastLevel:index*10+10, prototypeLevel:index+1, tagline:world.tagline
 })));
 
 export function getElementalLevel(levelNumber) {
@@ -1689,8 +1696,13 @@ export function getElementalLevel(levelNumber) {
   return ELEMENTAL_LEVELS[index];
 }
 
-export function createElementalPlayer(role, saved = null, levelNumber = 1) {
-  const level = getElementalLevel(levelNumber);
+export function getElementalPrototypeLevel(levelNumber) {
+  const index = Math.max(1, Math.min(ELEMENTAL_PROTOTYPE_LEVEL_COUNT, Number(levelNumber) || 1)) - 1;
+  return ELEMENTAL_PROTOTYPE_LEVELS[index];
+}
+
+export function createElementalPlayer(role, saved = null, levelNumber = 1, prototype = false) {
+  const level = prototype ? getElementalPrototypeLevel(levelNumber) : getElementalLevel(levelNumber);
   const spawn = level.spawn[role === 'guest' ? 'guest' : 'host'];
   // Older builds used a short corridor or the previous single-route map. Respawn
   // those stale positions into the current branched map, while retaining progress.

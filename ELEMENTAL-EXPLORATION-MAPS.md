@@ -1,4 +1,8 @@
-# Elemental Duo — Classic Co-op Puzzle Rooms (v0.38.0)
+# Elemental Duo — Classic Temple Prototype (v0.39.0)
+
+## Prototype 5 level lintas tema
+
+Level aktif 01–05 masing-masing memakai satu blueprint pembuka dari lima dunia. Lima level ini ditujukan sebagai sampel kualitas visual dan mekanik sebelum pengembangan 45 blueprint lainnya diteruskan.
 
 ## Tata letak ruang puzzle yang terarah
 Peta dirancang sebagai ruang puzzle layar-tetap, bukan maze acak atau koridor satu arah. Setiap pola mempertahankan tata bahasa yang mudah dibaca: dua jalur elemen dari area bawah, pijakan dan permata berbeda, area pertemuan di tengah, lalu jalur atas atau sisi menuju dua pintu karakter.
@@ -75,3 +79,7 @@ Mengubah pengalaman dari koridor kiri-ke-kanan menjadi platform-puzzle eksploras
 - Jump speed 690 dan gravity 1100; jump buffer 170 ms dan coyote time 140 ms menambah toleransi kontrol sentuh.
 - Kurva kesulitan: Dunia 1 mudah hingga level 8; Dunia 2 maksimal Menengah; Dunia 3 maksimal Menengah; Dunia 4 dan 5 meningkat bertahap hingga Sulit. Tidak ada label Expert.
 - Pola Menara Kembar diperbaiki untuk menghilangkan tumpang tindih platform utama.
+
+
+## Visual v0.39.0
+Renderer menggambar latar batu bata gelap, sambungan batu, aksen lumut, tanaman rambat, relief kuil, dan partikel. Warna dasar tiap tema dibedakan namun seluruh level mempertahankan bahasa visual dungeon klasik. Platform batu, hazard air/lava, permata, pintu dan karakter menggunakan gambar Canvas prosedural sehingga tidak memerlukan aset eksternal tambahan.

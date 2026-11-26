@@ -1,17 +1,16 @@
-# Diri. Playroom Date v0.38.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.39.0 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.38.0 — Elemental Duo Classic Room Rework
+## Pembaruan terbaru v0.39.0 — Elemental Duo Classic Temple Prototype
 
-- Menyusun ulang 10 pola ruang menjadi puzzle-room kooperatif yang terarah: dua jalur elemen kiri/kanan, pijakan Bara dan Nira, permata masing-masing, jembatan tengah, platform atas, serta pintu yang dapat berada di sayap atau ruang tengah. Bukan lorong lurus dan bukan labirin acak.
-- Seluruh 50 level memakai tata bahasa ruang yang konsisten dengan variasi posisi pintu, platform bergerak/berkala, katup, tuas, angin, arus, es, uap, dan lava sesuai blueprint tiap dunia.
-- Menurunkan lompatan menjadi `ELEMENTAL_JUMP_SPEED = 280` dan `ELEMENTAL_GRAVITY = 1300` (tinggi puncak teoretis sekitar 30,2 unit). Jarak tier utama 24 unit; celah horizontal antarbagian jalur diuji dengan jump envelope.
-- Analog virtual hanya menggerakkan kiri/kanan. Sumbu vertikal analog tidak melompat; tombol LOMPAT/Space tetap terpisah.
-- Tampilan landscape/fullscreen yang disukai dipertahankan; revisi ini tidak mengubah komposisi landscape.
-- Checkpoint ditempatkan pada platform stabil yang tidak menimpa hazard, pintu, atau objek interaksi. Platform lift/berkala dipertahankan pada slot yang tidak mengganggu spawn dan tujuan.
-- `ELEMENTAL_MAP_VERSION` menjadi 14. Posisi karakter di level aktif kembali ke spawn saat migrasi; progres level, serpihan, dan jumlah jatuh dipertahankan. Firebase Rules tidak berubah.
-- Verifikasi: 191/191 tes otomatis lulus; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- Prototype Elemental Duo kini berisi **5 level aktif**, satu level pembuka dari masing-masing tema: Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno.
+- 45 blueprint lanjutan tetap disimpan pada engine untuk fase pengembangan berikutnya, tetapi tidak dapat dimainkan pada build prototype ini.
+- Visual Canvas diarahkan ke puzzle platformer klasik: dinding bata kuil gelap, batu bertekstur, lumut, akar/tanaman rambat, relief, partikel, cairan hazard, permata bersegi, portal batu, serta karakter Bara dan Nira yang lebih terbaca.
+- Progress bar, nomor level, dan halaman hasil akhir kini memakai hitungan prototype 5 level.
+- Metadata sesi versi lama dimigrasikan ke level 1 prototype dan state puzzle per-level lama dibersihkan. Posisi karakter dimulai ulang karena `ELEMENTAL_MAP_VERSION=15`; statistik dasar pemain dipertahankan.
+- GitHub Pages cache key menggunakan v0.39.0. Firebase Rules dan fitur selain Elemental Duo tidak diubah.
+- Verifikasi: 193/193 tes otomatis lulus; semua file JavaScript lolos `node --check`.
 
-Lihat `ELEMENTAL-EXPLORATION-MAPS.md`, `ELEMENTAL-DUO.md`, dan `BUILD-VERIFICATION.md` untuk rincian v0.38.0.
+Lihat `ELEMENTAL-DUO.md`, `ELEMENTAL-EXPLORATION-MAPS.md`, `BUILD-VERIFICATION.md`, dan `REVIEW-BUILD-QA.md` untuk detail build.
 
 ## Keputusan produk
 
@@ -21,7 +20,7 @@ Lihat `ELEMENTAL-EXPLORATION-MAPS.md`, `ELEMENTAL-DUO.md`, dan `BUILD-VERIFICATI
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (platform-puzzle kooperatif 50 level dengan Bara dan Nira). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (platform-puzzle kooperatif 5 level prototype lintas tema dengan Bara dan Nira; 45 blueprint lanjutan tersimpan). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 

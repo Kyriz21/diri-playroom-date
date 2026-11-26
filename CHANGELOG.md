@@ -1,3 +1,15 @@
+## v0.39.0 — Classic Temple Prototype (5 tema)
+
+- Mengubah cakupan permainan aktif menjadi **5 level prototype**; masing-masing memakai satu blueprint pembuka dari Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno.
+- 45 blueprint lanjutan tetap disimpan di engine untuk ekspansi setelah prototype diuji; progres prototype berhenti pada level 5.
+- Renderer Canvas diperbarui dengan dinding bata gelap, pola batu kuil, lumut, tanaman rambat, relief, partikel, dan aksen visual yang berbeda untuk kelima tema.
+- Platform batu mendapat tekstur balok, tepi batu, lumut, sambungan, serta retakan; air dan lava mendapat permukaan cairan yang lebih hidup.
+- Permata dibuat lebih faceted, pintu menjadi portal batu persegi dengan simbol elemen, dan Bara/Nira mendapat siluet karakter platformer yang lebih terbaca.
+- Level counter, progress bar, dan hasil akhir disesuaikan untuk 5 level (15 bintang, 10 permata).
+- Menambahkan `prototypeVersion` pada metadata sesi untuk memindahkan sesi lama kembali ke level 1 dan membersihkan state puzzle lama. Firebase Rules tidak berubah.
+- `ELEMENTAL_MAP_VERSION` naik menjadi 15 agar posisi karakter lama kembali ke spawn baru; statistik dasar pemain tetap dibawa.
+- Cache key menjadi v0.39.0. Verifikasi lokal: 193/193 tes otomatis lulus; pemeriksaan sintaks JS lulus.
+
 ## v0.38.0 — Elemental Duo Classic Room Rework
 - Mengganti pola eksplorasi yang terlalu acak menjadi 10 pola ruang puzzle kooperatif yang terarah, dengan dua jalur elemen, platform bertingkat, area pertemuan tengah, permata warna, pijakan, dan pintu karakter.
 - Tier vertikal utama disusun pada y `[522, 498, 474, 450, 426, 402]` (selisih 24 unit) dan tiap lompatan rute utama diuji dengan envelope fisika.

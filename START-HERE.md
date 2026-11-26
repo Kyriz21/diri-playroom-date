@@ -1,18 +1,29 @@
-# Mulai di sini — Diri. Playroom Date v0.38.0
+# Mulai di sini — Diri. Playroom Date v0.39.0
 
 ## Yang berubah pada Elemental Duo
-- Peta ditata sebagai puzzle-room dua karakter: jalur elemen terpisah, pijakan dan permata sendiri, pertemuan tengah, galeri atas, serta pintu yang tidak selalu berada di kanan.
-- Lompatan dibuat lebih rendah dan terukur: `jumpSpeed 280`, `gravity 1300` (tinggi puncak sekitar 30,2 unit).
-- Analog hanya untuk kiri/kanan. Tombol LOMPAT/Space tetap terpisah; analog tidak memicu lompat.
-- Tampilan landscape yang disukai dipertahankan.
-- 191/191 tes otomatis lulus; Firebase Rules tidak berubah.
+- Prototype hanya membuka 5 level aktif, satu dari setiap tema dunia.
+- Visual arena diperbarui menjadi dungeon batu klasik dengan bata gelap, lumut, akar, platform batu, permata, pintu dan karakter yang lebih dekat ke referensi.
+- Engine tetap menyimpan 45 blueprint lanjutan untuk ekspansi setelah lima prototype diuji.
+- Firebase Rules dan mini-game lain tidak berubah.
 
-## Memasang v0.38.0
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.38.0_Elemental_Classic_Puzzle_Repair.zip`.
+## Memasang v0.39.0
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.0_Classic_Temple_Prototype.zip`.
 2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
-3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, dan dokumentasi ikut terunggah.
-4. Refresh kedua perangkat. Karena `ELEMENTAL_MAP_VERSION` naik menjadi 14, posisi kedua pemain pada level aktif kembali ke spawn; progres level, serpihan, dan jumlah jatuh tetap dipertahankan.
-5. Firebase Rules tidak berubah dan tidak perlu dipublikasikan ulang.
+3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
+4. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=1`; state puzzle lama dibersihkan.
+5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=15`. Firebase Rules tidak perlu dipublikasikan ulang.
+
+## Urutan 5 prototype
+1. Hutan Berbisik — Jejak Cahaya.
+2. Kedalaman Kristal — Retakan Pertama.
+3. Kerajaan Bara — Napas Lava.
+4. Reruntuhan Langit — Tangga Awan.
+5. Jantung Kuno — Simpul Pertama.
+
+## Verifikasi lokal
+- `npm test`: **193/193 lulus**.
+- JavaScript lolos `node --check`.
+- Uji dua HP dengan Firebase aktif dan pemeriksaan visual browser tetap diperlukan.
 
 ---
 

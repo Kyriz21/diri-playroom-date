@@ -1,9 +1,9 @@
-# QA — Diri. Playroom Date v0.38.0
+# QA — Diri. Playroom Date v0.39.0
 
-## Hasil verifikasi otomatis v0.38.0
-- 191/191 tes lulus.
+## Hasil verifikasi otomatis v0.39.0
+- 193/193 tes lulus.
 - JavaScript syntax check lulus pada seluruh folder `js/`.
-- 50 level memakai 10 pola ruang terstruktur; platform, spawn, pijakan, permata, pintu, dan checkpoint diperiksa.
+- 5 level prototype memakai 10 pola ruang terstruktur; platform, spawn, pijakan, permata, pintu, dan checkpoint diperiksa.
 - Jump speed 280/gravity 1300 dan tier gap24 diperiksa menggunakan jump envelope.
 - Analog diuji hanya mengubah kiri/kanan; input vertikal tidak memicu jump buffer; tombol LOMPAT tetap menjadi jalur lompat.
 - MapVersion 14; Firebase Rules tidak berubah.
@@ -535,3 +535,13 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - Pastikan joystick kiri/kanan menggerakkan karakter dan joystick ke atas melompat.
 - Pastikan menekan pijakan elemen tidak membutuhkan tombol INTERAKSI.
 - Mainkan level 1–10 untuk memverifikasi lompatan tutorial dan kurva kesulitan sebelum mencoba dunia berikutnya.
+
+
+## Checklist prototype v0.39.0
+- [ ] Hutan Berbisik: tekstur batu, lumut, akar, dan jalur dasar jelas.
+- [ ] Kedalaman Kristal: es/kristal dan arus terbaca jelas serta tidak menutupi platform.
+- [ ] Kerajaan Bara: lava/uap terbaca dan collision sesuai elemen.
+- [ ] Reruntuhan Langit: hembusan angin terlihat tetapi tidak menutupi pemain.
+- [ ] Jantung Kuno: kombinasi mekanik dan rune tidak mengganggu jalur puzzle.
+- [ ] Dua HP: kedua karakter dapat bergerak, menginjak pijakan, mengumpulkan permata, dan mencapai portal masing-masing.
+- [ ] Selesaikan level 05: game menampilkan hasil prototype dan tidak mencoba membuka level 06.

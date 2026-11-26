@@ -1,4 +1,18 @@
-# Build Verification — Diri. Playroom Date v0.38.0
+# Build Verification — Diri. Playroom Date v0.39.0
+
+## v0.39.0 — Classic Temple Prototype
+- `npm test`: **193/193 tes lulus**.
+- Pemeriksaan sintaks seluruh file JavaScript menggunakan `node --check` lulus.
+- 5 level aktif memakai lima tema berbeda; 45 blueprint lain tetap tersimpan tetapi tidak masuk jalur permainan prototype.
+- Renderer Canvas menggunakan dinding bata gelap, relief, vine, platform batu bertekstur, hazard cairan, permata faceted, portal batu dan karakter yang diperbarui.
+- Progress prototype berhenti setelah level 05; hasil maksimal 15 bintang dan 10 permata.
+- `ELEMENTAL_MAP_VERSION=15`; sesi lama bermigrasi ke prototype level 01 dan state puzzle lama dibersihkan melalui metadata versi sesi.
+- Cache key `index.html`, `js/app.js`, dan modul Elemental Duo menggunakan v0.39.0. Firebase Rules tidak berubah.
+
+## Batas verifikasi
+Tes otomatis memeriksa struktur blueprint, tema, geometri, logika dan integrasi source. Belum dilakukan playtest visual di browser dan dua HP fisik dengan Firebase aktif; kemiripan visual dan feel kontrol masih perlu dinilai setelah build dipasang.
+
+---
 
 ## v0.38.0 — Classic puzzle-room and movement tuning
 - `npm test`: **191/191 tes lulus**.

@@ -1,12 +1,12 @@
 import { db, ref, set, update, onValue, runTransaction } from '../firebase.js';
 import {
-  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION,
+  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_PROTOTYPE_LEVEL_COUNT,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
-  createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap,
+  createElementalPlayer, getElementalPrototypeLevel, getElementalStars, rectsOverlap,
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.38.0';
+} from './elemental-duo-logic.js?v=0.39.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -25,8 +25,8 @@ export function mountElementalDuo(root, context) {
   const metaRef = ref(db, `${basePath}/meta`);
   const ownPlayerRef = ref(db, `${basePath}/players/${role}`);
   let data = {};
-  let localPlayer = createElementalPlayer(role);
-  let remoteRender = createElementalPlayer(otherRole);
+  let localPlayer = createElementalPlayer(role, null, 1, true);
+  let remoteRender = createElementalPlayer(otherRole, null, 1, true);
   let remoteTarget = { ...remoteRender };
   let currentLevel = 1;
   let currentView = '';
@@ -205,8 +205,9 @@ export function mountElementalDuo(root, context) {
 
   function path(...parts) { return `${basePath}/${parts.join('/')}`; }
   function rolePlayer(roleKey) { return data.players?.[roleKey] || null; }
-  function levelData() { return getElementalLevel(Number(data.meta?.level) || 1); }
-  function levelState() { return data.levels?.[String(Number(data.meta?.level) || 1)] || {}; }
+  function activeLevelNumber() { return Math.max(1,Math.min(ELEMENTAL_PROTOTYPE_LEVEL_COUNT,Number(data.meta?.level)||1)); }
+  function levelData() { return getElementalPrototypeLevel(activeLevelNumber()); }
+  function levelState() { return data.levels?.[String(activeLevelNumber())] || {}; }
   function switchIsOn(element) { return Boolean(levelState().switches?.[element]); }
   function valveIsOpen(id) { return Boolean(levelState().valves?.[id]); }
   function windLeverIsOn(id) { return Boolean(levelState().windLevers?.[id]); }
@@ -238,10 +239,10 @@ export function mountElementalDuo(root, context) {
             <div><span class="ed-how-icon ed-gem-icon">◇</span><strong>Kerja sama</strong><small>Tekan kedua pijakan untuk membuka penghalang dan pintu.</small></div>
           </div>
           <button class="ed-primary-button" type="button" data-ed-action="ready">Aku siap bertualang <span>↗</span></button>
-          <p class="ed-lobby-note">Petualangan memiliki 50 level dalam 5 dunia. Level berikutnya terbuka otomatis setelah kalian berdua mencapai gerbang.</p>
+          <p class="ed-lobby-note">Prototype ini berisi 5 level. Setiap level mewakili satu dunia dengan tema dan mekanik yang berbeda.</p>
         </section>
         <section class="ed-panel ed-game-panel" data-ed-view="game" hidden>
-          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh landscape" title="Layar penuh landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button><button class="ed-mode-button ed-control-mode-button" type="button" data-ed-action="toggle-controls" aria-label="Ganti ke kontrol analog" aria-pressed="false"><span>◎</span><b data-ed-control-mode-label>Tombol</b></button></div></div></div>
+          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 05</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh landscape" title="Layar penuh landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button><button class="ed-mode-button ed-control-mode-button" type="button" data-ed-action="toggle-controls" aria-label="Ganti ke kontrol analog" aria-pressed="false"><span>◎</span><b data-ed-control-mode-label>Tombol</b></button></div></div></div>
           <div class="ed-progress-track"><span data-ed-progress></span></div>
           <div class="ed-hud-row">
             <div class="ed-hud-player"><span class="ed-hud-orb ed-fire-icon">✦</span><span><b>${ESCAPE(names.host)}</b><small data-ed-status="host">Bara · belum tiba</small></span></div>
@@ -260,8 +261,8 @@ export function mountElementalDuo(root, context) {
           <div class="ed-bottom-tip"><b>Petunjuk level</b><span data-ed-mechanic>Perhatikan kemampuan masing-masing karakter.</span></div>
         </section>
         <section class="ed-panel ed-finish-panel" data-ed-view="finish" hidden>
-          <div class="ed-finish-emblem">✧</div><span class="ed-section-kicker">PETUALANGAN SELESAI</span><h2>Kalian menyatukan<br><em>lima kekuatan dunia.</em></h2><p>Jantung Lima Dunia kembali bercahaya berkat kerja sama Bara dan Nira.</p><div class="ed-finish-stats"><div><strong data-ed-finish-stars>0</strong><small>BINTANG TERKUMPUL</small></div><div><strong data-ed-finish-shards>0</strong><small>SERPihan ENERGI</small></div><div><strong>50</strong><small>LEVEL DITUNTASKAN</small></div></div><button class="ed-primary-button" type="button" data-ed-action="back">Kembali ke ruang <span>♡</span></button></section>
-        <footer class="ed-footer"><span>ELEMENTAL DUO · PETUALANGAN ORISINAL DIRI</span><span>50 LEVEL · 5 DUNIA · 2 PEMAIN</span></footer>
+          <div class="ed-finish-emblem">✧</div><span class="ed-section-kicker">PETUALANGAN SELESAI</span><h2>Kalian menyatukan<br><em>lima kekuatan dunia.</em></h2><p>Jantung Lima Dunia kembali bercahaya berkat kerja sama Bara dan Nira.</p><div class="ed-finish-stats"><div><strong data-ed-finish-stars>0</strong><small>BINTANG TERKUMPUL</small></div><div><strong data-ed-finish-shards>0</strong><small>SERPihan ENERGI</small></div><div><strong>05</strong><small>LEVEL PROTOTIPE</small></div></div><button class="ed-primary-button" type="button" data-ed-action="back">Kembali ke ruang <span>♡</span></button></section>
+        <footer class="ed-footer"><span>ELEMENTAL DUO · PETUALANGAN ORISINAL DIRI</span><span>5 LEVEL PROTOTIPE · 5 TEMA · 2 PEMAIN</span></footer>
       </section>`;
     gamePanel = root.querySelector('.ed-game-panel');
     canvas = root.querySelector('.ed-canvas');
@@ -523,7 +524,7 @@ export function mountElementalDuo(root, context) {
 
   function updateHud() {
     const meta = data.meta || {};
-    const level = getElementalLevel(meta.level || 1);
+    const level = getElementalPrototypeLevel(meta.level || 1);
     const players = data.players || {};
     const mine = players[role] || localPlayer;
     const host = players.host || {};
@@ -553,7 +554,7 @@ export function mountElementalDuo(root, context) {
     setText('[data-ed-deaths]', `Jatuh: ${Number(mine.deaths)||0}`);
     setText('[data-ed-mechanic]', `${level.mechanic}. ${level.tagline}`);
     const progress = queryUI('[data-ed-progress]');
-    if (progress) progress.style.width = `${(level.id / 50) * 100}%`;
+    if (progress) progress.style.width = `${(level.id / ELEMENTAL_PROTOTYPE_LEVEL_COUNT) * 100}%`;
     const readyHost = queryUI('[data-ed-ready="host"]');
     const readyGuest = queryUI('[data-ed-ready="guest"]');
     if (readyHost) readyHost.textContent = host.ready ? 'Siap ✓' : 'Menunggu siap';
@@ -579,39 +580,54 @@ export function mountElementalDuo(root, context) {
     const levels = data.levels || {};
     const totalShards = Object.values(levels).reduce((sum, item) => sum + Number(Boolean(item?.gems?.fire)) + Number(Boolean(item?.gems?.water)), 0);
     const setText = (selector, value) => { const el = queryUI(selector); if (el) el.textContent = value; };
-    setText('[data-ed-finish-stars]', `${totalStars} / 150`);
-    setText('[data-ed-finish-shards]', `${totalShards} / 100`);
+    setText('[data-ed-finish-stars]', `${totalStars} / 15`);
+    setText('[data-ed-finish-shards]', `${totalShards} / 10`);
   }
 
   async function initialiseMeta() {
     if (metaInitStarted || role !== 'host') return;
     metaInitStarted = true;
     try {
-      await runTransaction(metaRef, current => current || {
-        phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}
+      let needsPrototypeMigration = false;
+      await runTransaction(metaRef, current => {
+        if (!current) return {
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:1
+        };
+        if (Number(current.prototypeVersion) === 1) return current;
+        needsPrototypeMigration = true;
+        return {
+          ...current, phase:'lobby', level:1, startedAt:now(),
+          transitioning:false, transitionStartedAt:null, completedAt:null,
+          results:{}, prototypeVersion:1
+        };
       });
+      if (needsPrototypeMigration) {
+        // Old map state belongs to a different level order; discard only the
+        // per-level puzzle switches/gems, not the room or Firebase membership.
+        await update(baseRef, { levels:null });
+      }
     } catch (error) { notify(`Gagal menyiapkan petualangan: ${error.message}`, 'error'); }
   }
 
   async function initialisePlayer() {
     if (playerInitStarted || data.players?.[role]) return;
     playerInitStarted = true;
-    try { await set(ownPlayerRef, createElementalPlayer(role)); }
+    try { await set(ownPlayerRef, createElementalPlayer(role, null, 1, true)); }
     catch (error) { playerInitStarted = false; notify(`Gagal menyiapkan karakter: ${error.message}`, 'error'); }
   }
 
   function updateViewFromData() {
     const meta = data.meta;
     if (!meta) { showView('lobby'); return; }
-    const nextLevel = Math.max(1, Math.min(50, Number(meta.level) || 1));
+    const nextLevel = Math.max(1, Math.min(ELEMENTAL_PROTOTYPE_LEVEL_COUNT, Number(meta.level) || 1));
     if (nextLevel !== currentLevel) {
       currentLevel = nextLevel;
-      localPlayer = createElementalPlayer(role, data.players?.[role], currentLevel);
+      localPlayer = createElementalPlayer(role, data.players?.[role], currentLevel, true);
       localHydrated = true;
       localCheckpoint = null;
-      notify(`Level ${String(currentLevel).padStart(2,'0')} terbuka: ${getElementalLevel(currentLevel).name}`);
+      notify(`Level ${String(currentLevel).padStart(2,'0')} terbuka: ${getElementalPrototypeLevel(currentLevel).name}`);
     } else if (data.players?.[role] && !localHydrated) {
-      localPlayer = createElementalPlayer(role, data.players[role], currentLevel);
+      localPlayer = createElementalPlayer(role, data.players[role], currentLevel, true);
       localHydrated = true;
     }
     if (meta.phase === 'complete') {
@@ -683,7 +699,7 @@ export function mountElementalDuo(root, context) {
       const stars = getElementalStars({ deaths, shards });
       const result = { stars, shards, deaths, completedAt:now() };
       const patch = { [`meta/results/${level}`]:result };
-      if (level >= 50) {
+      if (level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT) {
         patch['meta/phase'] = 'complete';
         patch['meta/transitioning'] = false;
         patch['meta/transitionStartedAt'] = null;
@@ -695,8 +711,8 @@ export function mountElementalDuo(root, context) {
         patch['meta/startedAt'] = now();
         patch['meta/transitioning'] = false;
         patch['meta/transitionStartedAt'] = null;
-        patch['players/host'] = createElementalPlayer('host', { ready:true, deaths:Number(host.deaths)||0, levelDeaths:0, shards:Number(host.shards)||0 }, nextLevel);
-        patch['players/guest'] = createElementalPlayer('guest', { ready:true, deaths:Number(guest.deaths)||0, levelDeaths:0, shards:Number(guest.shards)||0 }, nextLevel);
+        patch['players/host'] = createElementalPlayer('host', { ready:true, deaths:Number(host.deaths)||0, levelDeaths:0, shards:Number(host.shards)||0 }, nextLevel, true);
+        patch['players/guest'] = createElementalPlayer('guest', { ready:true, deaths:Number(guest.deaths)||0, levelDeaths:0, shards:Number(guest.shards)||0 }, nextLevel, true);
       }
       await update(baseRef, patch);
     } catch (error) {
@@ -1064,52 +1080,154 @@ export function mountElementalDuo(root, context) {
     context.arcTo(x,y+h,x,y,r); context.arcTo(x,y,x+w,y,r); context.closePath();
   }
 
-  function drawBackground(level, time) {
-    const c = level.colors;
-    const floorY = level.floorY || ELEMENTAL_FLOOR_Y;
-    const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
-    const height = level.worldHeight || ELEMENTAL_WORLD_HEIGHT;
-    const gradient = ctx.createLinearGradient(0,0,0,height);
-    gradient.addColorStop(0,c.sky); gradient.addColorStop(.58,c.sky2); gradient.addColorStop(1,c.sky2);
-    ctx.fillStyle = gradient; ctx.fillRect(0,0,width,height);
-    // Distant layered silhouettes give the tall rooms depth while the camera scrolls.
+  function classicPalette(level) {
+    const palettes = [
+      { wall:'#202818', base:'#171e12', bricks:['#303a20','#384326','#41492b','#2b351c'], mortar:'#151b10', stone:'#82794c', stoneDark:'#4c4a2f', moss:'#55783b', accent:'#8cb84d', glow:'#c8e17c' },
+      { wall:'#17242b', base:'#10191f', bricks:['#293b42','#31474e','#3b5159','#24363e'], mortar:'#10191f', stone:'#777d70', stoneDark:'#414b4d', moss:'#4c796f', accent:'#75c9df', glow:'#b7f4ff' },
+      { wall:'#2a1b17', base:'#1c1211', bricks:['#493027','#55382d','#613c2d','#3b2822'], mortar:'#1b1210', stone:'#8c684b', stoneDark:'#513b32', moss:'#76533a', accent:'#e07842', glow:'#ffc06b' },
+      { wall:'#202537', base:'#151a2a', bricks:['#343b50','#3e4760','#4a536b','#2b3449'], mortar:'#151b2c', stone:'#85869a', stoneDark:'#4b5267', moss:'#60738b', accent:'#9dbbe7', glow:'#e1f0ff' },
+      { wall:'#27221b', base:'#181711', bricks:['#3e3828','#49412d','#554b34','#322f23'], mortar:'#17170f', stone:'#93845a', stoneDark:'#554b34', moss:'#687044', accent:'#c3a65a', glow:'#f5df98' }
+    ];
+    return palettes[Math.max(0,Math.min(4,(level.worldIndex||1)-1))];
+  }
+
+  function drawVine(x, y, direction, time, palette, length = 150) {
     ctx.save();
-    ctx.globalAlpha = .22;
-    for (let i=0;i<9;i++) {
-      const drift = ((i*191 + time*.006*(i%2 ? 1 : -1)) % (width+240) + width+240) % (width+240) - 120;
-      const y = 115 + (i%4)*108;
-      const r = 28 + (i%3)*9;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.ellipse(drift,y,r*1.6,r*.55,0,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-    for (const [baseY,color,alpha,step] of [[floorY-190,c.far,.54,115],[floorY-105,c.near,.72,92]]) {
-      ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(0,baseY);
-      for (let x=0;x<=width+step;x+=step) {
-        const ridge = baseY - 48 - ((Math.floor(x/step)%3)*19);
-        ctx.quadraticCurveTo(x+step/2,ridge,x+step,baseY+10);
+    ctx.translate(x,y);
+    ctx.strokeStyle = palette.moss;
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.bezierCurveTo(direction*18, length*.18, direction*-10, length*.38, direction*22, length*.56);
+    ctx.bezierCurveTo(direction*48, length*.72, direction*5, length*.86, direction*32, length);
+    ctx.stroke();
+    for (let i=0;i<6;i++) {
+      const yy = 12 + i*(length/6);
+      const sway = Math.sin(time*.0017+i)*4;
+      for (const side of [-1,1]) {
+        const xx = direction*(i%2 ? 17 : 9) + sway;
+        ctx.save(); ctx.translate(xx,yy); ctx.rotate(side*(.45+i*.045));
+        ctx.fillStyle = i%2 ? palette.accent : palette.moss;
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(side*17,-12,side*23,1); ctx.quadraticCurveTo(side*12,13,0,0); ctx.fill();
+        ctx.strokeStyle = 'rgba(17,28,13,.55)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(side*18,1); ctx.stroke();
+        ctx.restore();
       }
-      ctx.lineTo(width,height); ctx.lineTo(0,height); ctx.closePath(); ctx.fill(); ctx.restore();
-    }
-    ctx.save(); ctx.globalAlpha=.22;
-    for(let i=0;i<66;i++){
-      const x=(i*83+23)%width, y=45+(i*67)%(floorY-95);
-      ctx.fillStyle=i%2?'#fff':'#ffe7b6'; ctx.beginPath(); ctx.arc(x,y,1.2+(i%3),0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
   }
 
+  function drawBackground(level, time) {
+    const palette = classicPalette(level);
+    const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
+    const height = level.worldHeight || ELEMENTAL_WORLD_HEIGHT;
+    const floorY = level.floorY || ELEMENTAL_FLOOR_Y;
+    const gradient = ctx.createLinearGradient(0,0,0,height);
+    gradient.addColorStop(0,palette.wall);
+    gradient.addColorStop(.72,palette.base);
+    gradient.addColorStop(1,'#10140d');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,width,height);
+
+    // Repeating hand-shaded masonry recreates the dark stone temple backdrop.
+    const brickW = 54, brickH = 27;
+    for (let row=0; row<Math.ceil(height/brickH); row++) {
+      const offset = row%2 ? -brickW/2 : 0;
+      for (let col=-1; col<Math.ceil(width/brickW)+1; col++) {
+        const x = col*brickW+offset;
+        const y = row*brickH;
+        const shade = (row*7+col*11+40)%palette.bricks.length;
+        ctx.fillStyle = palette.mortar;
+        ctx.fillRect(x,y,brickW-1,brickH-1);
+        ctx.fillStyle = palette.bricks[shade];
+        ctx.fillRect(x+1,y+1,brickW-3,brickH-3);
+        ctx.fillStyle = 'rgba(224,222,166,.055)';
+        ctx.fillRect(x+3,y+2,brickW-8,1.4);
+        ctx.fillStyle = 'rgba(0,0,0,.16)';
+        ctx.fillRect(x+2,y+brickH-4,brickW-7,2);
+        if ((row*13+col*5)%9===0) {
+          ctx.strokeStyle = 'rgba(13,20,11,.42)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(x+brickW*.62,y+5); ctx.lineTo(x+brickW*.56,y+10); ctx.lineTo(x+brickW*.68,y+16); ctx.stroke();
+        }
+        if ((row*19+col*3)%17===0) {
+          ctx.fillStyle = palette.moss;
+          ctx.globalAlpha = .55;
+          ctx.fillRect(x+8,y+brickH-5,7,2);
+          ctx.fillRect(x+17,y+brickH-4,4,1.5);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    // A barely visible temple relief gives the chamber a central landmark.
+    ctx.save();
+    ctx.globalAlpha = .085;
+    ctx.strokeStyle = palette.glow;
+    ctx.fillStyle = palette.base;
+    ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(width*.5,height*.22); ctx.lineTo(width*.59,height*.34); ctx.lineTo(width*.55,height*.53); ctx.lineTo(width*.5,height*.59); ctx.lineTo(width*.45,height*.53); ctx.lineTo(width*.41,height*.34); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(width*.5,height*.39,32,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    // World accents stay subtle so the shared classic dungeon language remains clear.
+    if (level.worldIndex === 1 || level.worldIndex === 5) {
+      drawVine(18,15,1,time,palette,155);
+      drawVine(width-20,18,-1,time,palette,170);
+      drawVine(170,0,1,time,palette,82);
+    } else if (level.worldIndex === 2) {
+      ctx.save(); ctx.globalAlpha=.2;
+      for(let i=0;i<12;i++) {
+        const x=75+(i*97)% (width-150), y=90+(i*59)%250;
+        ctx.fillStyle=palette.accent; ctx.beginPath(); ctx.moveTo(x,y-18-(i%3)*5); ctx.lineTo(x+8,y); ctx.lineTo(x,y+20); ctx.lineTo(x-7,y); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    } else if (level.worldIndex === 3) {
+      ctx.save(); ctx.globalAlpha=.2; ctx.strokeStyle=palette.accent; ctx.lineWidth=2;
+      for(let i=0;i<7;i++){const x=90+i*155;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x-7,32);ctx.lineTo(x+6,52);ctx.stroke();}
+      ctx.restore();
+    }
+
+    // Warm/cool particles and a dark vignette add depth without hiding platforms.
+    ctx.save();
+    ctx.globalAlpha=.2;
+    for(let i=0;i<34;i++) {
+      const x=(i*83+31)%width;
+      const y=40+(i*67)%(Math.max(1,floorY-70));
+      const pulse=.6+.4*Math.sin(time*.003+i);
+      ctx.fillStyle=palette.glow; ctx.globalAlpha=.08+.16*pulse;
+      ctx.beginPath();ctx.arc(x,y,1+(i%3)*.55,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+    const vignette=ctx.createRadialGradient(width*.5,height*.42,80,width*.5,height*.48,width*.72);
+    vignette.addColorStop(0,'rgba(0,0,0,0)'); vignette.addColorStop(1,'rgba(0,0,0,.48)');
+    ctx.fillStyle=vignette; ctx.fillRect(0,0,width,height);
+  }
+
   function drawFloorSegments(level) {
+    const palette = classicPalette(level);
     const segments = level.floorSegments || [{x:0,y:ELEMENTAL_FLOOR_Y,w:ELEMENTAL_WORLD_WIDTH,h:60}];
     for (const segment of segments) {
       const ground = ctx.createLinearGradient(0,segment.y,0,segment.y+segment.h);
-      ground.addColorStop(0,level.colors.ground); ground.addColorStop(1,'rgba(36,35,58,.94)');
-      ctx.fillStyle = ground; roundedRect(ctx,segment.x,segment.y,segment.w,segment.h,7); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,.24)'; roundedRect(ctx,segment.x+4,segment.y+3,segment.w-8,4,2); ctx.fill();
-      ctx.save(); ctx.globalAlpha=.18; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
-      for(let x=segment.x+18;x<segment.x+segment.w-8;x+=34){
-        ctx.beginPath(); ctx.moveTo(x,segment.y+14); ctx.lineTo(x+8,segment.y+25+(x%3)*3); ctx.stroke();
+      ground.addColorStop(0,palette.stone);
+      ground.addColorStop(.22,palette.stoneDark);
+      ground.addColorStop(1,'#211f18');
+      ctx.fillStyle=ground;
+      ctx.fillRect(segment.x,segment.y,segment.w,segment.h);
+      ctx.fillStyle=palette.moss;
+      ctx.fillRect(segment.x,segment.y,segment.w,4);
+      ctx.fillStyle='rgba(226,212,149,.28)';
+      ctx.fillRect(segment.x,segment.y+4,segment.w,2);
+      ctx.strokeStyle='rgba(20,20,13,.5)'; ctx.lineWidth=1;
+      for(let x=segment.x+28;x<segment.x+segment.w;x+=58){
+        ctx.beginPath();ctx.moveTo(x,segment.y+7);ctx.lineTo(x-4,segment.y+segment.h-2);ctx.stroke();
+      }
+      for(let y=segment.y+29;y<segment.y+segment.h;y+=28){
+        ctx.beginPath();ctx.moveTo(segment.x,y);ctx.lineTo(segment.x+segment.w,y);ctx.stroke();
+      }
+      ctx.save();ctx.globalAlpha=.3;ctx.strokeStyle='#d9ce9c';ctx.lineWidth=1.2;
+      for(let x=segment.x+12;x<segment.x+segment.w-10;x+=97){
+        ctx.beginPath();ctx.moveTo(x,segment.y+10);ctx.lineTo(x+5,segment.y+14);ctx.lineTo(x+2,segment.y+20);ctx.stroke();
       }
       ctx.restore();
     }
@@ -1289,13 +1407,33 @@ export function mountElementalDuo(root, context) {
         ctx.strokeStyle='rgba(80,167,197,.48)'; ctx.lineWidth=1.3;
         ctx.beginPath(); ctx.moveTo(p.x+p.w*.32,p.y+5); ctx.lineTo(p.x+p.w*.42,p.y+11); ctx.lineTo(p.x+p.w*.51,p.y+5); ctx.stroke();
       } else {
-        ctx.fillStyle = p.kind === 'crystal' ? 'rgba(230,250,255,.88)' : c.ground;
-        roundedRect(ctx,p.x,p.y,p.w,visualH,8); ctx.fill();
-        ctx.fillStyle = p.kind === 'crystal' ? '#fff' : 'rgba(255,255,255,.28)';
-        roundedRect(ctx,p.x+4,p.y+3,p.w-8,3,2); ctx.fill();
-        if (p.kind === 'crystal') {
-          ctx.fillStyle='rgba(105,203,220,.25)';
-          ctx.beginPath(); ctx.moveTo(p.x+16,p.y+2); ctx.lineTo(p.x+26,p.y-10); ctx.lineTo(p.x+36,p.y+2); ctx.fill();
+        const palette = classicPalette(level);
+        const stone = ctx.createLinearGradient(0,p.y,0,p.y+visualH+5);
+        stone.addColorStop(0,p.kind === 'crystal' && level.worldIndex === 2 ? '#82979a' : '#9a8d5e');
+        stone.addColorStop(.24,palette.stone);
+        stone.addColorStop(1,palette.stoneDark);
+        ctx.fillStyle=stone;
+        ctx.beginPath();
+        ctx.moveTo(p.x+2,p.y+4); ctx.lineTo(p.x+8,p.y); ctx.lineTo(p.x+p.w-9,p.y);
+        ctx.lineTo(p.x+p.w-2,p.y+4); ctx.lineTo(p.x+p.w-5,p.y+visualH-2);
+        ctx.lineTo(p.x+5,p.y+visualH-2); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle='rgba(22,23,14,.72)'; ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle=palette.moss;
+        ctx.fillRect(p.x+5,p.y+1,Math.max(0,p.w-10),2.5);
+        ctx.fillStyle='rgba(238,222,158,.58)';
+        ctx.fillRect(p.x+7,p.y+4,Math.max(0,p.w-14),1.4);
+        ctx.strokeStyle='rgba(28,27,18,.48)'; ctx.lineWidth=1;
+        for(let seam=p.x+34;seam<p.x+p.w-12;seam+=48){
+          ctx.beginPath();ctx.moveTo(seam,p.y+7);ctx.lineTo(seam-3,p.y+visualH-3);ctx.stroke();
+        }
+        for(let mark=0;mark<Math.max(1,Math.floor(p.w/72));mark++){
+          const mx=p.x+18+mark*67;
+          ctx.strokeStyle='rgba(35,32,20,.42)';
+          ctx.beginPath();ctx.moveTo(mx,p.y+8);ctx.lineTo(mx+5,p.y+11);ctx.lineTo(mx+2,p.y+14);ctx.stroke();
+        }
+        if (p.kind === 'crystal' && level.worldIndex === 2) {
+          ctx.fillStyle='rgba(142,226,239,.55)';
+          ctx.beginPath();ctx.moveTo(p.x+18,p.y+2);ctx.lineTo(p.x+26,p.y-10);ctx.lineTo(p.x+34,p.y+2);ctx.closePath();ctx.fill();
         }
       }
       if (source.motion) {
@@ -1353,12 +1491,32 @@ export function mountElementalDuo(root, context) {
         for(let i=0;i<3;i++){const bx=h.x+16+i*31+Math.sin(time*.003+i)*4;ctx.fillStyle='rgba(220,255,167,.8)';ctx.beginPath();ctx.arc(bx,h.y+11+(i%2)*4,2.5,0,Math.PI*2);ctx.fill();}
       } else {
         const fire = h.type === 'fire';
-        const base = fire ? '#dc7959' : '#3e9db8';
-        ctx.fillStyle = base; roundedRect(ctx,h.x,h.y,h.w,h.h,7); ctx.fill();
-        ctx.strokeStyle = fire ? '#ffd08f' : '#c6f7ff'; ctx.lineWidth=3;
+        const liquid = ctx.createLinearGradient(0,h.y,0,h.y+h.h);
+        if (fire) {
+          liquid.addColorStop(0,'#ffd16b'); liquid.addColorStop(.28,'#ef7440'); liquid.addColorStop(1,'#8d3027');
+          ctx.shadowColor='#f36b35'; ctx.shadowBlur=13;
+        } else {
+          liquid.addColorStop(0,'#9de4ee'); liquid.addColorStop(.3,'#397f9b'); liquid.addColorStop(1,'#1c3d5a');
+          ctx.shadowColor='#68cde3'; ctx.shadowBlur=8;
+        }
+        ctx.fillStyle=liquid; roundedRect(ctx,h.x,h.y,h.w,h.h,5); ctx.fill(); ctx.shadowBlur=0;
+        ctx.strokeStyle=fire ? '#ffe6a0' : '#c8f8ff'; ctx.lineWidth=3;
         ctx.beginPath();
-        for(let x=0;x<=h.w;x+=5){const y=h.y+6+Math.sin((x+time*.09)/12)*3; if(x===0)ctx.moveTo(h.x+x,y);else ctx.lineTo(h.x+x,y);}
+        for(let x=0;x<=h.w;x+=4){const y=h.y+5+Math.sin((x+time*(fire?.085:.055))/12)*3; if(x===0)ctx.moveTo(h.x+x,y);else ctx.lineTo(h.x+x,y);}
         ctx.stroke();
+        if (fire) {
+          ctx.fillStyle='rgba(255,237,157,.78)';
+          for(let i=0;i<Math.max(1,Math.floor(h.w/34));i++){
+            const bx=h.x+14+((i*29+time*.018)%Math.max(12,h.w-24));
+            ctx.beginPath();ctx.arc(bx,h.y+12+Math.sin(time*.004+i)*3,2,0,Math.PI*2);ctx.fill();
+          }
+        } else {
+          ctx.fillStyle='rgba(219,249,255,.55)';
+          for(let i=0;i<Math.max(1,Math.floor(h.w/42));i++){
+            const bx=h.x+15+i*39+Math.sin(time*.002+i)*4;
+            ctx.beginPath();ctx.arc(bx,h.y+16+(i%2)*5,1.5,0,Math.PI*2);ctx.fill();
+          }
+        }
       }
       ctx.restore();
     }
@@ -1431,12 +1589,19 @@ export function mountElementalDuo(root, context) {
     for (const gem of level.gems) {
       if (gems[gem.element]) continue;
       const fire = gem.element === 'fire';
-      const color = fire ? '#ffb05f' : '#8ce9f3';
-      const pulse = 1 + Math.sin(time*.006+(fire?0:1))*0.12;
-      ctx.save();ctx.translate(gem.x,gem.y);ctx.scale(pulse,pulse);
-      ctx.shadowColor=color;ctx.shadowBlur=20;ctx.fillStyle=color;
-      ctx.beginPath();ctx.moveTo(0,-13);ctx.lineTo(10,0);ctx.lineTo(0,13);ctx.lineTo(-10,0);ctx.closePath();ctx.fill();
-      ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,.78)';ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(4,0);ctx.lineTo(0,7);ctx.lineTo(-3,0);ctx.fill();ctx.restore();
+      const color = fire ? '#ed3c32' : '#20bce7';
+      const highlight = fire ? '#ffbd8e' : '#d5fbff';
+      const pulse = 1 + Math.sin(time*.006+(fire?0:1))*.09;
+      ctx.save(); ctx.translate(gem.x,gem.y); ctx.scale(pulse,pulse);
+      ctx.shadowColor=color;ctx.shadowBlur=15;
+      ctx.fillStyle=color;
+      ctx.beginPath();ctx.moveTo(0,-13);ctx.lineTo(11,-3);ctx.lineTo(8,9);ctx.lineTo(0,14);ctx.lineTo(-8,9);ctx.lineTo(-11,-3);ctx.closePath();ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle='rgba(18,28,25,.72)';ctx.lineWidth=1.4;ctx.stroke();
+      ctx.fillStyle=highlight;
+      ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,-3);ctx.lineTo(0,1);ctx.lineTo(-7,-3);ctx.closePath();ctx.fill();
+      ctx.fillStyle=fire?'rgba(255,235,195,.62)':'rgba(255,255,255,.72)';
+      ctx.beginPath();ctx.moveTo(-7,-2);ctx.lineTo(0,2);ctx.lineTo(0,11);ctx.lineTo(-6,7);ctx.closePath();ctx.fill();
+      ctx.restore();
     }
   }
 
@@ -1445,35 +1610,39 @@ export function mountElementalDuo(root, context) {
     if (level.gate && !open) {
       const gate = level.gate;
       ctx.save();
-      ctx.shadowColor='rgba(88,69,111,.32)'; ctx.shadowBlur=12;
-      const g = ctx.createLinearGradient(gate.x,0,gate.x+gate.w,0);
-      g.addColorStop(0,'#6e617f'); g.addColorStop(.5,'#d9c9e8'); g.addColorStop(1,'#6e617f');
-      ctx.fillStyle=g; roundedRect(ctx,gate.x,gate.y,gate.w,gate.h,8); ctx.fill();
-      ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=3;
-      if (gate.w >= gate.h) {
-        for(let x=gate.x+12;x<gate.x+gate.w-8;x+=25){ctx.beginPath();ctx.moveTo(x,gate.y+3);ctx.lineTo(x,gate.y+gate.h-3);ctx.stroke();}
-        ctx.fillStyle='#fff4c8'; ctx.font='bold 17px system-ui'; ctx.textAlign='center'; ctx.fillText('✦',gate.x+gate.w/2,gate.y-12);
-      } else {
-        for(let y=gate.y+12;y<gate.y+gate.h-8;y+=25){ctx.beginPath();ctx.moveTo(gate.x+3,y);ctx.lineTo(gate.x+gate.w-3,y);ctx.stroke();}
-        ctx.fillStyle='#fff4c8'; ctx.font='bold 17px system-ui'; ctx.textAlign='center'; ctx.fillText('✦',gate.x+gate.w/2,gate.y-12);
-      }
+      const gateGradient=ctx.createLinearGradient(gate.x,0,gate.x+gate.w,0);
+      gateGradient.addColorStop(0,'#524b38');gateGradient.addColorStop(.5,'#c2b17a');gateGradient.addColorStop(1,'#524b38');
+      ctx.fillStyle=gateGradient;ctx.fillRect(gate.x,gate.y,gate.w,gate.h);
+      ctx.strokeStyle='rgba(20,20,13,.85)';ctx.lineWidth=3;ctx.strokeRect(gate.x,gate.y,gate.w,gate.h);
+      for(let y=gate.y+10;y<gate.y+gate.h-5;y+=23){ctx.strokeStyle='rgba(27,29,18,.75)';ctx.beginPath();ctx.moveTo(gate.x+3,y);ctx.lineTo(gate.x+gate.w-3,y);ctx.stroke();}
       ctx.restore();
     }
     const doors = level.doors || { fire:level.exit, water:level.exit };
     for (const element of ['fire','water']) {
-      const door = doors[element];
-      const fire = element === 'fire';
-      const color = fire ? '#ff9b5d' : '#58cde2';
-      const player = data.players?.[fire?'host':'guest'];
-      ctx.save(); ctx.translate(door.x+door.w/2,door.y+door.h/2);
-      ctx.shadowColor=open?color:'rgba(45,49,74,.18)'; ctx.shadowBlur=open?24:4;
-      ctx.fillStyle=open?(fire?'rgba(255,187,125,.32)':'rgba(116,228,240,.32)'):'rgba(48,44,71,.22)';
-      roundedRect(ctx,-door.w/2,-door.h/2,door.w,door.h,15); ctx.fill();
-      ctx.shadowBlur=0; ctx.strokeStyle=open?color:'rgba(255,255,255,.55)'; ctx.lineWidth=4;
-      ctx.beginPath(); ctx.moveTo(-door.w/2+3,door.h/2); ctx.lineTo(-door.w/2+3,0); ctx.arc(0,0,door.w/2-3,Math.PI,0); ctx.lineTo(door.w/2-3,door.h/2); ctx.stroke();
-      ctx.fillStyle=open?color:'rgba(255,255,255,.65)'; ctx.font='bold 19px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(fire?'✦':'✧',0,3);
-      ctx.fillStyle='#fff'; ctx.font='800 9px system-ui'; ctx.fillText(fire?'BARA':'AIR',0,door.h/2+13);
-      if (player?.complete) { ctx.fillStyle='#fff4b3'; ctx.font='bold 15px system-ui'; ctx.fillText('✓',0,-door.h/2-10); }
+      const door=doors[element];
+      const fire=element==='fire';
+      const color=fire?'#e84736':'#22b9e0';
+      const player=data.players?.[fire?'host':'guest'];
+      ctx.save();
+      // Square stone portals with a dark inset and a colored elemental seal.
+      const frame=ctx.createLinearGradient(door.x,door.y,door.x+door.w,door.y+door.h);
+      frame.addColorStop(0,'#c0ad72');frame.addColorStop(.38,'#716444');frame.addColorStop(1,'#403d2b');
+      ctx.shadowColor=open?color:'rgba(0,0,0,.5)';ctx.shadowBlur=open?15:5;
+      ctx.fillStyle=frame;ctx.fillRect(door.x-4,door.y-3,door.w+8,door.h+5);
+      ctx.shadowBlur=0;
+      ctx.strokeStyle='#201f16';ctx.lineWidth=3;ctx.strokeRect(door.x-4,door.y-3,door.w+8,door.h+5);
+      ctx.fillStyle=open?'rgba(12,26,25,.94)':'rgba(12,15,12,.88)';
+      ctx.fillRect(door.x+3,door.y+4,door.w-6,door.h-4);
+      ctx.fillStyle='rgba(225,205,137,.2)';ctx.fillRect(door.x+6,door.y+8,2,door.h-14);
+      ctx.strokeStyle=open?color:'rgba(190,171,111,.55)';ctx.lineWidth=2;
+      ctx.strokeRect(door.x+6,door.y+7,door.w-12,door.h-10);
+      ctx.fillStyle=open?color:'rgba(207,190,131,.68)';
+      ctx.font='bold 23px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(fire?'♂':'♀',door.x+door.w/2,door.y+door.h*.48);
+      ctx.fillStyle=color;ctx.fillRect(door.x+door.w*.25,door.y+door.h-8,door.w*.5,3);
+      ctx.fillStyle='#f3e8c4';ctx.font='bold 8px system-ui';ctx.textBaseline='top';
+      ctx.fillText(fire?'BARA':'NIRA',door.x+door.w/2,door.y+door.h+5);
+      if(player?.complete){ctx.fillStyle='#fff3a8';ctx.font='bold 15px system-ui';ctx.fillText('✓',door.x+door.w/2,door.y-11);}
       ctx.restore();
     }
   }
@@ -1486,25 +1655,42 @@ export function mountElementalDuo(root, context) {
 
   function drawSpirit(player, element, isRemote = false, time = 0) {
     if (!player) return;
-    const fire = element === 'fire';
-    const x = player.x, y = player.y + Math.sin(time*.008+(fire?0:1))*1.8;
-    ctx.save();ctx.translate(x,y);ctx.scale(player.dir || 1,1);
-    ctx.globalAlpha = isRemote ? .92 : 1;
-    ctx.shadowColor = fire ? '#ff9860' : '#5bd1e5';ctx.shadowBlur=14;
-    if (fire) {
-      const grad=ctx.createLinearGradient(0,-22,0,20);grad.addColorStop(0,'#fff1af');grad.addColorStop(.48,'#ffae67');grad.addColorStop(1,'#f16c57');
-      ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(-14,8);ctx.quadraticCurveTo(-19,-5,-8,-16);ctx.quadraticCurveTo(-7,-28,1,-34);ctx.quadraticCurveTo(3,-23,10,-19);ctx.quadraticCurveTo(20,-8,13,8);ctx.quadraticCurveTo(10,19,0,19);ctx.quadraticCurveTo(-12,19,-14,8);ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.45)';ctx.beginPath();ctx.moveTo(-3,-2);ctx.quadraticCurveTo(-4,-12,3,-19);ctx.quadraticCurveTo(3,-7,8,-2);ctx.quadraticCurveTo(7,8,0,10);ctx.quadraticCurveTo(-6,8,-3,-2);ctx.fill();
-    } else {
-      const grad=ctx.createLinearGradient(-10,-22,10,22);grad.addColorStop(0,'#e8ffff');grad.addColorStop(.45,'#8de5ef');grad.addColorStop(1,'#3aa9ca');
-      ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(0,-31);ctx.quadraticCurveTo(7,-17,16,-4);ctx.quadraticCurveTo(21,11,8,19);ctx.quadraticCurveTo(-1,24,-11,16);ctx.quadraticCurveTo(-21,6,-12,-7);ctx.quadraticCurveTo(-5,-18,0,-31);ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.56)';ctx.beginPath();ctx.ellipse(-5,-3,3,8,-.4,0,Math.PI*2);ctx.fill();
-    }
+    const fire=element==='fire';
+    const bob=Math.sin(time*.009+(fire?0:1))*1.1;
+    const stride=player.grounded?Math.sin(time*.018+(fire?0:Math.PI))*2.2:0;
+    const x=player.x, y=player.y+bob;
+    const primary=fire?'#ed3e32':'#16b8e4';
+    const shade=fire?'#9e211e':'#126c9b';
+    const light=fire?'#ffad70':'#a8f4ff';
+    ctx.save();ctx.translate(x,y);ctx.scale(player.dir||1,1);
+    ctx.globalAlpha=isRemote?.94:1;
+    ctx.shadowColor=primary;ctx.shadowBlur=9;
+    // Feet and short legs animate independently for a readable platformer gait.
+    ctx.fillStyle=shade;
+    roundedRect(ctx,-8+stride,-1,6,8,2);ctx.fill();
+    roundedRect(ctx,3-stride,-1,6,8,2);ctx.fill();
+    ctx.fillStyle=primary;
+    roundedRect(ctx,-12,-20,24,23,8);ctx.fill();
     ctx.shadowBlur=0;
-    ctx.fillStyle='#55465a';ctx.beginPath();ctx.ellipse(-5,1,2,3.4,0,0,Math.PI*2);ctx.ellipse(5,1,2,3.4,0,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='rgba(87,55,75,.65)';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(0,6,3,0.15,Math.PI-.15);ctx.stroke();
-    ctx.fillStyle=fire?'#ffd6ae':'#d4fbff';ctx.globalAlpha=.75;ctx.beginPath();ctx.arc(-12,-17,3,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-    if (player.complete) { ctx.fillStyle='#fff4b3';ctx.font='bold 18px system-ui';ctx.textAlign='center';ctx.fillText('✓',0,-43); }
+    // Arms, then the signature flame crest / water crown.
+    ctx.strokeStyle=shade;ctx.lineWidth=4;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-10,-15);ctx.lineTo(-15,-8+stride);ctx.moveTo(10,-15);ctx.lineTo(15,-9-stride);ctx.stroke();
+    ctx.fillStyle=fire?'#ff6340':'#38d2f0';
+    ctx.beginPath();
+    if(fire){
+      ctx.moveTo(-12,-17);ctx.lineTo(-15,-27);ctx.lineTo(-7,-24);ctx.lineTo(-2,-36);ctx.lineTo(3,-25);ctx.lineTo(10,-32);ctx.lineTo(11,-22);ctx.lineTo(14,-17);ctx.closePath();
+    }else{
+      ctx.moveTo(-12,-18);ctx.quadraticCurveTo(-18,-30,-7,-31);ctx.quadraticCurveTo(-4,-40,4,-31);ctx.quadraticCurveTo(17,-31,13,-18);ctx.quadraticCurveTo(4,-23,-12,-18);ctx.closePath();
+    }
+    ctx.fill();
+    ctx.strokeStyle='rgba(30,25,20,.62)';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=light;ctx.globalAlpha=.68;ctx.beginPath();ctx.ellipse(-6,-25,3,5,-.4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=isRemote?.94:1;
+    // Bright face, dark pupils and a small smile keep the characters legible at phone scale.
+    ctx.fillStyle='#fff1d5';ctx.beginPath();ctx.ellipse(-4,-14,2.4,3.2,0,0,Math.PI*2);ctx.ellipse(5,-14,2.4,3.2,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#29231d';ctx.beginPath();ctx.arc(-3,-14,1.15,0,Math.PI*2);ctx.arc(6,-14,1.15,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(50,26,21,.85)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(1,-8,3.2,.12,Math.PI-.1);ctx.stroke();
+    ctx.fillStyle=fire?'#ffd27f':'#ddfbff';ctx.beginPath();ctx.arc(-10,-22,2,0,Math.PI*2);ctx.fill();
+    if(player.complete){ctx.fillStyle='#fff0a4';ctx.font='bold 17px system-ui';ctx.textAlign='center';ctx.fillText('✓',0,-41);}
     ctx.restore();
   }
 
@@ -1681,14 +1867,14 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (!data.meta) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 1)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {
       remoteTarget = { x:other.x, y:other.y, dir:other.dir || (otherRole==='guest'?-1:1), complete:Boolean(other.complete) };
       if (!lastFrame) remoteRender = { ...remoteTarget };
     } else {
-      const safePartnerSpawn = createElementalPlayer(otherRole);
+      const safePartnerSpawn = createElementalPlayer(otherRole, null, 1, true);
       remoteTarget = { x:safePartnerSpawn.x, y:safePartnerSpawn.y, dir:safePartnerSpawn.dir, complete:false };
       if (!lastFrame) remoteRender = { ...remoteTarget };
     }

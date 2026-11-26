@@ -1,10 +1,10 @@
-## v0.38.0 — batasan yang masih perlu diuji
+## v0.39.0 — batasan prototype yang masih perlu diuji
 - 10 pola ruang terstruktur digunakan pada 50 level dengan variasi mekanik per dunia; pengujian rasa tiap level tetap perlu playtest manusia.
 - Sistem kotak dorong dan tombol yang harus ditahan seperti pada beberapa puzzle Fireboy and Watergirl belum diimplementasikan pada revisi ini; interaksi yang ada adalah pijakan, katup, dan tuas.
 - Tinggi lompatan teoretis sekitar 30,2 unit dengan tier 24 unit; rasa lompatan pada skala fisik HP tetap perlu dinilai langsung.
 - Analog memang hanya gerak horizontal; tombol LOMPAT digunakan terpisah.
 - Mode landscape dipertahankan, tetapi kompatibilitas fullscreen dan area aman tergantung browser/OS.
-- `ELEMENTAL_MAP_VERSION=14` memindahkan posisi pemain pada level aktif ke spawn saat migrasi, tetapi mempertahankan progres level, serpihan, dan statistik jatuh.
+- `ELEMENTAL_MAP_VERSION=15` memindahkan posisi pemain pada level aktif ke spawn saat migrasi, tetapi mempertahankan progres level, serpihan, dan statistik jatuh.
 - Firebase Rules tidak berubah. Pengujian dua perangkat dengan Firebase aktif tetap diperlukan.
 
 ---
@@ -86,3 +86,6 @@
 - Kontrol katup dan tuas menggunakan tombol INTERAKSI/E/Enter ketika karakter berada dekat objek. Ketepatan jangkauan dan kenyamanan sentuh perlu diuji pada perangkat fisik.
 - Tes unit dan pemeriksaan sintaks tidak membuktikan frame rate, respons kamera, orientasi fullscreen, atau collision terasa benar di semua browser/perangkat.
 - Fase hazard/platform/arus/angin memakai jam level bersama Firebase; bila inisialisasi koneksi/time offset gagal, permainan menunggu kesiapan jam bersama sebelum menjalankan simulasi lokal.
+
+- Prototype hanya membuka lima level, satu per tema. Visual Canvas prosedural sudah diperbarui, tetapi belum diverifikasi melalui tangkapan layar/browser dan playtest dua HP; kesamaan visual dengan referensi masih membutuhkan inspeksi manusia.
+- Gerakan kotak dorong dan tombol tahan dari game referensi belum diimplementasikan pada lima prototype ini.
