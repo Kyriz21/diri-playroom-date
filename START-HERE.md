@@ -1,24 +1,22 @@
-# Mulai di sini — Diri. Playroom Date v0.42.2
+# Mulai di sini — Diri. Playroom Date v0.43.0
 
 ## Yang berubah pada Elemental Duo
-- Lima prototype mengikuti komposisi puzzle side-view klasik: dua spawn di sisi bawah, saluran air/lava di kedua sisi, galeri utama di tengah, dua pintu elemen, dan cabang atas untuk permata.
-- Setiap sisi memiliki satu hazard yang aman bagi karakternya dan satu hazard elemen lawan yang harus dihindari. Rute dibuat tiga tahap: entry gallery → inner step → shared door gallery.
-- Dinding penghalang ditempatkan manual pada titik lintasan; kusen otomatis yang membuat arena tampak seperti rak berulang sudah dihapus.
-- Level 2–5 memperkenalkan lift/es/uap, hazard berdenyut, tuas angin, dan katup.
-- Fisika lompatan dipertahankan dari build sebelumnya. Analog tetap hanya menggerakkan kiri/kanan.
-- 45 blueprint level lanjutan tetap tersimpan untuk ekspansi.
+- Kampanye penuh **50 level aktif** dan dimainkan berurutan dari 01 hingga 50; tidak lagi berhenti di lima prototype.
+- Lima dunia masing-masing berisi 10 level: Hutan Berbisik (01–10), Kedalaman Kristal (11–20), Kerajaan Bara (21–30), Reruntuhan Langit (31–40), dan Jantung Kuno (41–50).
+- Setiap level memiliki dua permata bonus opsional: merah untuk Bara dan biru untuk Nira. Permata tidak membuka gerbang atau pintu.
+- Penilaian per level: 3 bintang untuk dua permata dan tanpa jatuh; 2 bintang jika maksimal dua kali jatuh gabungan; 1 bintang jika lebih dari dua kali jatuh. Maksimum kampanye 150 bintang dan 100 permata.
+- HUD menampilkan hitungan `BONUS 0/2`, sedangkan petunjuk lobby menjelaskan fungsi permata dan cara memperoleh bintang.
+- Progress berpindah otomatis ke level berikutnya sampai level 50. Hasil akhir menghitung semua bintang dan permata dari 50 level.
+- Fisika lompatan dipertahankan; analog tetap hanya menggerakkan kiri/kanan.
+- Sesi prototype lama dimigrasikan ke level 01 kampanye baru.
+- Verifikasi: `npm test` 201/201 lulus; seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid. `ELEMENTAL_MAP_VERSION=27`, `campaignVersion=1`; state puzzle lama dibersihkan dan status ready direset.
 
-- Level 2: lift sisi tidak lagi melintasi jalur vertikal wajib.
-- Level 3: jendela aman lava lebih panjang; semburan uap aktif lebih singkat.
-- Level 5: katup ditempatkan pada platform masuk yang stabil dan dapat dijangkau dari spawn masing-masing.
-- Verifikasi otomatis: 199/199 tes lulus.
-
-## Memasang v0.42.2
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.42.2_Challenge_Accessibility_Repair.zip`.
+## Memasang v0.43.0
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.43.0_Full_50_Level_Campaign.zip`.
 2. Backup repository GitHub Pages, lalu unggah seluruh isi proyek ke root repository dan timpa file lama.
 3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
-4. Buat sesi Elemental Duo baru untuk playtest. Sesi lama dimigrasikan ke prototype level 01 oleh `prototypeVersion=11`; state puzzle per-level dibersihkan.
-5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=26`. Firebase Rules tidak perlu dipublikasikan ulang karena file Rules tidak berubah.
+4. Buat sesi Elemental Duo baru untuk playtest. Sesi lama otomatis dimigrasikan ke awal kampanye 50 level; state puzzle per-level dibersihkan.
+5. Posisi pemain kembali ke spawn karena `ELEMENTAL_MAP_VERSION=27`. Firebase Rules tidak perlu dipublikasikan ulang karena file Rules tidak berubah.
 
 ---
 
@@ -73,4 +71,4 @@ Blueprint tema, hazard, sakelar, katup, tuas angin, dan urutan puzzle dari lima 
 - Fisika lebih toleran dengan jump buffer dan coyote time; kurva kesulitan 50 level diturunkan.
 
 
-Build v0.42.2 memperbaiki akses lift Level 2 dan posisi katup Level 5. Gunakan room baru setelah deploy karena state map dimigrasikan.
+Catatan historis v0.42.2: build tersebut memperbaiki akses lift Level 2 dan posisi katup Level 5. Build terbaru v0.43.0 memakai migrasi kampanye penuh.

@@ -1292,3 +1292,12 @@ body.ed-game-active #app.page-content {
 .ed-game-panel .ed-move-controls[hidden] { display:none !important; }
 .ed-game-panel .ed-analog-pad[hidden] { display:none !important; }
 .ed-game-panel .ed-interact-control[hidden] { display:none !important; }
+
+/* v0.43.0 — explain that elemental gems are optional score collectibles. */
+.ed-gem-explainer{display:flex;align-items:flex-start;gap:10px;width:min(100%,700px);margin:-7px auto 17px;padding:11px 14px;border:1px solid #eadff2;border-radius:13px;background:linear-gradient(110deg,#fffaff,#f7f2fc);text-align:left}
+.ed-gem-explainer>span{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:9px;background:#f0e7fb;color:#9f7bbd;font-size:19px}
+.ed-gem-explainer p{margin:0;color:#8f8196;font-size:10px;line-height:1.55}
+.ed-gem-explainer strong{color:#65516f;font-weight:900}
+.ed-hud-center strong[data-ed-shards]{cursor:help}
+@media(max-width:640px){.ed-gem-explainer{gap:7px;margin:-5px auto 13px;padding:9px 10px}.ed-gem-explainer>span{flex-basis:24px;width:24px;height:24px;font-size:16px}.ed-gem-explainer p{font-size:9px;line-height:1.5}}
+.ed-finish-panel .ed-finish-final-line{margin:12px auto 0!important;color:#8e75a4;font-size:10px;font-weight:850;letter-spacing:.02em}

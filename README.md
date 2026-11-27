@@ -1,18 +1,18 @@
-# Diri. Playroom Date v0.42.2 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.43.0 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.42.2 — Fireboy & Watergirl Classic-style Co-op
-- Perbaikan akses tantangan: dua lift Level 2 dipindahkan ke sisi jalur agar tidak menghalangi lompatan wajib menuju galeri. Amplitudo lift dikurangi agar tetap terpisah dari pijakan atas.
-- Katup wajib Level 5 kini berada tepat di atas pijakan masuk dan dapat diaktifkan tanpa harus melompat ke area hazard.
-- Durasi aktif lava berdenyut Level 3 dikurangi menjadi 2,6 detik dari siklus 6,4 detik; jendela aman menjadi lebih panjang.
-- Map version 26 dan prototype version 11; 199/199 tes otomatis lulus.
+## Pembaruan terbaru v0.43.0 — Full 50-Level Campaign & Gem Scoring
+- Elemental Duo kini menjalankan kampanye penuh **50 level berurutan** dalam lima dunia, masing-masing 10 level. Progress tidak lagi berhenti setelah lima prototype.
+- Urutan dunia: Hutan Berbisik (01–10), Kedalaman Kristal (11–20), Kerajaan Bara (21–30), Reruntuhan Langit (31–40), dan Jantung Kuno (41–50).
+- Permata bersifat opsional dan bukan kunci pintu: Bara mengumpulkan permata merah, Nira permata biru. Dua permata + tanpa jatuh memberi 3 bintang; maksimal dua jatuh memberi 2 bintang; lebih dari dua jatuh memberi 1 bintang.
+- Maksimum kampanye: 150 bintang dan 100 permata. HUD menandai permata sebagai bonus; lobby menjelaskan fungsi serta aturan penilaiannya.
+- Sesi prototype lama dimigrasikan ke awal kampanye 50 level, state puzzle per-level dibersihkan, dan pemain kembali ke spawn. `ELEMENTAL_MAP_VERSION=27`, `campaignVersion=1`; Firebase Rules tidak berubah.
 
-- Lima level Elemental Duo dirancang manual mengikuti pola puzzle side-view klasik: dua spawn bawah, empat kolam elemen di jalur bawah, galeri utama, dua pintu tengah, cabang permata atas, dan gerbang kerja sama.
-- Jalur Bara dan Nira masing-masing memuat hazard yang aman sesuai elemennya dan hazard elemen lawan yang perlu dihindari.
-- Setiap level memiliki 11–12 pijakan/ledge dengan rute entry → inner step → galeri pintu. Level 2–5 menambahkan lift/es/uap, lava berdenyut, angin, dan katup.
+- Lima layout handcrafted menjadi level pembuka pada setiap dunia (01, 11, 21, 31, 41); 45 level lainnya memakai blueprint eksplorasi masing-masing dengan nama, mekanik, dan tingkat kesulitan yang ditetapkan di data kampanye.
+- Semua level menyediakan jalur Bara/Nira, hazard elemen, switch kerja sama, pintu, checkpoint, dan dua permata bonus sesuai blueprint.
 - Lompatan tetap pada `560 / 1500` (puncak sekitar 104,5 unit); analog tetap hanya untuk gerakan horizontal.
-- `ELEMENTAL_MAP_VERSION=26`, `prototypeVersion=11`; Firebase Rules tidak berubah. 199/199 tes otomatis lulus; playtest browser dan dua HP masih diperlukan.
+- Verifikasi: `npm test` 201/201 lulus; seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid. Playtest browser dan dua HP masih diperlukan.
 
-## Pembaruan terbaru v0.40.0 — Classic Co-op Level Rebuild
+## Riwayat pembaruan v0.40.0 — Classic Co-op Level Rebuild
 
 - Arena prototype diubah lebih jauh dari susunan platform ala game side-scroller biasa menjadi **labirin dungeon tampak samping**: kamar yang lebih pendek, koridor bergantian kiri/kanan, pintu penghubung, pilar pemisah, dan jalur yang berbelok.
 - Lantai dasar kini menyatu secara visual dengan lantai dungeon; platform jangkar spawn/checkpoint tidak lagi digambar sebagai rak terpisah. Tiang penyangga di bawah platform dihilangkan.
@@ -42,7 +42,7 @@ Lihat `ELEMENTAL-DUO.md`, `ELEMENTAL-EXPLORATION-MAPS.md`, `BUILD-VERIFICATION.m
 - **Foto Sendiri:** langsung masuk editor Photobooth tanpa room, login, atau Firebase. Foto dan galeri disimpan lokal pada perangkat.
 - **Buat Sesi Berdua:** membuat kode enam karakter. Pembuat membagikan kode kepada pasangan.
 - **Gabung Sesi:** pasangan memasukkan kode. Setelah berhasil bergabung, sesi Photobooth bersama dibuka otomatis—tanpa memilih game atau menekan tombol Ready di lobi.
-- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (platform-puzzle kooperatif 5 level prototype lintas tema dengan Bara dan Nira; 45 blueprint lanjutan tersimpan). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
+- **Mini-games aktif:** Gambar Bareng (menggambar secara live), Tebak Pasangan (menjawab/menebak secara bergantian), Bomb Storm (menghindari bom dan mengumpulkan hati), Balloon Pop (mengetuk balon dan menghindari bom), serta Elemental Duo (kampanye puzzle kooperatif 50 level dalam lima dunia bersama Bara dan Nira). Modul game lama lainnya tetap menjadi referensi source dan belum diaktifkan sebagai permainan yang siap dipakai.
 
 ## Memanfaatkan progres build sebelumnya
 

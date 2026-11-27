@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ELEMENTAL_LEVELS, ELEMENTAL_PROTOTYPE_LEVELS, ELEMENTAL_PROTOTYPE_LEVEL_COUNT, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED, getElementalLevel,
+  ELEMENTAL_LEVELS, ELEMENTAL_LEVEL_COUNT, ELEMENTAL_PROTOTYPE_LEVELS, ELEMENTAL_PROTOTYPE_LEVEL_COUNT, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED, getElementalLevel,
   createElementalPlayer, clampElementalPlayer, rectsOverlap, getElementalStars,
   getElementalViewport, getElementalCameraTarget, getElementalPrototypeLevel,
   getElementalPlatformState, getElementalHazardState, getElementalDifficultyLabel,
@@ -15,6 +15,19 @@ test('Elemental Duo memiliki tepat 50 level unik dalam lima dunia', () => {
   assert.deepEqual(ELEMENTAL_WORLDS.map(world => [world.firstLevel, world.lastLevel]), [[1,10],[11,20],[21,30],[31,40],[41,50]]);
   assert.equal(getElementalLevel(0).id, 1);
   assert.equal(getElementalLevel(51).id, 50);
+});
+
+test('Kesulitan 50 level meningkat bertahap di setiap dunia', () => {
+  for (const world of ELEMENTAL_WORLDS) {
+    const levels = ELEMENTAL_LEVELS.slice(world.firstLevel - 1, world.lastLevel);
+    assert.equal(levels.length, 10, `${world.name} has ten levels`);
+    for (let index = 1; index < levels.length; index++) {
+      assert.ok(levels[index].difficulty >= levels[index - 1].difficulty,
+        `${world.name} level ${levels[index].id} must not be easier by difficulty rating than the previous level`);
+    }
+    assert.ok(new Set(levels.map(level => level.mechanic)).size >= 8,
+      `${world.name} introduces varied level mechanics`);
+  }
 });
 
 test('Prototype lima level memakai layout manual dua jalur ala puzzle klasik', () => {
@@ -111,16 +124,23 @@ test('Perbaikan tantangan prototype menjaga jalur utama bebas dari lift dan kont
   }
 });
 
-test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertahankan mesin untuk ekspansi', () => {
+test('Elemental Duo menjalankan kampanye penuh 50 level secara berurutan', () => {
   const game = readSource('../js/games/elemental-duo.js');
-  assert.match(game,/ELEMENTAL_PROTOTYPE_LEVEL_COUNT/);
-  assert.match(game,/getElementalPrototypeLevel/);
-  assert.match(game,/if \(level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT\)/);
-  assert.match(game,/<small>\/ 05<\/small>/);
-  assert.match(game,/prototypeVersion:11/);
-  assert.match(game,/Number\(data\.meta\.prototypeVersion\) !== 11/);
-  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 11\)/);
-  assert.match(game,/await update\(baseRef, \{ levels:null \}\)/);
+  assert.equal(ELEMENTAL_LEVEL_COUNT,50);
+  assert.match(game,/ELEMENTAL_LEVEL_COUNT/);
+  assert.match(game,/getElementalLevel/);
+  assert.match(game,/if \(level >= ELEMENTAL_LEVEL_COUNT\)/);
+  assert.match(game,/<small>\/ 50<\/small>/);
+  assert.match(game,/campaignVersion:1/);
+  assert.match(game,/Number\(data\.meta\.campaignVersion\) !== 1/);
+  assert.match(game,/const migrationPatch = \{ levels:null \}/);
+  assert.match(game,/ready:false, complete:false, levelDeaths:0/);
+  assert.doesNotMatch(game,/getElementalPrototypeLevel/);
+  assert.doesNotMatch(game,/ELEMENTAL_PROTOTYPE_LEVEL_COUNT/);
+  assert.match(game,/setText\('\[data-ed-finish-stars\]', `\$\{totalStars\} \/ 150`\)/);
+  assert.match(game,/setText\('\[data-ed-finish-shards\]', `\$\{totalShards\} \/ 100`\)/);
+  assert.match(game,/data-ed-finish-final-line/);
+  assert.match(game,/previousResult\.stars/,'the completed level score is shown before advancing');
   assert.match(game,/drawVine\(/);
   assert.match(game,/const brickW = 54, brickH = 27/);
   assert.match(game,/function drawRuinWalls\(/);
@@ -129,6 +149,25 @@ test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertah
   assert.doesNotMatch(game,/drawAncientDecor/);
   assert.match(game,/function drawSpirit\(/);
   assert.match(game,/function drawExit\(/);
+});
+
+test('Permata adalah bonus skor opsional, bukan syarat membuka pintu', () => {
+  for (const level of ELEMENTAL_LEVELS) {
+    assert.deepEqual(level.gems.map(gem=>gem.element).sort(),['fire','water'],`level ${level.id} has one gem per element`);
+  }
+  assert.equal(getElementalStars({deaths:0,shards:2}),3,'both gems and no falls award three stars');
+  assert.equal(getElementalStars({deaths:0,shards:1}),2,'one gem does not block completion');
+  assert.equal(getElementalStars({deaths:2,shards:0}),2,'gems are optional and two falls still allow two stars');
+  assert.equal(getElementalStars({deaths:3,shards:2}),1,'more than two falls award one star');
+  const game = readSource('../js/games/elemental-duo.js');
+  assert.match(game,/item\.element === CHARACTER\[role\]\.element/);
+  assert.match(game,/data\.levels\[String\(currentLevel\)\]\.gems\[gem\.element\] = true/,'committed gems are reflected locally before finish scoring');
+  assert.match(game,/Permata adalah bonus penilaian, bukan kunci pintu/);
+  assert.match(game,/maksimal dua jatuh gabungan/);
+  assert.match(game,/Permata bonus \$\{claimed\} dari 2/);
+  const gateFunction = game.match(/function gateIsOpen\(\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  assert.ok(gateFunction.includes("switchIsOn('fire')") && gateFunction.includes("switchIsOn('water')"));
+  assert.doesNotMatch(gateFunction,/gems|shards/,'the gate does not require collectibles');
 });
 
 test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan arena valid', () => {
@@ -363,7 +402,7 @@ test('Tantangan lima prototype dapat dilalui dengan collision satu arah, tanpa d
   }
 });
 
-test('Lima level aktif memakai layout handcrafted; 45 level lain tetap memakai generator ekspansi', () => {
+test('Kampanye 50 level memakai lima layout pembuka handcrafted dan blueprint ekspansi per level', () => {
   const mapNames=new Set();
   for(const level of ELEMENTAL_LEVELS){
     mapNames.add(level.mapName);
@@ -649,9 +688,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.42\.2/);
-  assert.match(app, /elemental-duo\.js\?v=0\.42\.2/);
-  assert.match(index, /app\.js\?v=0\.42\.2/);
+  assert.match(index, /elemental-duo\.css\?v=0\.43\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.43\.0/);
+  assert.match(index, /app\.js\?v=0\.43\.0/);
 });
 
 
@@ -1300,8 +1339,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Room map v26 uses handcrafted dual routes for the five prototype maps and preserves generated expansion maps', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,26);
+test('Room map v27 retains the five handcrafted world entrances and the 50-level campaign maps', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,27);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {

@@ -1,13 +1,23 @@
-# QA — Diri. Playroom Date v0.42.2
+# QA — Diri. Playroom Date v0.43.0
 
-## Hasil verifikasi otomatis v0.42.2
-- `npm test`: **199/199 lulus**.
-- Semua file JavaScript lolos `node --check`; Firebase Rules JSON valid.
-- `ELEMENTAL_MAP_VERSION=26`, `prototypeVersion=11`; Firebase Rules tidak berubah.
-- Lima layout manual memiliki dua spawn bawah, galeri pintu tengah yang lebar, dua pintu elemen, cabang permata atas, dan 11–12 pijakan/ledge per level.
-- Setiap sisi memiliki hazard aman dan hazard lawan pada jalur bawah; switch berada di sisi pintu masing-masing, dengan gerbang kerja sama di bagian tengah.
-- Level 2–5 memperkenalkan lift/es/uap, lava berdenyut, tuas angin, serta katup dan urutan switch.
+## Hasil verifikasi otomatis v0.43.0
+- Kampanye Elemental Duo aktif sampai Level 50; lima dunia memuat 10 level masing-masing.
+- `npm test`: **201/201 lulus**; seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- Semua level memiliki dua gem opsional dan kedua role hanya dapat mengumpulkan gem elemennya sendiri.
+- Aturan scoring 3/2/1 bintang diuji; gerbang diuji tidak bergantung pada jumlah gem.
+- Transisi berurutan, penyelesaian Level 50, agregat 150 bintang/100 permata, dan migrasi dari prototype lama diuji.
+- `ELEMENTAL_MAP_VERSION=27`, `campaignVersion=1`; Firebase Rules tidak berubah.
 - Belum dilakukan playtest browser dan dua HP fisik dengan Firebase aktif.
+
+## Checklist playtest kampanye 50 level
+- [ ] Pastikan setiap dunia membuka rentang level yang benar: 01–10, 11–20, 21–30, 31–40, dan 41–50.
+- [ ] Mainkan setidaknya level pembuka, tengah, dan akhir dari setiap dunia; lanjutkan secara berurutan hingga Level 50.
+- [ ] Pastikan Bara hanya mengumpulkan permata merah dan Nira hanya mengumpulkan permata biru.
+- [ ] Selesaikan level tanpa permata untuk memastikan permata bukan syarat membuka pintu.
+- [ ] Uji scoring: dua permata + tanpa jatuh = 3 bintang; maksimal dua jatuh = 2 bintang; lebih dari dua jatuh = 1 bintang.
+- [ ] Pastikan kedua pemain berpindah bersama ke level berikutnya dan hasil setiap level tetap tercatat.
+- [ ] Pastikan Level 50 memunculkan layar akhir dengan agregat maksimum 150 bintang dan 100 permata.
+- [ ] Uji migrasi room dari prototype lama dan pastikan kedua pemain kembali ke spawn dengan status Ready direset.
 
 ## Playtest manual yang tetap diperlukan
 ## Hasil verifikasi otomatis v0.40.0

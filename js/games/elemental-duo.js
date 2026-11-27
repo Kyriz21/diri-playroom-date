@@ -1,12 +1,12 @@
 import { db, ref, set, update, onValue, runTransaction } from '../firebase.js';
 import {
-  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_PROTOTYPE_LEVEL_COUNT,
+  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_LEVEL_COUNT,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
-  createElementalPlayer, getElementalPrototypeLevel, getElementalStars, rectsOverlap,
+  createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap,
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.42.2';
+} from './elemental-duo-logic.js?v=0.43.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -25,8 +25,8 @@ export function mountElementalDuo(root, context) {
   const metaRef = ref(db, `${basePath}/meta`);
   const ownPlayerRef = ref(db, `${basePath}/players/${role}`);
   let data = {};
-  let localPlayer = createElementalPlayer(role, null, 1, true);
-  let remoteRender = createElementalPlayer(otherRole, null, 1, true);
+  let localPlayer = createElementalPlayer(role, null, 1);
+  let remoteRender = createElementalPlayer(otherRole, null, 1);
   let remoteTarget = { ...remoteRender };
   let currentLevel = 1;
   let currentView = '';
@@ -205,8 +205,8 @@ export function mountElementalDuo(root, context) {
 
   function path(...parts) { return `${basePath}/${parts.join('/')}`; }
   function rolePlayer(roleKey) { return data.players?.[roleKey] || null; }
-  function activeLevelNumber() { return Math.max(1,Math.min(ELEMENTAL_PROTOTYPE_LEVEL_COUNT,Number(data.meta?.level)||1)); }
-  function levelData() { return getElementalPrototypeLevel(activeLevelNumber()); }
+  function activeLevelNumber() { return Math.max(1,Math.min(ELEMENTAL_LEVEL_COUNT,Number(data.meta?.level)||1)); }
+  function levelData() { return getElementalLevel(activeLevelNumber()); }
   function levelState() { return data.levels?.[String(activeLevelNumber())] || {}; }
   function switchIsOn(element) { return Boolean(levelState().switches?.[element]); }
   function valveIsOpen(id) { return Boolean(levelState().valves?.[id]); }
@@ -228,7 +228,7 @@ export function mountElementalDuo(root, context) {
           <div class="ed-lobby-art" aria-hidden="true"><div class="ed-orbit ed-orbit-one"></div><div class="ed-orbit ed-orbit-two"></div><div class="ed-lobby-spirit ed-bara">✦</div><div class="ed-lobby-spirit ed-nira">✧</div><span class="ed-art-star star-one">✧</span><span class="ed-art-star star-two">✦</span></div>
           <div class="ed-section-kicker">MISI KALIAN DIMULAI DI SINI</div>
           <h2>Bangunkan kembali<br><em>Jantung Lima Dunia</em></h2>
-          <p class="ed-lobby-copy">Bara dan Nira punya kekuatan berbeda. Lewati lava dan air, injak pijakan elemen masing-masing, ambil permata, lalu temukan pintu kalian.</p>
+          <p class="ed-lobby-copy">Jelajahi lima dunia berisi 50 level. Bara dan Nira punya kekuatan berbeda: aktifkan pijakan masing-masing, atasi puzzle, lalu capai pintu elemen kalian.</p>
           <div class="ed-player-pair">
             <article class="ed-player-card ed-player-fire"><div class="ed-player-orb">✦</div><div><span>PEMAIN 1 · PEMBUAT SESI</span><strong>${ESCAPE(names.host)}</strong><small>Bara · Roh Bara</small></div><b data-ed-ready="host">Menunggu siap</b></article>
             <article class="ed-player-card ed-player-water"><div class="ed-player-orb">✧</div><div><span>PEMAIN 2 · PASANGAN</span><strong>${ESCAPE(names.guest)}</strong><small>Nira · Roh Air</small><b data-ed-ready="guest">Menunggu siap</b></div></article>
@@ -238,15 +238,16 @@ export function mountElementalDuo(root, context) {
             <div><span class="ed-how-icon ed-water-icon">✧</span><strong>Nira</strong><small>Aman di air, hindari lava, ambil permata air.</small></div>
             <div><span class="ed-how-icon ed-gem-icon">◇</span><strong>Kerja sama</strong><small>Tekan kedua pijakan untuk membuka penghalang dan pintu.</small></div>
           </div>
+          <div class="ed-gem-explainer"><span aria-hidden="true">◇</span><p><strong>Permata adalah bonus penilaian, bukan kunci pintu.</strong> Bara mengambil permata merah; Nira mengambil permata biru. <b>3★</b> = dua permata dan tanpa jatuh; <b>2★</b> = maksimal dua jatuh gabungan; <b>1★</b> = lebih dari dua jatuh. Kalian tetap bisa membuka gerbang tanpa permata.</p></div>
           <button class="ed-primary-button" type="button" data-ed-action="ready">Aku siap bertualang <span>↗</span></button>
-          <p class="ed-lobby-note">Prototype ini berisi 5 level. Setiap level mewakili satu dunia dengan tema dan mekanik yang berbeda.</p>
+          <p class="ed-lobby-note">50 level · 5 dunia · 10 level per dunia. Mekanik baru diperkenalkan bertahap, lalu digabungkan pada dunia terakhir.</p>
         </section>
         <section class="ed-panel ed-game-panel" data-ed-view="game" hidden>
-          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 05</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh landscape" title="Layar penuh landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button><button class="ed-mode-button ed-control-mode-button" type="button" data-ed-action="toggle-controls" aria-label="Ganti ke kontrol analog" aria-pressed="false"><span>◎</span><b data-ed-control-mode-label>Tombol</b></button></div></div></div>
+          <div class="ed-game-topline"><div><span class="ed-world-label" data-ed-world>HUTAN BERBISIK</span><h2 data-ed-level-title>01 · Jejak Cahaya</h2><p data-ed-level-note>Tekan pijakan elemen dan temukan pintu.</p></div><div class="ed-game-tools"><div class="ed-level-count"><strong data-ed-level-number>01</strong><small>/ 50</small></div><div class="ed-display-modes" role="group" aria-label="Mode tampilan permainan"><button class="ed-mode-button is-active" type="button" data-ed-action="portrait" aria-pressed="true"><span>▯</span><b>Potret</b></button><button class="ed-mode-button" type="button" data-ed-action="fullscreen" aria-label="Layar penuh landscape" title="Layar penuh landscape" aria-pressed="false"><span>⛶</span><b>Layar penuh</b></button><button class="ed-mode-button ed-control-mode-button" type="button" data-ed-action="toggle-controls" aria-label="Ganti ke kontrol analog" aria-pressed="false"><span>◎</span><b data-ed-control-mode-label>Tombol</b></button></div></div></div>
           <div class="ed-progress-track"><span data-ed-progress></span></div>
           <div class="ed-hud-row">
             <div class="ed-hud-player"><span class="ed-hud-orb ed-fire-icon">✦</span><span><b>${ESCAPE(names.host)}</b><small data-ed-status="host">Bara · belum tiba</small></span></div>
-            <div class="ed-hud-center"><span data-ed-gates>2 simpul belum aktif</span><strong data-ed-shards>◇ 0 / 2</strong></div>
+            <div class="ed-hud-center"><span data-ed-gates>2 simpul belum aktif</span><strong data-ed-shards title="Permata bonus, bukan kunci pintu. 3 bintang: dua permata dan nol jatuh; 2 bintang: maksimal dua jatuh gabungan; 1 bintang: lebih dari dua jatuh.">◇ BONUS 0 / 2</strong></div>
             <div class="ed-hud-player ed-hud-right"><span><b>${ESCAPE(names.guest)}</b><small data-ed-status="guest">Nira · belum tiba</small></span><span class="ed-hud-orb ed-water-icon">✧</span></div>
           </div>
           <div class="ed-live-notice" data-ed-notice aria-live="polite" hidden></div>
@@ -261,8 +262,8 @@ export function mountElementalDuo(root, context) {
           <div class="ed-bottom-tip"><b>Petunjuk level</b><span data-ed-mechanic>Perhatikan kemampuan masing-masing karakter.</span></div>
         </section>
         <section class="ed-panel ed-finish-panel" data-ed-view="finish" hidden>
-          <div class="ed-finish-emblem">✧</div><span class="ed-section-kicker">PETUALANGAN SELESAI</span><h2>Kalian menyatukan<br><em>lima kekuatan dunia.</em></h2><p>Jantung Lima Dunia kembali bercahaya berkat kerja sama Bara dan Nira.</p><div class="ed-finish-stats"><div><strong data-ed-finish-stars>0</strong><small>BINTANG TERKUMPUL</small></div><div><strong data-ed-finish-shards>0</strong><small>SERPihan ENERGI</small></div><div><strong>05</strong><small>LEVEL PROTOTIPE</small></div></div><button class="ed-primary-button" type="button" data-ed-action="back">Kembali ke ruang <span>♡</span></button></section>
-        <footer class="ed-footer"><span>ELEMENTAL DUO · PETUALANGAN ORISINAL DIRI</span><span>5 LEVEL PROTOTIPE · 5 TEMA · 2 PEMAIN</span></footer>
+          <div class="ed-finish-emblem">✧</div><span class="ed-section-kicker">PETUALANGAN SELESAI</span><h2>Kalian menyatukan<br><em>lima dunia.</em></h2><p>50 level telah ditaklukkan. Jantung Lima Dunia kembali bercahaya berkat kerja sama Bara dan Nira.</p><p class="ed-finish-final-line" data-ed-finish-final-line></p><div class="ed-finish-stats"><div><strong data-ed-finish-stars>0</strong><small>BINTANG · MAKS. 150</small></div><div><strong data-ed-finish-shards>0</strong><small>PERMATA · MAKS. 100</small></div><div><strong>50</strong><small>LEVEL SELESAI</small></div></div><button class="ed-primary-button" type="button" data-ed-action="back">Kembali ke ruang <span>♡</span></button></section>
+        <footer class="ed-footer"><span>ELEMENTAL DUO · PETUALANGAN ORISINAL DIRI</span><span>50 LEVEL · 5 DUNIA · 2 PEMAIN</span></footer>
       </section>`;
     gamePanel = root.querySelector('.ed-game-panel');
     canvas = root.querySelector('.ed-canvas');
@@ -524,7 +525,7 @@ export function mountElementalDuo(root, context) {
 
   function updateHud() {
     const meta = data.meta || {};
-    const level = getElementalPrototypeLevel(meta.level || 1);
+    const level = getElementalLevel(meta.level || 1);
     const players = data.players || {};
     const mine = players[role] || localPlayer;
     const host = players.host || {};
@@ -548,13 +549,15 @@ export function mountElementalDuo(root, context) {
     const activeWindLevers = requiredWindLevers.filter(windLeverIsOn).length;
     const windLeverLabel = requiredWindLevers.length ? ` · Tuas angin ${activeWindLevers}/${requiredWindLevers.length}` : '';
     setText('[data-ed-gates]', gateIsOpen() ? 'Penghalang terbuka · cari pintu!' : `Bara ${switchIsOn('fire') ? '✓' : '✕'} · Nira ${switchIsOn('water') ? '✓' : '✕'}${sequenceLabel}${valveLabel}${windLeverLabel}`);
-    setText('[data-ed-shards]', `◇ ${claimed} / 2`);
+    setText('[data-ed-shards]', `◇ BONUS ${claimed} / 2`);
+    const gemCounter = queryUI('[data-ed-shards]');
+    if (gemCounter) gemCounter.setAttribute('aria-label', `Permata bonus ${claimed} dari 2. Merah untuk Bara, biru untuk Nira. Bukan kunci pintu. Tiga bintang memerlukan dua permata dan nol jatuh; dua bintang untuk maksimal dua jatuh gabungan; satu bintang jika lebih dari dua jatuh.`);
     setText('[data-ed-status="host"]', host.complete ? 'Bara · tiba di gerbang' : host.ready ? 'Bara · menjelajah' : 'Bara · menunggu');
     setText('[data-ed-status="guest"]', guest.complete ? 'Nira · tiba di gerbang' : guest.ready ? 'Nira · menjelajah' : 'Nira · menunggu');
     setText('[data-ed-deaths]', `Jatuh: ${Number(mine.deaths)||0}`);
     setText('[data-ed-mechanic]', `${level.mechanic}. ${level.tagline}`);
     const progress = queryUI('[data-ed-progress]');
-    if (progress) progress.style.width = `${(level.id / ELEMENTAL_PROTOTYPE_LEVEL_COUNT) * 100}%`;
+    if (progress) progress.style.width = `${(level.id / ELEMENTAL_LEVEL_COUNT) * 100}%`;
     const readyHost = queryUI('[data-ed-ready="host"]');
     const readyGuest = queryUI('[data-ed-ready="guest"]');
     if (readyHost) readyHost.textContent = host.ready ? 'Siap ✓' : 'Menunggu siap';
@@ -580,31 +583,42 @@ export function mountElementalDuo(root, context) {
     const levels = data.levels || {};
     const totalShards = Object.values(levels).reduce((sum, item) => sum + Number(Boolean(item?.gems?.fire)) + Number(Boolean(item?.gems?.water)), 0);
     const setText = (selector, value) => { const el = queryUI(selector); if (el) el.textContent = value; };
-    setText('[data-ed-finish-stars]', `${totalStars} / 15`);
-    setText('[data-ed-finish-shards]', `${totalShards} / 10`);
+    setText('[data-ed-finish-stars]', `${totalStars} / 150`);
+    setText('[data-ed-finish-shards]', `${totalShards} / 100`);
+    const finalLevel = results[String(ELEMENTAL_LEVEL_COUNT)] || {};
+    setText('[data-ed-finish-final-line]', `Level 50: ${Number(finalLevel.stars)||0}/3 bintang · ${Number(finalLevel.shards)||0}/2 permata · ${Number(finalLevel.deaths)||0} jatuh`);
   }
 
   async function initialiseMeta() {
     if (metaInitStarted || role !== 'host') return;
     metaInitStarted = true;
     try {
-      let needsPrototypeMigration = false;
+      let needsCampaignMigration = false;
       await runTransaction(metaRef, current => {
+        needsCampaignMigration = false;
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:11
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, campaignVersion:1
         };
-        if (Number(current.prototypeVersion) === 11) return current;
-        needsPrototypeMigration = true;
+        if (Number(current.campaignVersion) === 1) return current;
+        needsCampaignMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, prototypeVersion:11
+          results:{}, campaignVersion:1
         };
       });
-      if (needsPrototypeMigration) {
-        // Old map state belongs to a different level order; discard only the
-        // per-level puzzle switches/gems, not the room or Firebase membership.
-        await update(baseRef, { levels:null });
+      if (needsCampaignMigration) {
+        // Prototype sessions used a five-level route and incompatible map coordinates.
+        // Start a clean 50-level campaign while retaining room membership and lifetime stats.
+        const migrationPatch = { levels:null };
+        for (const playerRole of ['host','guest']) {
+          const oldPlayer = data.players?.[playerRole];
+          if (!oldPlayer) continue;
+          migrationPatch[`players/${playerRole}`] = createElementalPlayer(playerRole, {
+            ...oldPlayer, ready:false, complete:false, levelDeaths:0
+          }, 1);
+        }
+        await update(baseRef, migrationPatch);
       }
     } catch (error) { notify(`Gagal menyiapkan petualangan: ${error.message}`, 'error'); }
   }
@@ -612,22 +626,29 @@ export function mountElementalDuo(root, context) {
   async function initialisePlayer() {
     if (playerInitStarted || data.players?.[role]) return;
     playerInitStarted = true;
-    try { await set(ownPlayerRef, createElementalPlayer(role, null, 1, true)); }
+    try { await set(ownPlayerRef, createElementalPlayer(role, null, 1)); }
     catch (error) { playerInitStarted = false; notify(`Gagal menyiapkan karakter: ${error.message}`, 'error'); }
   }
 
   function updateViewFromData() {
     const meta = data.meta;
     if (!meta) { showView('lobby'); return; }
-    const nextLevel = Math.max(1, Math.min(ELEMENTAL_PROTOTYPE_LEVEL_COUNT, Number(meta.level) || 1));
+    const nextLevel = Math.max(1, Math.min(ELEMENTAL_LEVEL_COUNT, Number(meta.level) || 1));
     if (nextLevel !== currentLevel) {
+      const previousLevel = currentLevel;
+      const wasAlreadyInCampaign = localHydrated;
+      const previousResult = wasAlreadyInCampaign ? meta.results?.[String(previousLevel)] : null;
       currentLevel = nextLevel;
-      localPlayer = createElementalPlayer(role, data.players?.[role], currentLevel, true);
+      localPlayer = createElementalPlayer(role, data.players?.[role], currentLevel);
       localHydrated = true;
       localCheckpoint = null;
-      notify(`Level ${String(currentLevel).padStart(2,'0')} terbuka: ${getElementalPrototypeLevel(currentLevel).name}`);
+      if (previousResult) {
+        notify(`Level ${String(previousLevel).padStart(2,'0')}: ${Number(previousResult.stars)||0}/3 bintang · ${Number(previousResult.shards)||0}/2 permata · ${Number(previousResult.deaths)||0} jatuh. Lanjut ${String(currentLevel).padStart(2,'0')}!`);
+      } else {
+        notify(`Level ${String(currentLevel).padStart(2,'0')} terbuka: ${getElementalLevel(currentLevel).name}`);
+      }
     } else if (data.players?.[role] && !localHydrated) {
-      localPlayer = createElementalPlayer(role, data.players[role], currentLevel, true);
+      localPlayer = createElementalPlayer(role, data.players[role], currentLevel);
       localHydrated = true;
     }
     if (meta.phase === 'complete') {
@@ -699,7 +720,7 @@ export function mountElementalDuo(root, context) {
       const stars = getElementalStars({ deaths, shards });
       const result = { stars, shards, deaths, completedAt:now() };
       const patch = { [`meta/results/${level}`]:result };
-      if (level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT) {
+      if (level >= ELEMENTAL_LEVEL_COUNT) {
         patch['meta/phase'] = 'complete';
         patch['meta/transitioning'] = false;
         patch['meta/transitionStartedAt'] = null;
@@ -711,8 +732,8 @@ export function mountElementalDuo(root, context) {
         patch['meta/startedAt'] = now();
         patch['meta/transitioning'] = false;
         patch['meta/transitionStartedAt'] = null;
-        patch['players/host'] = createElementalPlayer('host', { ready:true, deaths:Number(host.deaths)||0, levelDeaths:0, shards:Number(host.shards)||0 }, nextLevel, true);
-        patch['players/guest'] = createElementalPlayer('guest', { ready:true, deaths:Number(guest.deaths)||0, levelDeaths:0, shards:Number(guest.shards)||0 }, nextLevel, true);
+        patch['players/host'] = createElementalPlayer('host', { ready:true, deaths:Number(host.deaths)||0, levelDeaths:0, shards:Number(host.shards)||0 }, nextLevel);
+        patch['players/guest'] = createElementalPlayer('guest', { ready:true, deaths:Number(guest.deaths)||0, levelDeaths:0, shards:Number(guest.shards)||0 }, nextLevel);
       }
       await update(baseRef, patch);
     } catch (error) {
@@ -901,8 +922,14 @@ export function mountElementalDuo(root, context) {
     runTransaction(ref(db, path('levels', String(currentLevel), 'gems', gem.element)), value => value === true ? undefined : true)
       .then(result => {
         if (result.committed) {
+          // Update the local snapshot immediately after the committed transaction so
+          // a same-frame door completion cannot calculate stars from a stale Firebase snapshot.
+          data.levels ??= {};
+          data.levels[String(currentLevel)] ??= {};
+          data.levels[String(currentLevel)].gems ??= {};
+          data.levels[String(currentLevel)].gems[gem.element] = true;
           localPlayer.shards = (Number(localPlayer.shards)||0) + 1;
-          notify('Serpihan energi terkumpul! ◇');
+          notify(`Permata ${gem.element === 'fire' ? 'Bara' : 'Air'} terkumpul! Bonus untuk bintang akhir level.`);
           saveLocalPlayer(true);
         }
       })
@@ -2040,14 +2067,14 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 11)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.campaignVersion) !== 1)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {
       remoteTarget = { x:other.x, y:other.y, dir:other.dir || (otherRole==='guest'?-1:1), complete:Boolean(other.complete) };
       if (!lastFrame) remoteRender = { ...remoteTarget };
     } else {
-      const safePartnerSpawn = createElementalPlayer(otherRole, null, 1, true);
+      const safePartnerSpawn = createElementalPlayer(otherRole, null, 1);
       remoteTarget = { x:safePartnerSpawn.x, y:safePartnerSpawn.y, dir:safePartnerSpawn.dir, complete:false };
       if (!lastFrame) remoteRender = { ...remoteTarget };
     }

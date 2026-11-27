@@ -1,24 +1,44 @@
-# Elemental Duo — Panduan Game (build v0.42.2)
+# Elemental Duo — Panduan Game (build v0.43.0)
 
-## Pembaruan v0.42.2 — Fireboy & Watergirl Classic-style Co-op
-- Lima level prototype mengikuti komposisi puzzle side-view klasik: dua spawn bawah, galeri utama lebar, pintu Bara dan Nira di tingkat yang sama, jalur permata atas, serta gerbang kerja sama di tengah.
-- Setiap sisi bawah memiliki kolam yang aman bagi karakternya dan kolam elemen lawan yang harus dihindari atau dilompati.
-- Rute dasar masing-masing karakter: entry gallery → inner step → shared door gallery. Switch berada di sisi pintu sendiri; kedua switch membuka gerbang tengah.
-- Setiap layout memiliki 11–12 platform/ledge yang ditempatkan manual dengan komposisi berbeda. Dinding penghalang tidak lagi dibuat otomatis di setiap platform.
-- Level 2–5 memperkenalkan lift bergerak, es, uap, lava berdenyut, arus angin, katup, dan urutan switch.
-- `ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`; puncak teoretis sekitar 104,5 unit. Analog tetap hanya untuk kiri/kanan.
-- `ELEMENTAL_MAP_VERSION=26` dan `prototypeVersion=11` memigrasikan posisi serta state puzzle dari map sebelumnya. Firebase Rules tidak berubah.
-## Rute utama
-Setiap level memiliki dua galeri bawah yang dapat dicapai dari spawn. Bara harus menghindari air dan Nira harus menghindari lava. Switch berada di galeri yang sama dengan pintu elemen masing-masing. Keduanya perlu mengaktifkan switch agar gerbang pusat terbuka. Platform di tingkat atas menjadi jalur opsional untuk mengambil permata.
+## Pembaruan v0.43.0 — Full 50-Level Campaign
+- Seluruh **50 level aktif** dimainkan secara berurutan. Lima dunia masing-masing memiliki 10 level: Hutan Berbisik (01–10), Kedalaman Kristal (11–20), Kerajaan Bara (21–30), Reruntuhan Langit (31–40), dan Jantung Kuno (41–50).
+- Alur memakai seluruh `ELEMENTAL_LEVELS` melalui `getElementalLevel()`; progres maju otomatis sampai Level 50 dan baru menampilkan layar tamat setelah level terakhir diselesaikan.
+- Lima layout handcrafted sebelumnya tetap menjadi level pembuka per dunia (01, 11, 21, 31, 41); level lain memakai blueprint eksplorasi masing-masing, termasuk mekanik dan tingkat kesulitan yang ditetapkan di data 50 level.
+- Dua permata tiap level adalah **bonus penilaian**, bukan kunci gerbang. Permata merah hanya dapat diambil Bara; permata biru hanya dapat diambil Nira. Gerbang tetap ditentukan oleh switch, katup, dan tuas wajib sesuai blueprint.
+- Penilaian per level: 3 bintang jika kedua permata terkumpul dan total jatuh 0; 2 bintang jika total jatuh 0–2; 1 bintang jika total jatuh lebih dari 2. Tanpa permata, level tetap dapat diselesaikan.
+- Maksimum hasil kampanye: 150 bintang, 100 permata, dan 50 level selesai. Lobby, HUD, dan layar tamat menjelaskan cakupan ini.
+- `ELEMENTAL_MAP_VERSION=27`, `campaignVersion=1`; sesi prototype lama kembali ke level 01, posisi di-spawn ulang, state puzzle lama dibersihkan, dan status ready/completion direset. Firebase Rules tidak berubah.
+- `npm test`: 201/201 lulus; seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
+- Fisika lompatan dipertahankan (`ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`); analog tetap hanya menggerakkan kiri/kanan.
 
-## Batas mekanik prototype
-Level prototype belum mengimplementasikan semua mekanik Fireboy and Watergirl (misalnya kotak dorong dan tombol tahan permanen). Mekanik aktif adalah lompatan, pijakan, hazard, permata, gerbang, lift, es, angin, katup, dan pintu elemen.
+## Fungsi permata dan sistem bintang
+| Permata | Karakter | Fungsi |
+|---|---|---|
+| Merah | Bara | Koleksi bonus; menambah hasil permata dan syarat bintang 3 |
+| Biru | Nira | Koleksi bonus; menambah hasil permata dan syarat bintang 3 |
 
-## Verifikasi v0.42.2
-- `npm test`: 199/199 tes lulus.
-- JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
-- Geometri jalur, jangkauan lompatan, lokasi switch/valve/lever, hazard, checkpoint, dan pintu diperiksa otomatis.
-- Playtest visual di browser dan dua perangkat dengan Firebase aktif masih diperlukan.
+Permata tidak mengaktifkan switch, tidak membuka gerbang, dan tidak menjadi syarat mencapai pintu. Setiap permata tersimpan pada state level yang sedang dimainkan. Kedua pemain tetap harus mengaktifkan switch dan memenuhi kontrol wajib yang ditentukan level.
+
+| Hasil satu level | Bintang |
+|---|---:|
+| Kedua permata terkumpul, tanpa jatuh | 3 |
+| Maksimal dua kali jatuh | 2 |
+| Lebih dari dua kali jatuh | 1 |
+
+## Cakupan kampanye
+| Dunia | Level | Fokus tantangan |
+|---|---:|---|
+| Hutan Berbisik | 01–10 | Dasar gerak, pijakan elemen, akar, jembatan |
+| Kedalaman Kristal | 11–20 | Es, arus, permukaan licin, kristal |
+| Kerajaan Bara | 21–30 | Lava berdenyut, uap, katup, switch berurutan |
+| Reruntuhan Langit | 31–40 | Angin, lift, jembatan dan ruang vertikal |
+| Jantung Kuno | 41–50 | Kombinasi switch, katup, pintu, dan puzzle akhir |
+
+## Verifikasi v0.43.0
+- Kampanye memuat 50 level dan 5 rentang dunia; test coverage memeriksa dua permata pada setiap level.
+- Tes scoring memeriksa 3/2/1 bintang dan memastikan gem tidak masuk ke syarat gate.
+- Tes integrasi memeriksa urutan 01–50, batas level akhir, progres, layar tamat, serta migrasi sesi prototype lama.
+- Playtest browser dan dua perangkat dengan Firebase aktif masih diperlukan.
 
 ---
 
@@ -203,7 +223,7 @@ Semua state interaksi disimpan di bawah `levels/{level}` dan memakai jam level b
 - MapVersion 9 memindahkan posisi pada level aktif ke spawn saat pembaruan, tanpa menghapus progres, serpihan, atau statistik jatuh.
 
 
-# Prototype v0.39.1 — lima dunia, lima level aktif
+# Riwayat prototype v0.39.1 — lima dunia, lima level aktif
 
 Build ini sengaja membatasi jalur permainan menjadi lima level percontohan. Urutannya memakai blueprint level pertama dari setiap dunia, bukan lima level pertama dari Dunia 1:
 

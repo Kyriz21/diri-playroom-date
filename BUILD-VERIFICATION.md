@@ -1,18 +1,21 @@
-# Build Verification — Diri. Playroom Date v0.42.2
+# Build Verification — Diri. Playroom Date v0.43.0
 
-## v0.42.2 — Fireboy & Watergirl Classic-style Co-op
-- `npm test`: **199/199 tes lulus**.
-- Semua file JavaScript lolos `node --check`; `firebase-database.rules.json` valid.
-- `ELEMENTAL_MAP_VERSION=26`, `prototypeVersion=11`, `jumpSpeed=560`, `gravity=1500`; Firebase Rules tidak berubah.
-- Lima level prototype dirancang manual dengan 11–12 platform/ledge per layout, dua spawn bawah, satu galeri utama yang lebar, dua pintu pada tingkat tengah, dan cabang atas untuk permata.
-- Tiap sisi bawah memiliki kolam elemen yang aman bagi karakternya serta kolam elemen lawan yang harus dihindari/dilompati. Rute tiap karakter melewati entry ledge, stepping stone, lalu galeri pintunya.
-- Switch berada di sisi masing-masing galeri; gerbang bersama membatasi lintasan tengah. Pintu Bara dan Nira berada pada galeri yang sama, bukan di puncak menara platform.
-- Level 2–5 menambah lift bergerak, es, uap, lava berdenyut, arus angin, katup, dan urutan switch.
-- Tes geometri memeriksa jangkauan platform, pintu/switch, empat hazard pool di jalur bawah, dinding penghalang, gerbang dan variasi mekanik.
-- Belum dilakukan playtest browser dan dua perangkat fisik dengan Firebase aktif.
+## v0.43.0 — Full 50-Level Campaign & Gem Scoring
+- Kampanye Elemental Duo membuka 50 level aktif secara berurutan dalam lima dunia; alur tidak lagi dibatasi pada lima prototype.
+- `npm test`: **201/201 tes lulus**.
+- `ELEMENTAL_LEVEL_COUNT=50`, `ELEMENTAL_MAP_VERSION=27`, `campaignVersion=1`, `jumpSpeed=560`, `gravity=1500`; Firebase Rules tidak berubah.
+- Tes otomatis menguji rentang level 01–50, kelima rentang dunia, kurva kesulitan tiap dunia, jangkauan platform dari spawn kedua role, level akhir, tampilan counter 50, dan aturan transisi kampanye.
+- Semua 50 level diverifikasi memiliki dua permata, satu untuk Bara dan satu untuk Nira. Permata bersifat opsional dan gate tidak membaca `gems` atau `shards`.
+- Scoring per level diverifikasi: 3 bintang untuk dua permata dan tanpa jatuh; 2 bintang untuk maksimal dua jatuh gabungan; 1 bintang untuk lebih dari dua jatuh. Maksimum agregat 150 bintang dan 100 permata.
+- Migrasi sesi prototype lama mengembalikan kedua pemain ke spawn level 01, mereset status ready/completion, hasil kampanye dan state puzzle level; room membership dan statistik lifetime tetap dipertahankan.
+- Semua file JavaScript diperiksa dengan `node --check`; `firebase-database.rules.json` valid dan tidak berubah.
+- Belum dilakukan playtest langsung di browser dan dua perangkat fisik dengan Firebase aktif.
 
-## Batas verifikasi
-## v0.40.0 — Classic Co-op Level Rebuild
+## Batas verifikasi v0.43.0
+Tes otomatis memvalidasi blueprint, scoring, progres 50 level, migrasi, geometri, dan integrasi source. Tes belum menggantikan playtest visual di browser serta dua perangkat fisik dengan Firebase aktif; semua 50 level tetap perlu dijalankan untuk menilai pacing dan kenyamanan puzzle.
+
+## Riwayat build terdahulu
+### v0.40.0 — Classic Co-op Level Rebuild
 
 - Lima level prototype dirancang sebagai kamar dungeon dan koridor yang berbelok; tidak lagi menggunakan platform panjang bertingkat dengan tiang penyangga.
 - Tiga jangkar lantai bawah menyatu dengan lantai dungeon, sedangkan rute atas berpindah di antara kamar pendek kiri/kanan.

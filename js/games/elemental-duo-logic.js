@@ -4,7 +4,7 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 26;
+export const ELEMENTAL_MAP_VERSION = 27;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1500;
 export const ELEMENTAL_MOVE_SPEED = 260;
@@ -2069,6 +2069,7 @@ function makeLevel(index, sourceIndex = index) {
 }
 
 export const ELEMENTAL_LEVELS = Object.freeze(Array.from({ length:50 }, (_, index) => Object.freeze(makeLevel(index))));
+export const ELEMENTAL_LEVEL_COUNT = ELEMENTAL_LEVELS.length;
 const ELEMENTAL_PROTOTYPE_SOURCE_ORDER = Object.freeze([0,10,20,30,40]);
 export const ELEMENTAL_PROTOTYPE_LEVEL_COUNT = ELEMENTAL_PROTOTYPE_SOURCE_ORDER.length;
 export const ELEMENTAL_PROTOTYPE_LEVELS = Object.freeze(ELEMENTAL_PROTOTYPE_SOURCE_ORDER.map((sourceIndex, displayIndex) =>
@@ -2076,11 +2077,11 @@ export const ELEMENTAL_PROTOTYPE_LEVELS = Object.freeze(ELEMENTAL_PROTOTYPE_SOUR
 ));
 export const ELEMENTAL_WORLDS = Object.freeze(WORLD_CONFIG.map((world, index) => Object.freeze({
   id:world.id, name:world.name, shortName:world.shortName,
-  firstLevel:index*10+1, lastLevel:index*10+10, prototypeLevel:index+1, tagline:world.tagline
+  firstLevel:index*10+1, lastLevel:index*10+10, openingLevel:index*10+1, tagline:world.tagline
 })));
 
 export function getElementalLevel(levelNumber) {
-  const index = Math.max(1, Math.min(50, Number(levelNumber) || 1)) - 1;
+  const index = Math.max(1, Math.min(ELEMENTAL_LEVELS.length, Number(levelNumber) || 1)) - 1;
   return ELEMENTAL_LEVELS[index];
 }
 
@@ -2119,6 +2120,12 @@ export function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+/**
+ * Optional elemental gems are score collectibles, not gate keys.
+ * 3 stars: collect both gems and finish without a fall.
+ * 2 stars: finish with at most two falls.
+ * 1 star: finish with more than two falls.
+ */
 export function getElementalStars({ deaths = 0, shards = 0 } = {}) {
   if (Number(shards) >= 2 && Number(deaths) === 0) return 3;
   if (Number(deaths) <= 2) return 2;

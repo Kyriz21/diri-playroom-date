@@ -1,3 +1,15 @@
+## v0.43.0 — Full 50-Level Campaign & Gem Scoring
+
+- Membuka seluruh 50 level Elemental Duo sebagai kampanye aktif berurutan; tidak lagi berhenti setelah lima level prototype.
+- Menyusun urutan lima dunia, masing-masing 10 level: Hutan Berbisik (01–10), Kedalaman Kristal (11–20), Kerajaan Bara (21–30), Reruntuhan Langit (31–40), dan Jantung Kuno (41–50).
+- Mengaktifkan semua blueprint `ELEMENTAL_LEVELS` melalui `getElementalLevel()` dan transisi otomatis hingga Level 50. Lima layout handcrafted tetap menjadi level pembuka untuk setiap dunia.
+- Menjelaskan permata sebagai bonus opsional: merah hanya untuk Bara, biru hanya untuk Nira; permata bukan syarat switch, gerbang, atau pintu.
+- Menegaskan scoring tiap level: 3 bintang (dua permata + nol jatuh), 2 bintang (maksimal dua jatuh gabungan), 1 bintang (lebih dari dua jatuh). Maksimum kampanye 150 bintang dan 100 permata.
+- Lobby, HUD, progress bar, counter level, serta layar akhir diperbarui untuk kampanye 50 level dan fungsi permata.
+- Migrasi `campaignVersion=1` memindahkan sesi prototype lama ke level 01, membersihkan state puzzle/hasil lama, dan mereset status ready/completion. Statistik lifetime dan keanggotaan room tetap dipertahankan.
+- `ELEMENTAL_MAP_VERSION=27`; fisika lompatan dan Firebase Rules tidak berubah.
+- Tes mencakup kelima dunia, semua 50 level, dua permata per level, aturan scoring, gate independen dari gem, progres sampai Level 50, dan migrasi kampanye.
+
 ## v0.42.0 — Fireboy & Watergirl Classic-style Co-op
 
 - Menyusun ulang lima level sebagai puzzle side-view klasik: spawn kiri/kanan di bawah, kolam air/lava, galeri utama, dua pintu pada tingkat yang sama, cabang permata di atas, dan gerbang bersama di tengah.
