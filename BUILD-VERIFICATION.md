@@ -1,9 +1,9 @@
-# Build Verification — Diri. Playroom Date v0.42.0
+# Build Verification — Diri. Playroom Date v0.42.2
 
-## v0.42.0 — Fireboy & Watergirl Classic-style Co-op
-- `npm test`: **194/194 tes lulus**.
+## v0.42.2 — Fireboy & Watergirl Classic-style Co-op
+- `npm test`: **199/199 tes lulus**.
 - Semua file JavaScript lolos `node --check`; `firebase-database.rules.json` valid.
-- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`, `jumpSpeed=560`, `gravity=1500`; Firebase Rules tidak berubah.
+- `ELEMENTAL_MAP_VERSION=26`, `prototypeVersion=11`, `jumpSpeed=560`, `gravity=1500`; Firebase Rules tidak berubah.
 - Lima level prototype dirancang manual dengan 11–12 platform/ledge per layout, dua spawn bawah, satu galeri utama yang lebar, dua pintu pada tingkat tengah, dan cabang atas untuk permata.
 - Tiap sisi bawah memiliki kolam elemen yang aman bagi karakternya serta kolam elemen lawan yang harus dihindari/dilompati. Rute tiap karakter melewati entry ledge, stepping stone, lalu galeri pintunya.
 - Switch berada di sisi masing-masing galeri; gerbang bersama membatasi lintasan tengah. Pintu Bara dan Nira berada pada galeri yang sama, bukan di puncak menara platform.
@@ -82,3 +82,13 @@ Tes otomatis memvalidasi logika, geometri, jangkauan, dan input berdasarkan sour
 ## Catatan pengujian
 - Tes otomatis tidak membuktikan UX dan perilaku input di semua model perangkat. Perlu playtest dua HP, analog, fullscreen/orientation, dan transisi level setelah deployment.
 - Android dapat tetap menampilkan status bar/notifikasi sistem dan toast keluar fullscreen; halaman tidak dapat menyembunyikan UI sistem yang dikendalikan OS.
+
+
+## v0.42.2 — Challenge Accessibility Repair
+- Automated test suite: 199/199 passed.
+- Level 2 lift clearance checked against both direct player ascent corridors and upper route clearance at maximum lift height.
+- Required Level 4 wind levers checked on stable ledges and within interaction radius.
+- Required Level 5 valves checked on stable entry ledges and within interaction radius.
+- All prototype jump routes and hazard clearance simulations passed.
+- JavaScript syntax and Firebase Rules JSON validation passed.
+- Manual browser and two-device multiplayer playtest remains required.

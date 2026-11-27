@@ -199,3 +199,12 @@
 ## Belum dibuktikan pada perangkat nyata
 - Actual orientation lock support varies by mobile browser and operating system.
 - Two-device Firebase play, touch feel, and visual camera framing still require real-device verification.
+
+
+## v0.42.2 — Challenge Accessibility Repair
+- Level 2 paired lifts dipindahkan ke sisi jalur utama agar tidak menangkap karakter saat naik ke galeri pintu.
+- Amplitudo lift dikurangi menjadi 18 unit; jarak vertikal ke jalur atas tetap aman pada seluruh fase gerak.
+- Katup Level 5 dipindahkan ke posisi berdiri yang sejajar dengan platform masuk dan berada dalam radius interaksi.
+- Level 3 mempertahankan hazard berwaktu dengan jendela aman; semua lintasan karakter diuji ulang.
+- Map version dinaikkan ke 26 dan prototype version ke 11 untuk membersihkan state posisi/puzzle dari build sebelumnya.
+- 199 tes otomatis lulus; ini bukan pengganti uji langsung dua perangkat.

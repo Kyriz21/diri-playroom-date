@@ -1,4 +1,4 @@
-# Mulai di sini — Diri. Playroom Date v0.42.0
+# Mulai di sini — Diri. Playroom Date v0.42.2
 
 ## Yang berubah pada Elemental Duo
 - Lima prototype mengikuti komposisi puzzle side-view klasik: dua spawn di sisi bawah, saluran air/lava di kedua sisi, galeri utama di tengah, dua pintu elemen, dan cabang atas untuk permata.
@@ -8,12 +8,17 @@
 - Fisika lompatan dipertahankan dari build sebelumnya. Analog tetap hanya menggerakkan kiri/kanan.
 - 45 blueprint level lanjutan tetap tersimpan untuk ekspansi.
 
-## Memasang v0.42.0
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.42.0_Classic_Cooperative_Labyrinth.zip`.
+- Level 2: lift sisi tidak lagi melintasi jalur vertikal wajib.
+- Level 3: jendela aman lava lebih panjang; semburan uap aktif lebih singkat.
+- Level 5: katup ditempatkan pada platform masuk yang stabil dan dapat dijangkau dari spawn masing-masing.
+- Verifikasi otomatis: 199/199 tes lulus.
+
+## Memasang v0.42.2
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.42.2_Challenge_Accessibility_Repair.zip`.
 2. Backup repository GitHub Pages, lalu unggah seluruh isi proyek ke root repository dan timpa file lama.
 3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
-4. Buat sesi Elemental Duo baru untuk playtest. Sesi lama dimigrasikan ke prototype level 01 oleh `prototypeVersion=8`; state puzzle per-level dibersihkan.
-5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=22`. Firebase Rules tidak perlu dipublikasikan ulang karena file Rules tidak berubah.
+4. Buat sesi Elemental Duo baru untuk playtest. Sesi lama dimigrasikan ke prototype level 01 oleh `prototypeVersion=11`; state puzzle per-level dibersihkan.
+5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=26`. Firebase Rules tidak perlu dipublikasikan ulang karena file Rules tidak berubah.
 
 ---
 
@@ -66,3 +71,6 @@ Blueprint tema, hazard, sakelar, katup, tuas angin, dan urutan puzzle dari lima 
 - Analog menggantikan tombol arah; joystick ke atas juga memicu lompatan.
 - INTERAKSI hanya muncul dekat katup/tuas. Pijakan elemen aktif otomatis saat diinjak.
 - Fisika lebih toleran dengan jump buffer dan coyote time; kurva kesulitan 50 level diturunkan.
+
+
+Build v0.42.2 memperbaiki akses lift Level 2 dan posisi katup Level 5. Gunakan room baru setelah deploy karena state map dimigrasikan.

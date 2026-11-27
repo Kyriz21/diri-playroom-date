@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.42.0';
+} from './elemental-duo-logic.js?v=0.42.2';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -591,14 +591,14 @@ export function mountElementalDuo(root, context) {
       let needsPrototypeMigration = false;
       await runTransaction(metaRef, current => {
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:8
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:11
         };
-        if (Number(current.prototypeVersion) === 8) return current;
+        if (Number(current.prototypeVersion) === 11) return current;
         needsPrototypeMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, prototypeVersion:8
+          results:{}, prototypeVersion:11
         };
       });
       if (needsPrototypeMigration) {
@@ -826,9 +826,13 @@ export function mountElementalDuo(root, context) {
     if (switchBusy || localPlayer.complete || data.meta?.phase !== 'playing') return;
     const level = levelData();
     if (!forcedPlate) {
-      const nearbyValve = (level.valves || []).find(item => Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
+      // Ignore controls that this player has already completed. Otherwise an
+      // activated valve/lever could keep capturing the interact button when
+      // another control is within the same radius (especially in Level 5).
+      const ownElement = CHARACTER[role].element;
+      const nearbyValve = (level.valves || []).find(item => item.element === ownElement && !valveIsOpen(item.id) && Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
       if (nearbyValve) { attemptValve(nearbyValve); return; }
-      const nearbyWindLever = (level.windLevers || []).find(item => Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
+      const nearbyWindLever = (level.windLevers || []).find(item => item.element === ownElement && !windLeverIsOn(item.id) && Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
       if (nearbyWindLever) { attemptWindLever(nearbyWindLever); return; }
     }
     const nearby = forcedPlate || level.switches.find(item => Math.hypot(localPlayer.x-item.x, (localPlayer.y-3)-item.y) < 62);
@@ -983,6 +987,10 @@ export function mountElementalDuo(root, context) {
     for (const entry of platforms) {
       const platform = entry.current;
       if (!platform.active) continue;
+      // One-way platforms must not block a character moving underneath them.
+      // Side collision only applies once the player's feet are above the ledge;
+      // downward landing is still handled by the vertical collision pass below.
+      if (platform.oneWay && localPlayer.y + halfH > platform.y) continue;
       const body = { x:localPlayer.x-halfW, y:localPlayer.y-halfH+3, w:halfW*2, h:halfH*2-3 };
       if (!rectsOverlap(body, platform)) continue;
       const previousX = localPlayer.x - localPlayer.vx * dt;
@@ -1023,7 +1031,7 @@ export function mountElementalDuo(root, context) {
           localPlayer.grounded = true;
           localPlayer.supportPlatformId = platform.id === 'main-floor' ? null : platform.id;
         }
-      } else if (horizontal && localPlayer.vy < 0 && localPlayer.y - halfH < platform.y + platform.h && localPlayer.y - halfH > platform.y) {
+      } else if (!platform.oneWay && horizontal && localPlayer.vy < 0 && localPlayer.y - halfH < platform.y + platform.h && localPlayer.y - halfH > platform.y) {
         localPlayer.y = platform.y + platform.h + halfH;
         localPlayer.vy = 0;
       }
@@ -2032,7 +2040,7 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 8)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 11)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {

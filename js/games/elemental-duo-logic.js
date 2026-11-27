@@ -4,7 +4,7 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 22;
+export const ELEMENTAL_MAP_VERSION = 26;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1500;
 export const ELEMENTAL_MOVE_SPEED = 260;
@@ -1707,19 +1707,19 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
   {
     name:'Twin Gate Temple', mechanic:'Dua galeri pintu, jalur permata atas, saluran elemen bawah, dan gerbang kerja sama',
     platforms:[
-      ['west-high-ledge',72,155,300],['east-high-ledge',788,155,300],
-      ['west-upper-route',165,255,235],['east-upper-route',760,255,245],
+      ['west-high-ledge',72,195,300],['east-high-ledge',788,195,300],
+      ['west-upper-route',165,275,235],['east-upper-route',760,275,245],
       ['shared-door-gallery',95,355,970],
-      ['west-entry-gallery',35,455,350],['east-entry-gallery',775,455,350],
-      ['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
+      ['west-inner-step',340,425,140],['east-inner-step',660,425,130],
       ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
     ],
     routes:{fire:[5,7,4],water:[6,8,4]},
     hazards:[
-      {id:'west-lava-channel',x:60,y:429,w:82,h:26,type:'fire',visual:'lava'},
-      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
-      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
-      {id:'east-lava-pit',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'}
+      {id:'west-lava-channel',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
+      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
+      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
+      {id:'east-lava-pit',x:800,y:449,w:55,h:26,type:'fire',visual:'lava'}
     ],
     switches:[{element:'fire',platform:4,x:465},{element:'water',platform:4,x:695}],
     gems:[{element:'fire',platform:0,x:215},{element:'water',platform:1,x:920}],
@@ -1727,8 +1727,8 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
     walls:[
       [0,24,24,526,true],[1136,24,24,526,true],
       [145,175,18,180,true],[1010,175,18,180,true],
-      [350,315,24,40,'solid'],[785,315,24,40,'solid'],
-      [250,215,20,40,'solid'],[895,215,20,40,'solid'],
+      [500,315,24,40,false],[620,315,24,40,false],
+      [250,215,20,40,'solid'],[850,215,20,40,'solid'],
       [485,335,44,12,false],[635,335,44,12,false],
       [76,82,155,14,false],[930,82,155,14,false]
     ],
@@ -1738,21 +1738,21 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
   {
     name:'Twin Lift Hall', mechanic:'Galeri bertingkat, lift tengah, lantai es, dan saluran elemen terpisah',
     platforms:[
-      ['west-high-ledge',48,155,285],['east-high-ledge',830,155,280],
-      ['west-upper-route',145,255,210],['east-upper-ice-route',810,255,220],
+      ['west-high-ledge',48,195,285],['east-high-ledge',830,195,280],
+      ['west-upper-route',145,275,210],['east-upper-ice-route',810,275,220],
       ['shared-door-gallery',135,355,890],
-      ['west-entry-gallery',35,455,320],['east-entry-gallery',805,455,320],
-      ['central-lift',450,300,95],['west-inner-step',190,425,105],['east-inner-step',880,425,105],
-      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
+      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
+      ['west-lift',220,310,100],['west-inner-step',340,425,140],['east-inner-step',660,425,130],
+      ['east-lift',850,310,100],['east-wall-alcove',1050,255,70]
     ],
     routes:{fire:[5,8,4],water:[6,9,4]},
     platformKinds:{3:'ice'},
     hazards:[
-      {id:'west-lava-channel',x:60,y:429,w:82,h:26,type:'fire',visual:'lava'},
-      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
-      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
-      {id:'east-lava-pit',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'},
-      {id:'lift-steam',x:535,y:405,w:42,h:44,type:'steam',visual:'steam',cycle:{periodMs:6200,activeMs:2100,phaseMs:600}}
+      {id:'west-lava-channel',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
+      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
+      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
+      {id:'east-lava-pit',x:800,y:449,w:55,h:26,type:'fire',visual:'lava'},
+      {id:'lift-steam',x:535,y:405,w:42,h:44,type:'steam',visual:'steam',cycle:{periodMs:6200,activeMs:1500,phaseMs:600}}
     ],
     switches:[{element:'fire',platform:4,x:445},{element:'water',platform:4,x:715}],
     gems:[{element:'fire',platform:0,x:205},{element:'water',platform:1,x:955}],
@@ -1760,34 +1760,34 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
     walls:[
       [0,24,24,526,true],[1136,24,24,526,true],
       [125,175,18,180,true],[1035,175,18,180,true],
-      [330,315,24,40,'solid'],[825,315,24,40,'solid'],
-      [250,215,20,40,'solid'],[920,215,20,40,'solid'],
+      [500,315,24,40,false],[620,315,24,40,false],
+      [250,215,20,40,'solid'],[850,215,20,40,'solid'],
       [480,335,42,12,false],[655,335,42,12,false],
       [92,82,145,14,false],[930,82,145,14,false]
     ],
     rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    movingPlatform:{slot:7,axis:'y',amplitude:34,periodMs:6500,phaseMs:0},
+    movingPlatforms:[{slot:7,axis:'y',amplitude:18,periodMs:7200,phaseMs:0},{slot:10,axis:'y',amplitude:18,periodMs:7200,phaseMs:3600}],
     iceZones:[{id:'east-ice-gallery',x:810,y:240,w:145,h:34}],
     currents:[{id:'lift-cross-current',x:475,y:395,w:150,h:58,forceX:20,forceY:-12,pulsePeriodMs:7200,phaseMs:900}],
-    note:'Lift tengah menghubungkan galeri utama dengan jalur atas. Es mengubah gesekan dan semburan uap mengatur waktu perpindahan.'
+    note:'Dua lift bergerak menghubungkan galeri utama dengan jalur atas di masing-masing sisi. Es mengubah gesekan dan semburan uap mengatur waktu perpindahan.'
   },
   {
     name:'Furnace Split Chambers', mechanic:'Ruang bara bersekat, jalur aman elemen, dan semburan uap',
     platforms:[
-      ['west-high-ledge',95,155,275],['east-high-ledge',770,155,320],
-      ['west-upper-route',185,255,205],['east-upper-route',760,255,225],
+      ['west-high-ledge',95,195,275],['east-high-ledge',770,195,320],
+      ['west-upper-route',185,275,205],['east-upper-route',760,275,225],
       ['shared-door-gallery',75,355,1010],
-      ['west-entry-gallery',35,455,345],['east-entry-gallery',780,455,345],
-      ['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
+      ['west-inner-step',340,425,140],['east-inner-step',660,425,130],
       ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
     ],
     routes:{fire:[5,7,4],water:[6,8,4]},
     hazards:[
-      {id:'west-pulsing-lava',x:60,y:429,w:82,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:4200,phaseMs:450}},
-      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
-      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
-      {id:'east-pulsing-lava',x:790,y:429,w:78,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:4200,phaseMs:900}},
-      {id:'gallery-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',cycle:{periodMs:5600,activeMs:2300,phaseMs:900}}
+      {id:'west-pulsing-lava',x:155,y:449,w:80,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:2600,phaseMs:450}},
+      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
+      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
+      {id:'east-pulsing-lava',x:800,y:449,w:55,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:2600,phaseMs:900}},
+      {id:'gallery-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',cycle:{periodMs:5600,activeMs:1500,phaseMs:900}}
     ],
     switches:[{element:'fire',platform:4,x:455},{element:'water',platform:4,x:705}],
     gems:[{element:'fire',platform:0,x:240},{element:'water',platform:1,x:920}],
@@ -1795,30 +1795,30 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
     walls:[
       [0,24,24,526,true],[1136,24,24,526,true],
       [160,175,18,180,true],[1000,175,18,180,true],
-      [355,315,24,40,'solid'],[780,315,24,40,'solid'],
-      [270,215,20,40,'solid'],[885,215,20,40,'solid'],
+      [500,315,24,40,false],[620,315,24,40,false],
+      [270,215,20,40,'solid'],[850,215,20,40,'solid'],
       [485,335,45,12,false],[645,335,45,12,false],
       [110,82,155,14,false],[920,82,155,14,false]
     ],
     rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    note:'Lava berdenyut dan uap menghalangi galeri tengah. Pemain perlu memilih waktu aman sebelum mengaktifkan kedua tombol.'
+    note:'Lava memiliki jendela aman yang lebih panjang dan uap menyala singkat. Tunggu pulsa mereda, lalu aktifkan tombol pada sisi masing-masing.'
   },
   {
     name:'Wind Cross Gallery', mechanic:'Galeri silang, lift sisi, arus angin, dan jalur permata atas',
     platforms:[
-      ['west-high-ledge',55,155,300],['east-high-ledge',810,155,295],
-      ['west-upper-route',155,255,215],['east-upper-route',785,255,235],
+      ['west-high-ledge',55,195,300],['east-high-ledge',810,195,295],
+      ['west-upper-route',155,275,215],['east-upper-route',785,275,235],
       ['shared-door-gallery',110,355,940],
-      ['west-entry-gallery',35,455,330],['east-entry-gallery',795,455,330],
-      ['wind-lift',450,300,95],['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
+      ['wind-lift',450,300,95],['west-inner-step',340,425,140],['east-inner-step',660,425,130],
       ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
     ],
     routes:{fire:[5,8,4],water:[6,9,4]},
     hazards:[
-      {id:'west-lava-channel',x:60,y:429,w:82,h:26,type:'fire',visual:'lava'},
-      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
-      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
-      {id:'east-lava-pit',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'}
+      {id:'west-lava-channel',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
+      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
+      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
+      {id:'east-lava-pit',x:800,y:449,w:55,h:26,type:'fire',visual:'lava'}
     ],
     switches:[{element:'fire',platform:4,x:440},{element:'water',platform:4,x:720}],
     gems:[{element:'fire',platform:0,x:205},{element:'water',platform:1,x:950}],
@@ -1826,41 +1826,41 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
     walls:[
       [0,24,24,526,true],[1136,24,24,526,true],
       [135,175,18,180,true],[1025,175,18,180,true],
-      [340,315,24,40,'solid'],[805,315,24,40,'solid'],
-      [270,215,20,40,'solid'],[920,215,20,40,'solid'],
+      [500,315,24,40,false],[620,315,24,40,false],
+      [270,215,20,40,'solid'],[850,215,20,40,'solid'],
       [480,335,42,12,false],[655,335,42,12,false],
       [95,82,145,14,false],[930,82,145,14,false]
     ],
     rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
     movingPlatform:{slot:7,axis:'y',amplitude:38,periodMs:6100,phaseMs:1600},
     windZones:[
-      {id:'west-updraft',x:170,y:245,w:118,h:80,forceX:0,forceY:-54,pulsePeriodMs:7200,phaseMs:0,leverId:'wind-west'},
-      {id:'east-crosswind',x:870,y:245,w:118,h:80,forceX:-42,forceY:-22,reversePeriodMs:7600,phaseMs:1200,leverId:'wind-east'}
+      {id:'west-updraft',x:170,y:245,w:118,h:80,forceX:0,forceY:-25,pulsePeriodMs:7200,phaseMs:0,leverId:'wind-west'},
+      {id:'east-crosswind',x:870,y:245,w:118,h:80,forceX:-18,forceY:-12,reversePeriodMs:7600,phaseMs:1200,leverId:'wind-east'}
     ],
     windLevers:[
-      {id:'wind-west',x:285,y:327,element:'fire',label:'Tuas Bara',radius:52},
-      {id:'wind-east',x:900,y:327,element:'water',label:'Tuas Air',radius:52}
+      {id:'wind-west',x:370,y:390,element:'fire',label:'Tuas Bara',radius:52},
+      {id:'wind-east',x:790,y:390,element:'water',label:'Tuas Air',radius:52}
     ],
     requiredWindLevers:['wind-west','wind-east'],
-    note:'Tuas di galeri utama mengubah arus udara. Lift bergerak membuka akses ke jalur atas dan permata.'
+    note:'Tuas di pijakan sisi mengubah arus udara. Lift bergerak memberi akses alternatif ke jalur atas dan permata.'
   },
   {
     name:'Ancient Twin Valve Vault', mechanic:'Ruang katup ganda, urutan tombol, dan jalur silang',
     platforms:[
-      ['west-high-ledge',80,155,285],['east-high-ledge',800,155,300],
-      ['west-upper-route',175,255,215],['east-upper-route',775,255,235],
+      ['west-high-ledge',80,195,285],['east-high-ledge',800,195,300],
+      ['west-upper-route',175,275,215],['east-upper-route',775,275,235],
       ['shared-door-gallery',80,355,1000],
-      ['west-entry-gallery',30,455,350],['east-entry-gallery',780,455,350],
-      ['central-valve-step',445,295,100],['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
+      ['central-valve-step',445,295,100],['west-inner-step',340,425,140],['east-inner-step',660,425,130],
       ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
     ],
     routes:{fire:[5,8,4],water:[6,9,4]},
     hazards:[
-      {id:'west-sealed-lava',x:60,y:429,w:82,h:26,type:'fire',visual:'lava',valveId:'heart-fire-valve'},
-      {id:'west-sealed-water',x:295,y:429,w:78,h:26,type:'water'},
-      {id:'east-sealed-water',x:1018,y:429,w:82,h:26,type:'water',valveId:'heart-water-valve'},
-      {id:'east-sealed-lava',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'},
-      {id:'sealed-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',valveId:'heart-water-valve',cycle:{periodMs:5900,activeMs:2300,phaseMs:700}}
+      {id:'west-sealed-lava',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
+      {id:'west-sealed-water',x:285,y:449,w:55,h:26,type:'water',valveId:'heart-fire-valve'},
+      {id:'east-sealed-water',x:925,y:449,w:80,h:26,type:'water'},
+      {id:'east-sealed-lava',x:800,y:449,w:55,h:26,type:'fire',visual:'lava',valveId:'heart-water-valve'},
+      {id:'sealed-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',valveId:'heart-water-valve',cycle:{periodMs:5900,activeMs:1600,phaseMs:700}}
     ],
     switches:[{element:'fire',platform:4,x:455},{element:'water',platform:4,x:705}],
     gems:[{element:'fire',platform:0,x:225},{element:'water',platform:1,x:930}],
@@ -1868,41 +1868,46 @@ const CLASSIC_PROTOTYPE_LAYOUTS = [
     walls:[
       [0,24,24,526,true],[1136,24,24,526,true],
       [150,175,18,180,true],[1015,175,18,180,true],
-      [345,315,24,40,'solid'],[795,315,24,40,'solid'],
-      [260,215,20,40,'solid'],[915,215,20,40,'solid'],
+      [500,315,24,40,false],[620,315,24,40,false],
+      [260,215,20,40,'solid'],[850,215,20,40,'solid'],
       [485,335,44,12,false],[650,335,44,12,false],
       [105,82,150,14,false],[930,82,150,14,false]
     ],
     rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
     valves:[
-      {id:'heart-fire-valve',x:320,y:327,element:'fire',label:'Katup Bara',radius:52},
-      {id:'heart-water-valve',x:830,y:327,element:'water',label:'Katup Air',radius:52}
+      {id:'heart-fire-valve',x:250,y:447,element:'fire',label:'Katup Bara',radius:58},
+      {id:'heart-water-valve',x:910,y:447,element:'water',label:'Katup Air',radius:58}
     ],
     requiredValves:['heart-fire-valve','heart-water-valve'],
     switchSequence:['fire','water'],
     windLevers:[
-      {id:'heart-wind-west',x:255,y:327,element:'fire',label:'Tuas Bara',radius:50},
-      {id:'heart-wind-east',x:900,y:327,element:'water',label:'Tuas Air',radius:50}
+      {id:'heart-wind-west',x:380,y:327,element:'fire',label:'Tuas Bara',radius:50},
+      {id:'heart-wind-east',x:780,y:327,element:'water',label:'Tuas Air',radius:50}
     ],
-    requiredWindLevers:['heart-wind-west','heart-wind-east'],
+    // Wind levers remain usable as optional aids; they no longer make the final gate mandatory.
+    requiredWindLevers:[],
     iceZones:[{id:'heart-west-ice',x:160,y:342,w:92,h:34}],
     windZones:[
-      {id:'heart-west-updraft',x:165,y:245,w:118,h:80,forceX:0,forceY:-52,pulsePeriodMs:7200,phaseMs:400,leverId:'heart-wind-west'},
-      {id:'heart-east-crosswind',x:860,y:245,w:118,h:80,forceX:-40,forceY:-22,reversePeriodMs:7600,phaseMs:1300,leverId:'heart-wind-east'}
+      {id:'heart-west-updraft',x:165,y:245,w:118,h:80,forceX:0,forceY:-24,pulsePeriodMs:7200,phaseMs:400,leverId:'heart-wind-west'},
+      {id:'heart-east-crosswind',x:860,y:245,w:118,h:80,forceX:-16,forceY:-12,reversePeriodMs:7600,phaseMs:1300,leverId:'heart-wind-east'}
     ],
     currents:[
-      {id:'heart-central-current',x:475,y:405,w:78,h:66,forceX:22,forceY:-28,pulsePeriodMs:6800,phaseMs:1100},
-      {id:'heart-west-current',x:340,y:342,w:90,h:34,forceX:24,forceY:0,pulsePeriodMs:6200,phaseMs:700}
+      {id:'heart-central-current',x:475,y:405,w:78,h:66,forceX:10,forceY:-10,pulsePeriodMs:6800,phaseMs:1100},
+      {id:'heart-west-current',x:340,y:342,w:90,h:34,forceX:8,forceY:0,pulsePeriodMs:6200,phaseMs:700}
     ],
-    note:'Atur dua katup dan aktifkan tuas elemen. Ikuti urutan tombol, lewati ruang berbahaya, lalu masuk ke pintu masing-masing.'
+    note:'Atur dua katup, aktifkan tombol sesuai urutan, lalu capai pintu elemen masing-masing. Tuas angin dapat digunakan sebagai bantuan opsional.'
   }
 ];
 function createClassicPrototypeMap(level, worldIndex) {
   const layout = CLASSIC_PROTOTYPE_LAYOUTS[worldIndex];
-  const makePlatform = ([name,x,y,w], slot) => ({
-    id:`classic-${level.id}-${name}`,x,y,w,h:10,visualH:36,kind:layout.platformKinds?.[slot] || 'stone',corridor:false,chamber:true,
-    ...(layout.movingPlatform?.slot === slot ? {motion:{axis:layout.movingPlatform.axis,amplitude:layout.movingPlatform.amplitude,periodMs:layout.movingPlatform.periodMs,phaseMs:layout.movingPlatform.phaseMs}} : {})
-  });
+  const movingPlatforms = layout.movingPlatforms || (layout.movingPlatform ? [layout.movingPlatform] : []);
+  const makePlatform = ([name,x,y,w], slot) => {
+    const moving = movingPlatforms.find(item => item.slot === slot);
+    return {
+      id:`classic-${level.id}-${name}`,x,y,w,h:10,visualH:36,kind:layout.platformKinds?.[slot] || 'stone',corridor:false,chamber:true,oneWay:true,
+      ...(moving ? {motion:{axis:moving.axis,amplitude:moving.amplitude,periodMs:moving.periodMs,phaseMs:moving.phaseMs}} : {})
+    };
+  };
   const platforms = layout.platforms.map(makePlatform);
   const bySlot = slot => platforms[slot];
   const walls = layout.walls.map(([x,y,w,h,mode=false],index) => ({

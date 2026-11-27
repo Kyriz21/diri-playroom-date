@@ -29,7 +29,8 @@ test('Prototype lima level memakai layout manual dua jalur ala puzzle klasik', (
     assert.equal(level.mapTopology?.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
     assert.ok(level.platforms.length>=10 && level.platforms.length<=12);
     assert.ok(level.ruinWalls.filter(wall=>wall.blockSideOnly).length>=4,'solid chamber dividers create real passages');
-    assert.ok(level.ruinWalls.filter(wall=>wall.solid&&!wall.blockSideOnly).length>=4,'hand-placed solid barriers shape the maze routes');
+    assert.ok(level.ruinWalls.filter(wall=>wall.solid&&!wall.blockSideOnly).length>=2,'only deliberate solid barriers remain; the gate is the main co-op blocker');
+    assert.ok(level.ruinWalls.filter(wall=>!wall.solid&&!wall.blockSideOnly).length>=2,'broken wall panels remain decorative and do not seal passages');
     assert.equal(level.ruinWalls.filter(wall=>/room-\d+-(left|right)-jamb/.test(wall.id)).length,0,'rooms use authored wall fragments instead of repetitive platform arches');
     assert.ok(level.hazards.filter(h=>h.type==='fire').length>=2 && level.hazards.filter(h=>h.type==='water').length>=2,'both sides include safe and unsafe element pools');
     assert.ok(level.hazards.filter(h=>h.y>=420).length>=4,'element pools belong to the lower traversal galleries');
@@ -49,7 +50,65 @@ test('Prototype lima level memakai layout manual dua jalur ala puzzle klasik', (
   assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].currents.length>0);
   assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[2].hazards.some(hazard=>hazard.visual==='lava'&&hazard.cycle));
   assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[3].windZones.length>0);
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[4].requiredValves.length===2 && ELEMENTAL_PROTOTYPE_LEVELS[4].requiredWindLevers.length===2);
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[4].requiredValves.length===2 && ELEMENTAL_PROTOTYPE_LEVELS[4].windLevers.length===2);
+  assert.equal(ELEMENTAL_PROTOTYPE_LEVELS[4].requiredWindLevers.length,0,'final gate does not require optional wind levers');
+});
+
+test('Katup Level 5 masing-masing menonaktifkan hazard lawan pada jalur pemiliknya', () => {
+  const level = ELEMENTAL_PROTOTYPE_LEVELS[4];
+  const fireValve = level.valves.find(valve => valve.id.endsWith('heart-fire-valve'));
+  const waterValve = level.valves.find(valve => valve.id.endsWith('heart-water-valve'));
+  assert.equal(fireValve.element,'fire');
+  assert.equal(waterValve.element,'water');
+  const fireControlled = level.hazards.filter(hazard => hazard.valveId === fireValve.id);
+  const waterControlled = level.hazards.filter(hazard => hazard.valveId === waterValve.id);
+  assert.ok(fireControlled.some(hazard => hazard.type === 'water' && hazard.x < 580), 'Bara can disable the water pit on the west route');
+  assert.ok(waterControlled.some(hazard => hazard.type === 'fire' && hazard.x > 580), 'Nira can disable the lava pit on the east route');
+  assert.ok(!fireControlled.some(hazard => hazard.type === 'fire' && hazard.x < 580), 'Bara’s safe lava pool is never disabled by the valve');
+  assert.ok(!waterControlled.some(hazard => hazard.type === 'water' && hazard.x > 580), 'Nira’s safe water pool is never disabled by the valve');
+  assert.deepEqual([...level.requiredValves].sort(),[fireValve.id,waterValve.id].sort());
+});
+
+test('Level 3 memberi jendela aman yang cukup untuk melewati lava dan uap', () => {
+  const level3 = ELEMENTAL_PROTOTYPE_LEVELS[2];
+  const pulsingLava = level3.hazards.filter(hazard => hazard.visual === 'lava' && hazard.cycle);
+  const steam = level3.hazards.filter(hazard => hazard.type === 'steam' && hazard.cycle);
+  assert.equal(pulsingLava.length, 2);
+  assert.ok(pulsingLava.every(hazard => hazard.cycle.activeMs <= hazard.cycle.periodMs * .42), 'lava should leave a generous inactive window');
+  assert.ok(steam.length > 0 && steam.every(hazard => hazard.cycle.activeMs <= hazard.cycle.periodMs * .3), 'steam should pulse briefly enough to time a crossing');
+});
+
+test('Perbaikan tantangan prototype menjaga jalur utama bebas dari lift dan kontrol wajib tetap terjangkau', () => {
+  const level2 = ELEMENTAL_PROTOTYPE_LEVELS[1];
+  const westLift = level2.platforms.find(platform => platform.id.endsWith('west-lift'));
+  const eastLift = level2.platforms.find(platform => platform.id.endsWith('east-lift'));
+  assert.ok(westLift?.motion?.axis === 'y' && eastLift?.motion?.axis === 'y');
+  assert.ok(westLift.x + westLift.w < 410 - 14, 'west lift must stay clear of Bara’s direct climb to the gallery');
+  assert.ok(eastLift.x > 750 + 14, 'east lift must stay clear of Nira’s direct climb to the gallery');
+  for (const lift of [westLift,eastLift]) {
+    const upper = level2.platforms.find(platform => platform.id.includes(lift === westLift ? 'west-upper' : 'east-upper'));
+    const lowestLiftY = lift.y - lift.motion.amplitude;
+    assert.ok(lowestLiftY >= upper.y + upper.h + 6, 'moving lift must not overlap the upper route at its highest point');
+    assert.ok(lift.y + lift.motion.amplitude < 355, 'moving lift remains above the main gallery');
+  }
+
+  const level4 = ELEMENTAL_PROTOTYPE_LEVELS[3];
+  for (const id of level4.requiredWindLevers) {
+    const lever = level4.windLevers.find(item => item.id.endsWith(id.replace(/^classic-4-/,'')) || item.id === id);
+    assert.ok(lever, `required lever ${id} exists`);
+    const platform = level4.platforms.find(item => lever.x >= item.x && lever.x <= item.x+item.w && Math.abs((lever.y+28)-item.y) <= 10);
+    assert.ok(platform && !platform.motion, `required lever ${id} is on a stable reachable ledge`);
+    assert.ok(Math.abs(lever.y - (platform.y-13)) < (lever.radius || 58), `required lever ${id} is within interaction radius while standing`);
+  }
+
+  const level5 = ELEMENTAL_PROTOTYPE_LEVELS[4];
+  for (const id of level5.requiredValves) {
+    const valve = level5.valves.find(item => item.id === id);
+    assert.ok(valve, `required valve ${id} exists`);
+    const platform = level5.platforms.find(item => valve.x >= item.x && valve.x <= item.x+item.w && Math.abs((valve.y+28)-item.y) <= 2);
+    assert.ok(platform && !platform.motion, `required valve ${id} is on a stable entry ledge`);
+    assert.ok(Math.abs(valve.y - (platform.y-13)) < (valve.radius || 58), `required valve ${id} can be activated without jumping into a hazard`);
+  }
 });
 
 test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertahankan mesin untuk ekspansi', () => {
@@ -58,9 +117,9 @@ test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertah
   assert.match(game,/getElementalPrototypeLevel/);
   assert.match(game,/if \(level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT\)/);
   assert.match(game,/<small>\/ 05<\/small>/);
-  assert.match(game,/prototypeVersion:8/);
-  assert.match(game,/Number\(data\.meta\.prototypeVersion\) !== 8/);
-  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 8\)/);
+  assert.match(game,/prototypeVersion:11/);
+  assert.match(game,/Number\(data\.meta\.prototypeVersion\) !== 11/);
+  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 11\)/);
   assert.match(game,/await update\(baseRef, \{ levels:null \}\)/);
   assert.match(game,/drawVine\(/);
   assert.match(game,/const brickW = 54, brickH = 27/);
@@ -114,6 +173,193 @@ test('Lima arena memakai dua jalur bertingkat yang dapat dijangkau dengan lompat
       }
     }
     assert.ok(level.platforms.every(platform=>platform.visualH>=32&&!platform.corridor));
+  }
+});
+
+
+
+test('Lima level prototype memiliki pintu masuk yang terbuka dan tantangan hazard dapat dilewati dengan lompatan normal', () => {
+  const halfW = 14, halfH = 13, dt = 1 / 120;
+  const safeElement = role => role === 'fire' ? 'fire' : 'water';
+  const simulateJump = (level, role, startX, direction, startPlatformY, target, elapsedOffset = 0) => {
+    let x = startX;
+    let y = startPlatformY - halfH;
+    let vy = -ELEMENTAL_JUMP_SPEED;
+    for (let frame = 0; frame < 240; frame++) {
+      const previousBottom = y + halfH;
+      x += direction * ELEMENTAL_MOVE_SPEED * dt;
+      vy += ELEMENTAL_GRAVITY * dt;
+      y += vy * dt;
+      const body = {x:x-halfW,y:y-halfH,w:halfW*2,h:halfH*2};
+      for (const hazard of level.hazards) {
+        const state = getElementalHazardState(hazard, elapsedOffset + frame * dt * 1000);
+        if (state.active === false) continue;
+        if (state.type === 'steam' || state.type !== safeElement(role)) {
+          assert.equal(rectsOverlap(body,state),false,`level ${level.id} ${role} must not collide with ${hazard.id}`);
+        }
+      }
+      if (vy >= 0 && previousBottom <= target.y + 5 && y + halfH >= target.y &&
+          x + halfW > target.x && x - halfW < target.x + target.w) {
+        return {landed:true,x,y:target.y-halfH};
+      }
+    }
+    return {landed:false,x,y};
+  };
+
+  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
+    const routes = level.mapTopology.characterRoutes;
+    const fireEntry = level.platforms[routes.fire[0]];
+    const waterEntry = level.platforms[routes.water[0]];
+    const fireStep = level.platforms[routes.fire[1]];
+    const waterStep = level.platforms[routes.water[1]];
+    const gallery = level.platforms[4];
+
+    // Spawn characters must not start underneath the first ledge.
+    assert.ok(65 + halfW < fireEntry.x, `level ${level.id}: Bara needs an open take-off lane`);
+    assert.ok(1095 - halfW > waterEntry.x + waterEntry.w, `level ${level.id}: Nira needs an open take-off lane`);
+    assert.ok(ELEMENTAL_FLOOR_Y - fireEntry.y <= 85 && ELEMENTAL_FLOOR_Y - waterEntry.y <= 85,
+      `level ${level.id}: first ledge must be reachable with margin`);
+
+    const fireStart = simulateJump(level,'fire',65,1,ELEMENTAL_FLOOR_Y,fireEntry);
+    const waterStart = simulateJump(level,'water',1095,-1,ELEMENTAL_FLOOR_Y,waterEntry);
+    assert.equal(fireStart.landed,true,`level ${level.id}: Bara can reach the first ledge from spawn`);
+    assert.equal(waterStart.landed,true,`level ${level.id}: Nira can reach the first ledge from spawn`);
+
+    // The wrong-element pools sit between a safe launch area and the next ledge.
+    const westLethal = level.hazards.find(h => h.type === 'water' && h.x < 580 && h.y + h.h === fireEntry.y);
+    const westSafe = level.hazards.find(h => h.type === 'fire' && h.x < 580 && h.y + h.h === fireEntry.y);
+    const eastLethal = level.hazards.find(h => h.type === 'fire' && h.x > 580 && h.y + h.h === waterEntry.y);
+    const eastSafe = level.hazards.find(h => h.type === 'water' && h.x > 580 && h.y + h.h === waterEntry.y);
+    assert.ok(westSafe && westLethal && eastSafe && eastLethal, `level ${level.id}: both routes need safe and unsafe pools`);
+    assert.ok(westSafe.x < westLethal.x && westLethal.x + westLethal.w <= fireStep.x,
+      `level ${level.id}: Bara's unsafe pool must be between safe ground and the landing ledge`);
+    assert.ok(eastLethal.x + eastLethal.w < eastSafe.x && waterStep.x + waterStep.w <= eastLethal.x,
+      `level ${level.id}: Nira's unsafe pool must be between the landing ledge and safe ground`);
+
+    const fireHop = simulateJump(level,'fire',245,1,fireEntry.y,fireStep);
+    const waterHop = simulateJump(level,'water',910,-1,waterEntry.y,waterStep);
+    assert.equal(fireHop.landed,true,`level ${level.id}: Bara can clear the water channel`);
+    assert.equal(waterHop.landed,true,`level ${level.id}: Nira can clear the lava channel`);
+
+    assert.equal(simulateJump(level,'fire',400,0,fireStep.y,gallery).landed,true,
+      `level ${level.id}: Bara can reach the switch/door gallery`);
+    assert.equal(simulateJump(level,'water',760,0,waterStep.y,gallery).landed,true,
+      `level ${level.id}: Nira can reach the switch/door gallery`);
+
+    // The optional upper gem branch also needs a practical jump margin.
+    const fireUpper = level.platforms[2], waterUpper = level.platforms[3];
+    assert.ok(gallery.y - fireUpper.y <= 85 && fireUpper.y - level.platforms[0].y <= 85);
+    assert.ok(gallery.y - waterUpper.y <= 85 && waterUpper.y - level.platforms[1].y <= 85);
+    assert.equal(simulateJump(level,'fire',215,0,gallery.y,fireUpper).landed,true,
+      `level ${level.id}: Bara can reach the optional upper route`);
+    assert.equal(simulateJump(level,'fire',215,0,fireUpper.y,level.platforms[0]).landed,true,
+      `level ${level.id}: Bara can reach the upper gem`);
+    assert.equal(simulateJump(level,'water',920,0,gallery.y,waterUpper).landed,true,
+      `level ${level.id}: Nira can reach the optional upper route`);
+    assert.equal(simulateJump(level,'water',920,0,waterUpper.y,level.platforms[1]).landed,true,
+      `level ${level.id}: Nira can reach the upper gem`);
+  }
+});
+
+test('Tantangan lima prototype dapat dilalui dengan collision satu arah, tanpa dinding yang mengunci jalur', () => {
+  const halfW = 14, halfH = 13, dt = 1 / 120;
+  const simulateGameJump = (level, role, startX, startY, direction, target, elapsedOffset = 5000) => {
+    let x = startX, y = startY, vy = -ELEMENTAL_JUMP_SPEED;
+    const safeType = role === 'fire' ? 'fire' : 'water';
+    for (let frame = 0; frame < 240; frame++) {
+      const previousX = x;
+      const previousBottom = y + halfH;
+      const vx = direction * ELEMENTAL_MOVE_SPEED;
+      x += vx * dt;
+
+      // Match the live engine's side-collision rules, including one-way ledges.
+      for (const source of level.platforms) {
+        const platform = getElementalPlatformState(source, elapsedOffset + frame * dt * 1000);
+        if (!platform.active || (platform.oneWay && y + halfH > platform.y)) continue;
+        const body = { x:x-halfW, y:y-halfH+3, w:halfW*2, h:halfH*2-3 };
+        if (!rectsOverlap(body, platform)) continue;
+        if (vx > 0 && previousX + halfW <= platform.x + 4) x = platform.x-halfW;
+        else if (vx < 0 && previousX-halfW >= platform.x+platform.w-4) x = platform.x+platform.w+halfW;
+      }
+      for (const wall of level.ruinWalls.filter(item => item.solid || item.blockSideOnly)) {
+        const body = { x:x-halfW, y:y-halfH+2, w:halfW*2, h:halfH*2-2 };
+        if (!rectsOverlap(body, wall)) continue;
+        if (vx > 0 && previousX + halfW <= wall.x + 4) x = wall.x-halfW-1;
+        else if (vx < 0 && previousX-halfW >= wall.x+wall.w-4) x = wall.x+wall.w+halfW+1;
+      }
+
+      const previousTop = y-halfH;
+      vy += ELEMENTAL_GRAVITY * dt;
+      y += vy * dt;
+      let landed = false;
+      const activePlatforms = level.platforms
+        .map(platform => getElementalPlatformState(platform, elapsedOffset + frame * dt * 1000))
+        .filter(platform => platform.active);
+      for (const platform of [...activePlatforms, ...level.floorSegments]) {
+        const horizontal = x+halfW > platform.x && x-halfW < platform.x+platform.w;
+        const bottom = y+halfH;
+        if (horizontal && vy >= 0 && previousBottom <= platform.y+5 && bottom >= platform.y) {
+          y = platform.y-halfH; vy = 0; landed = true;
+        } else if (!platform.oneWay && horizontal && vy < 0 && y-halfH < platform.y+platform.h && y-halfH > platform.y) {
+          y = platform.y+platform.h+halfH; vy = 0;
+        }
+      }
+      for (const wall of level.ruinWalls.filter(item => item.solid && !item.blockSideOnly)) {
+        const horizontal = x+halfW > wall.x && x-halfW < wall.x+wall.w;
+        const bottom = y+halfH;
+        if (horizontal && vy >= 0 && previousBottom <= wall.y+5 && bottom >= wall.y) {
+          y = wall.y-halfH; vy = 0; landed = true;
+        } else if (horizontal && vy < 0 && y-halfH < wall.y+wall.h && y-halfH > wall.y) {
+          y = wall.y+wall.h+halfH; vy = 0;
+        }
+      }
+      const body = { x:x-halfW, y:y-halfH, w:halfW*2, h:halfH*2 };
+      for (const source of level.hazards) {
+        const hazard = getElementalHazardState(source, elapsedOffset + frame * dt * 1000);
+        if (hazard.active === false || (hazard.type !== 'steam' && hazard.type === safeType)) continue;
+        assert.equal(rectsOverlap(body, hazard), false, `level ${level.id} ${role} route must clear ${hazard.id}`);
+      }
+      if (landed && x+halfW > target.x && x-halfW < target.x+target.w && Math.abs(y+halfH-target.y) < 1) {
+        return { landed:true, x, y };
+      }
+    }
+    return { landed:false, x, y };
+  };
+
+  const engine = readSource('../js/games/elemental-duo.js');
+  assert.match(engine, /platform\.oneWay && localPlayer\.y \+ halfH > platform\.y/);
+  assert.match(engine, /!platform\.oneWay && horizontal && localPlayer\.vy < 0/);
+
+  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
+    const route = level.mapTopology.characterRoutes;
+    for (const [role, playerRole, direction, stepX, galleryX, gemX] of [
+      ['fire','host',1,245,410,215],
+      ['water','guest',-1,910,750,920]
+    ]) {
+      const spawn = level.spawn[playerRole];
+      const entry = level.platforms[route[role][0]];
+      const step = level.platforms[route[role][1]];
+      const gallery = level.platforms[route[role][2]];
+      const upper = level.platforms[role === 'fire' ? 2 : 3];
+      const high = level.platforms[role === 'fire' ? 0 : 1];
+      assert.ok(level.platforms.every(platform => platform.oneWay), `level ${level.id}: prototype ledges are one-way`);
+      assert.equal(simulateGameJump(level,role,spawn.x,spawn.y,direction,entry).landed,true,`level ${level.id}: ${role} reaches the entry gallery`);
+      assert.equal(simulateGameJump(level,role,stepX,entry.y-13,direction,step).landed,true,`level ${level.id}: ${role} clears the element hazard to the inner step`);
+      assert.equal(simulateGameJump(level,role,galleryX,step.y-13,0,gallery).landed,true,`level ${level.id}: ${role} can rise through the gallery to the door floor`);
+      assert.equal(simulateGameJump(level,role,gemX,355-13,0,upper).landed,true,`level ${level.id}: ${role} can reach the optional upper route`);
+      assert.equal(simulateGameJump(level,role,gemX,upper.y-13,0,high).landed,true,`level ${level.id}: ${role} can reach the gem ledge`);
+    }
+  }
+
+  const finalLevel = ELEMENTAL_PROTOTYPE_LEVELS[4];
+  assert.equal(finalLevel.requiredValves.length,2);
+  assert.equal(finalLevel.requiredWindLevers.length,0,'wind controls are optional in the final prototype');
+  assert.deepEqual(finalLevel.switchSequence,['fire','water']);
+  for (const element of ['fire','water']) {
+    const valve = finalLevel.valves.find(item => item.element === element);
+    const lever = finalLevel.windLevers.find(item => item.element === element);
+    assert.ok(valve && lever);
+    assert.ok(Math.abs(valve.x-lever.x) > Math.max(valve.radius||58,lever.radius||58),`${element} valve and lever can be selected separately`);
   }
 });
 
@@ -403,9 +649,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.42\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.42\.0/);
-  assert.match(index, /app\.js\?v=0\.42\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.42\.2/);
+  assert.match(app, /elemental-duo\.js\?v=0\.42\.2/);
+  assert.match(index, /app\.js\?v=0\.42\.2/);
 });
 
 
@@ -1054,8 +1300,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Room map v22 uses handcrafted dual routes for the five prototype maps and preserves generated expansion maps', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,22);
+test('Room map v26 uses handcrafted dual routes for the five prototype maps and preserves generated expansion maps', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,26);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {

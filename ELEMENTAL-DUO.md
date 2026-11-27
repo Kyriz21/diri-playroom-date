@@ -1,21 +1,21 @@
-# Elemental Duo — Panduan Game (build v0.42.0)
+# Elemental Duo — Panduan Game (build v0.42.2)
 
-## Pembaruan v0.42.0 — Fireboy & Watergirl Classic-style Co-op
+## Pembaruan v0.42.2 — Fireboy & Watergirl Classic-style Co-op
 - Lima level prototype mengikuti komposisi puzzle side-view klasik: dua spawn bawah, galeri utama lebar, pintu Bara dan Nira di tingkat yang sama, jalur permata atas, serta gerbang kerja sama di tengah.
 - Setiap sisi bawah memiliki kolam yang aman bagi karakternya dan kolam elemen lawan yang harus dihindari atau dilompati.
 - Rute dasar masing-masing karakter: entry gallery → inner step → shared door gallery. Switch berada di sisi pintu sendiri; kedua switch membuka gerbang tengah.
 - Setiap layout memiliki 11–12 platform/ledge yang ditempatkan manual dengan komposisi berbeda. Dinding penghalang tidak lagi dibuat otomatis di setiap platform.
 - Level 2–5 memperkenalkan lift bergerak, es, uap, lava berdenyut, arus angin, katup, dan urutan switch.
 - `ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`; puncak teoretis sekitar 104,5 unit. Analog tetap hanya untuk kiri/kanan.
-- `ELEMENTAL_MAP_VERSION=22` dan `prototypeVersion=8` memigrasikan posisi serta state puzzle dari map sebelumnya. Firebase Rules tidak berubah.
+- `ELEMENTAL_MAP_VERSION=26` dan `prototypeVersion=11` memigrasikan posisi serta state puzzle dari map sebelumnya. Firebase Rules tidak berubah.
 ## Rute utama
 Setiap level memiliki dua galeri bawah yang dapat dicapai dari spawn. Bara harus menghindari air dan Nira harus menghindari lava. Switch berada di galeri yang sama dengan pintu elemen masing-masing. Keduanya perlu mengaktifkan switch agar gerbang pusat terbuka. Platform di tingkat atas menjadi jalur opsional untuk mengambil permata.
 
 ## Batas mekanik prototype
 Level prototype belum mengimplementasikan semua mekanik Fireboy and Watergirl (misalnya kotak dorong dan tombol tahan permanen). Mekanik aktif adalah lompatan, pijakan, hazard, permata, gerbang, lift, es, angin, katup, dan pintu elemen.
 
-## Verifikasi v0.42.0
-- `npm test`: 194/194 tes lulus.
+## Verifikasi v0.42.2
+- `npm test`: 199/199 tes lulus.
 - JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
 - Geometri jalur, jangkauan lompatan, lokasi switch/valve/lever, hazard, checkpoint, dan pintu diperiksa otomatis.
 - Playtest visual di browser dan dua perangkat dengan Firebase aktif masih diperlukan.
@@ -225,3 +225,7 @@ Build ini sengaja membatasi jalur permainan menjadi lima level percontohan. Urut
 - Karakter mendapat siluet kepala, badan, tangan, kaki, wajah, dan animasi langkah sederhana.
 
 `ELEMENTAL_MAP_VERSION=16` memaksa posisi pemain dari peta lama kembali ke spawn. `prototypeVersion=2` pada metadata sesi memulai ulang sesi lama ke level 1 dan membersihkan state puzzle per-level yang dibuat dengan urutan sebelumnya. Firebase Rules tidak berubah.
+
+
+## Perbaikan v0.42.2 — Area Tantangan
+Level 2 memakai dua lift sisi yang tidak memotong lintasan vertikal utama menuju galeri. Lift berada 18 unit dari posisi dasar dan memiliki celah aman terhadap jalur atas. Katup wajib pada Level 5 berada di atas platform masuk, dapat diaktifkan saat karakter berdiri, dan tidak mengharuskan pemain melompat ke hazard. Gerbang tetap membutuhkan kedua sakelar serta katup yang ditentukan level.

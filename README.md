@@ -1,12 +1,16 @@
-# Diri. Playroom Date v0.42.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.42.2 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.42.0 — Fireboy & Watergirl Classic-style Co-op
+## Pembaruan terbaru v0.42.2 — Fireboy & Watergirl Classic-style Co-op
+- Perbaikan akses tantangan: dua lift Level 2 dipindahkan ke sisi jalur agar tidak menghalangi lompatan wajib menuju galeri. Amplitudo lift dikurangi agar tetap terpisah dari pijakan atas.
+- Katup wajib Level 5 kini berada tepat di atas pijakan masuk dan dapat diaktifkan tanpa harus melompat ke area hazard.
+- Durasi aktif lava berdenyut Level 3 dikurangi menjadi 2,6 detik dari siklus 6,4 detik; jendela aman menjadi lebih panjang.
+- Map version 26 dan prototype version 11; 199/199 tes otomatis lulus.
 
 - Lima level Elemental Duo dirancang manual mengikuti pola puzzle side-view klasik: dua spawn bawah, empat kolam elemen di jalur bawah, galeri utama, dua pintu tengah, cabang permata atas, dan gerbang kerja sama.
 - Jalur Bara dan Nira masing-masing memuat hazard yang aman sesuai elemennya dan hazard elemen lawan yang perlu dihindari.
 - Setiap level memiliki 11–12 pijakan/ledge dengan rute entry → inner step → galeri pintu. Level 2–5 menambahkan lift/es/uap, lava berdenyut, angin, dan katup.
 - Lompatan tetap pada `560 / 1500` (puncak sekitar 104,5 unit); analog tetap hanya untuk gerakan horizontal.
-- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`; Firebase Rules tidak berubah. 194/194 tes otomatis lulus; playtest browser dan dua HP masih diperlukan.
+- `ELEMENTAL_MAP_VERSION=26`, `prototypeVersion=11`; Firebase Rules tidak berubah. 199/199 tes otomatis lulus; playtest browser dan dua HP masih diperlukan.
 
 ## Pembaruan terbaru v0.40.0 — Classic Co-op Level Rebuild
 

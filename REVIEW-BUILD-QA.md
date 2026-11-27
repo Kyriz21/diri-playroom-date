@@ -1,9 +1,9 @@
-# QA — Diri. Playroom Date v0.42.0
+# QA — Diri. Playroom Date v0.42.2
 
-## Hasil verifikasi otomatis v0.42.0
-- `npm test`: **194/194 lulus**.
+## Hasil verifikasi otomatis v0.42.2
+- `npm test`: **199/199 lulus**.
 - Semua file JavaScript lolos `node --check`; Firebase Rules JSON valid.
-- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`; Firebase Rules tidak berubah.
+- `ELEMENTAL_MAP_VERSION=26`, `prototypeVersion=11`; Firebase Rules tidak berubah.
 - Lima layout manual memiliki dua spawn bawah, galeri pintu tengah yang lebar, dua pintu elemen, cabang permata atas, dan 11–12 pijakan/ledge per level.
 - Setiap sisi memiliki hazard aman dan hazard lawan pada jalur bawah; switch berada di sisi pintu masing-masing, dengan gerbang kerja sama di bagian tengah.
 - Level 2–5 memperkenalkan lift/es/uap, lava berdenyut, tuas angin, serta katup dan urutan switch.
@@ -570,3 +570,11 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - [ ] Jantung Kuno: kombinasi mekanik dan rune tidak mengganggu jalur puzzle.
 - [ ] Dua HP: kedua karakter dapat bergerak, menginjak pijakan, mengumpulkan permata, dan mencapai portal masing-masing.
 - [ ] Selesaikan level 05: game menampilkan hasil prototype dan tidak mencoba membuka level 06.
+
+
+## QA v0.42.2 — Challenge Accessibility Repair
+- 199/199 automated tests pass.
+- Tested prototype routes for entry jumps, hazard clearance, inner steps, central gallery, upper gem branch, and control access.
+- Dynamic lift placements checked at their highest and lowest positions against main climb corridors.
+- Required controls checked for correct element assignment and standing interaction range.
+- No live Firebase multiplayer session was available for manual end-to-end verification.
