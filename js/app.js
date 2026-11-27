@@ -9,7 +9,7 @@ const createForm = document.querySelector('#create-form');
 const joinForm = document.querySelector('#join-form');
 const dialogError = document.querySelector('#dialog-error');
 const toastRegion = document.querySelector('#toast-region');
-const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel']);
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade']);
 const needsExplicitLobby = gameId => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 const state = {
@@ -97,7 +97,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -270,6 +270,10 @@ function renderLanding() {
       <div><h2>Balloon Pop 🎈</h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi jangan sampai menyentuh bom!</p></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
     </section>
+    <section class="arcade-landing-card">
+      <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE CLOCK</span><h2>Arcade <span>✦</span></h2><p>Jadikan wajah kalian karakter berkaki mi, lalu speedrun dua belas mini-game dalam satu arena bersama. Bergerak, melompat, menangkap bonus, dan adu skor dari dua perangkat.</p><div class="arcade-landing-tags"><span>12 mini games</span><span>Foto wajah sendiri</span><span>Shared arena</span></div><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Insert coin <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join with a code</button></div></div>
+      <div class="arcade-preview-screen" aria-label="Pratinjau arena arcade dua pemain"><div class="arcade-preview-top"><span>FLAPPY FACE</span><span>GAME 1 / 12</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>${escapeHtml(loadDisplayName() || 'Mia')} · 04</b><span>VS</span><b>04 · Leo</b></div></div>
+    </section>
     <section class="brain-games-section">
       <div class="brain-games-heading"><span class="date-kicker">AKTIVITAS BARU · MINI GAME BERDUA</span><h2>Tiga cara baru untuk saling mengenal</h2><p>Pilih aktivitas, undang pasangan dengan kode, atau mainkan latihan di satu perangkat.</p></div>
       <article class="brain-game-card brain-love-card">
@@ -291,7 +295,7 @@ function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
   const gameId = room.lobby?.selections?.host || 'photobooth';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   if (needsExplicitLobby(gameId)) {
     const ready = room.lobby?.ready || {};
     const membersJoined = Boolean(room.host?.uid && room.guest?.uid);
@@ -352,15 +356,18 @@ function renderActiveSession(room, current) {
   const isLoveMatch = session.gameId === 'lovematch';
   const isColorMatch = session.gameId === 'colormatch';
   const isIQDuel = session.gameId === 'iqduel';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : 'Photobooth';
+  const isArcade = session.gameId === 'arcade';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : isArcade ? 'Arcade' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
-  const modulePromise = isLoveMatch
-    ? import('./games/love-match.js?v=0.46.0').then(module => ({ mount: module.mountLoveMatch }))
-    : isColorMatch
-      ? import('./games/color-match.js?v=0.46.0').then(module => ({ mount: module.mountColorMatch }))
-      : isIQDuel
-        ? import('./games/iq-duel.js?v=0.46.0').then(module => ({ mount: module.mountIQDuel }))
-        : isElementalDuo
+  const modulePromise = isArcade
+    ? import('./games/arcade.js?v=0.47.0').then(module => ({ mount: module.mountArcade }))
+    : isLoveMatch
+      ? import('./games/love-match.js?v=0.46.0').then(module => ({ mount: module.mountLoveMatch }))
+      : isColorMatch
+        ? import('./games/color-match.js?v=0.46.0').then(module => ({ mount: module.mountColorMatch }))
+        : isIQDuel
+          ? import('./games/iq-duel.js?v=0.46.0').then(module => ({ mount: module.mountIQDuel }))
+          : isElementalDuo
           ? import('./games/elemental-duo.js?v=0.44.0').then(module => ({ mount: module.mountElementalDuo }))
           : isBalloonPop
     ? import('./games/balloon-pop.js?v=0.23.0').then(module => ({ mount: module.mountBalloonPop }))
@@ -560,6 +567,8 @@ async function runAction(action, element) {
   if (action === 'open-iq-create') return openDialog('create', 'iqduel');
   if (action === 'open-iq-join') return openDialog('join', 'iqduel');
   if (action === 'open-iq-solo') return openSoloMiniGame('iqduel');
+  if (action === 'open-arcade-create') return openDialog('create', 'arcade');
+  if (action === 'open-arcade-join') return openDialog('join', 'arcade');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

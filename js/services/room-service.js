@@ -10,7 +10,7 @@ import {
 
 const roomRef = (code) => ref(db, `rooms/${normalizeRoomCode(code)}`);
 const roomPath = (code) => `rooms/${normalizeRoomCode(code)}`;
-const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel']);
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade']);
 const needsExplicitLobby = (gameId) => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 function cleanName(name) {

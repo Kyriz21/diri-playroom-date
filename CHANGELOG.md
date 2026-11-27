@@ -254,3 +254,16 @@
 - IQ Duel tetap memakai satu halaman rekap final, dengan kartu skor dan daftar review soal.
 - Firebase Rules perlu dipublikasikan ulang untuk fase `scoring` Color Match serta presence gate lobi.
 - Automated tests: 214/214 passed; live browser/two-device Firebase playtest remains outstanding.
+
+
+## v0.47.0 — Arcade · 12 Mini Games dalam Satu Arena
+- Menambahkan Arcade sebagai mini-game baru ke katalog aktivitas dan menu utama; Elemental Duo tetap diarsipkan dan tidak dihapus dari source.
+- Arcade memiliki 12 ronde singkat: Flappy Face, Heart Catcher, Neon Dodge, Noodle Runner, Coin Rush, Bubble Pop, Sky Hop, Laser Lanes, Rocket Flight, Meteor Dodge, Rhythm Tap, dan Final Sprint.
+- Mendukung foto kamera/galeri yang dikompres menjadi JPEG 128×128 dan dibatasi maksimal 22 KB, atau memilih karakter emoji. Foto karakter disimpan pada node sesi Arcade di Firebase Realtime Database.
+- Menggunakan lobby bersama, kode undangan, presence online, Ready kedua pemain, serta Insert Coin oleh host. Setelah masuk sesi terdapat pemilihan karakter dan konfirmasi siap sebelum permainan dimulai.
+- Arena Canvas bersama menampilkan dua karakter berkepala foto/emoji dengan kaki noodle, skor, tiga nyawa, objek bonus, hazard, hitung mundur, dan progres 12 ronde.
+- Menambahkan kontrol sentuh/keyboard kiri, kanan, naik/lompat, turun, dan aksi; Bubble Pop kini dapat bergerak vertikal, Rocket Flight bisa naik/turun, dan Rhythm Tap memakai tombol aksi.
+- Setelah 12 ronde, hasil dirangkum dalam satu kartu skor akhir dengan pemenang/seri dan rincian skor tiap mini-game.
+- Firebase Rules menambahkan allowlist Arcade, syarat presence untuk Ready/Start, akses node Arcade berdasarkan membership dan sessionId, serta validasi role untuk profil dan skor pemain. Firebase Rules harus dipublikasikan ulang dari build ini.
+- Perbaikan tambahan: timer dibatasi maksimal durasi ronde saat countdown belum dimulai; HUD menampilkan sisa nyawa setiap pemain.
+- `npm test`: **231/231 lulus**. Pemeriksaan sintaks seluruh JavaScript, parsing JSON Firebase Rules, dan keseimbangan tanda kurung ekspresi Rules lulus. Playtest browser serta dua perangkat dengan Firebase aktif belum dilakukan.

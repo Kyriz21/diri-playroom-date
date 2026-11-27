@@ -126,3 +126,7 @@ Notifikasi kecil, pemanggilan webcam `getUserMedia`, dan pemisahan tombol kamera
 ## v0.46.0 — Lobby presence and recap access
 
 Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.46.0. Rules ini menambahkan dua pengaman untuk Love Match, Color Match, dan IQ Duel: pemain hanya dapat menyatakan Ready ketika presence host dan guest sama-sama online; host hanya dapat membuat `activeSession` jika kedua perangkat masih online dan keduanya Ready. Rules juga mengizinkan pembacaan silang tebakan privat Color Match pada fase `scoring` agar host dapat membangun kartu rekap ronde, lalu `finished` untuk hasil akhir. Aturan ini belum diuji dengan project Firebase aktif; lakukan tes dua UID nyata setelah Publish.
+
+
+## v0.47.0 — Arcade Rules
+Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.47.0. Rules ini menambahkan `arcade` ke pilihan game dan activeSession, mewajibkan kedua pemain terhubung sebelum Ready/Start, serta membatasi read/write node Arcade berdasarkan anggota room, gameId, sessionId, UID role, dan TTL room. Validasi karakter/foto dan skor per ronde juga ditambahkan. Jangan menempelkan potongan aturan saja. Setelah Publish, uji dua UID nyata untuk membuat room, bergabung, Ready, menyimpan avatar, memulai 12 ronde, dan membaca rekap. Rules JSON telah divalidasi secara lokal; belum dipublikasikan ke Firebase project.

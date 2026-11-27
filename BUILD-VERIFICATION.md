@@ -133,3 +133,11 @@ Tes otomatis memvalidasi logika, geometri, jangkauan, dan input berdasarkan sour
 - Love Match uses one final profile/compatibility recap; Color Match stores five round result records and displays one final recap grid; IQ Duel displays one score/review recap.
 - Color Match remote summary uses mean accuracy rather than the accumulated five-round sum.
 - JavaScript syntax and Firebase Rules JSON validation passed. No live browser or real two-device Firebase playtest was performed.
+
+
+## v0.47.0 — Arcade
+- Automated test suite: **231/231 passed**.
+- Added integration checks for active catalog entry, landing routes, explicit lobby, Ready/presence gating, Arcade Firebase data scope, selfie compression cap, and single recap card.
+- Arcade logic checks: deterministic 12-stage entities, player side bounds, jump/rocket movement, Bubble Pop vertical movement, collection, hazard lives/invulnerability, rhythm timing, countdown bounds, and winner calculation.
+- `node --check` passed for all JavaScript files. Firebase Rules parsed as JSON; all rule expression strings have balanced parentheses.
+- Not verified: live browser rendering across devices, webcam capture on target phones, real Firebase permission behavior, and full two-device Arcade playthrough.

@@ -107,3 +107,11 @@
 
 - Prototype hanya membuka lima level, satu per tema. Visual Canvas prosedural sudah diperbarui, tetapi belum diverifikasi melalui tangkapan layar/browser dan playtest dua HP; kesamaan visual dengan referensi masih membutuhkan inspeksi manusia.
 - Gerakan kotak dorong dan tombol tahan dari game referensi belum diimplementasikan pada lima prototype ini.
+
+
+## v0.47.0 — Arcade
+- Arcade is a first playable prototype: 12 short stage variations share one Canvas arena and a common movement/collection model; they are not 12 separate standalone game engines. Stage patterns and action rules differ, but further playtesting and balancing are needed.
+- Live synchronization uses per-player position/score updates. Network latency, background tab throttling, and device performance may affect perceived smoothness; verify on two real phones.
+- Selfie photos are compressed client-side to 128×128 JPEG (≤22 KB) and stored in the active room session. Users may choose emoji instead. Room membership restrictions still depend on successfully published Firebase Rules.
+- Browser camera requires a secure context (HTTPS/localhost) and user permission. No camera permission is requested until the user taps the camera action.
+- Automated tests do not replace visual playtesting, two-device multiplayer testing, or Firebase Emulator/production Rules tests.

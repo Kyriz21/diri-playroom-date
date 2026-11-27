@@ -44,3 +44,12 @@ Mini game memakai Firebase Anonymous Auth dan room/session ID yang sudah digunak
 ## Mode Elemental Duo
 
 Elemental Duo tidak tampil di menu utama sejak v0.45.0. Implementasi dan dokumen terdahulu tetap disimpan; sesi lama masih dapat dikenali oleh loader, tetapi opsi untuk membuat sesi baru tidak ditampilkan di landing page.
+
+
+## Arcade — v0.47.0
+- Arcade menambahkan 12 mini-game singkat dalam satu arena Canvas bersama.
+- Daftar ronde: Flappy Face, Heart Catcher, Neon Dodge, Noodle Runner, Coin Rush, Bubble Pop, Sky Hop, Laser Lanes, Rocket Flight, Meteor Dodge, Rhythm Tap, Final Sprint.
+- Karakter menggunakan foto kamera/galeri terkompresi atau avatar emoji. Foto dipakai pada sesi aktif dan tidak menjadi syarat bermain.
+- Lobby memiliki presence/Ready kedua pemain. Di setup game, kedua pemain juga mengonfirmasi avatar; host memulai dengan Insert Coin.
+- Kontrol sentuh dan keyboard: kiri, kanan, naik/lompat, turun, aksi. Bubble Pop menggunakan gerak vertikal; Rocket Flight memakai tahan-naik; Rhythm Tap memakai aksi sesuai ketukan.
+- Satu kartu rekap menampilkan pemenang/seri, total skor, dan rincian 12 ronde.

@@ -22,7 +22,8 @@ export const GAME_CATALOG = [
   { id: 'photobooth', number: 'PB', title: 'Photobooth', subtitle: 'Simpan momen bersama', description: 'Buat strip foto sendiri atau bersama dengan bingkai dan filter.', icon: '▧', state: 'active' },
   { id: 'lovematch', number: '09', title: 'Love Match', subtitle: 'Seberapa selaras kalian?', description: 'Jawab tes kepribadian singkat secara privat, lalu buka kecocokan bersama.', icon: '♡', state: 'active' },
   { id: 'colormatch', number: '10', title: 'Color Match', subtitle: 'Uji ingatan warna', description: 'Ingat warna dan bangun kembali dengan slider RGB dalam mode Versus atau Duet.', icon: '◉', state: 'active' },
-  { id: 'iqduel', number: '11', title: 'IQ Duel', subtitle: 'Adu cepat berpikir', description: 'Pola, logika, deret, analogi, dan hitung cepat. Skor dibuka di akhir.', icon: '✦', state: 'active' }
+  { id: 'iqduel', number: '11', title: 'IQ Duel', subtitle: 'Adu cepat berpikir', description: 'Pola, logika, deret, analogi, dan hitung cepat. Skor dibuka di akhir.', icon: '✦', state: 'active' },
+  { id: 'arcade', number: '12', title: 'Arcade', subtitle: 'Dua pemain, satu arena', description: 'Speedrun 12 mini-game arcade. Jadikan wajahmu karakter dan adu skor di arena bersama.', icon: '🕹', state: 'active' }
 ];
 
 export const GAME_LABELS = Object.fromEntries(GAME_CATALOG.map(game => [game.id, game.title]));
