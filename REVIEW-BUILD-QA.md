@@ -1,19 +1,26 @@
-# QA — Diri. Playroom Date v0.39.1
+# QA — Diri. Playroom Date v0.39.2
 
-## Hasil verifikasi otomatis v0.39.0
-- 193/193 tes lulus.
-- JavaScript syntax check lulus pada seluruh folder `js/`.
-- 5 level prototype memakai 10 pola ruang terstruktur; platform, spawn, pijakan, permata, pintu, dan checkpoint diperiksa.
-- Jump speed 560/gravity 1500 dan tier 80–95 unit diperiksa menggunakan jump envelope; puncak lompatan sekitar 104,5 unit.
-- Analog diuji hanya mengubah kiri/kanan; input vertikal tidak memicu jump buffer; tombol LOMPAT tetap menjadi jalur lompat.
-- MapVersion 14; Firebase Rules tidak berubah.
-- Landscape CSS/UI dipertahankan.
+## Hasil verifikasi otomatis v0.39.2
+- 194/194 tes otomatis lulus.
+- Seluruh file JavaScript lolos `node --check`; `firebase-database.rules.json` valid.
+- 10 layout ruang menggunakan partisi reruntuhan berbeda, platform puzzle, dua saluran elemen, gerbang bersama, dan pintu Bara/Nira.
+- Ornamen lingkaran/rune dan indikator panah dekoratif dihapus. Relief dinding kini berbentuk panel akuaduk persegi yang retak.
+- Collision balok runtuhan dan keterjangkauan rute diperiksa melalui tes geometri dan lompatan.
+- Fisika lompatan dipertahankan pada `jumpSpeed=560`, `gravity=1500` (puncak teoretis sekitar 104,5 unit).
+- `ELEMENTAL_MAP_VERSION=17`; `prototypeVersion=3`. Firebase Rules tidak berubah.
 
 ## Playtest manual yang tetap diperlukan
-- Coba level 1 dan 2 pada dua HP; pastikan kedua karakter bisa melompat antarplatform dengan tinggi yang terasa wajar.
-- Coba analog: gerakkan kiri/kanan, geser jari ke atas/bawah dan pastikan karakter tidak melompat; tekan tombol LOMPAT untuk lompat.
-- Uji pijakan, katup/tuas, permata, pintu pasangan, checkpoint, dan transisi level.
-- Uji mode landscape/fullscreen pada perangkat aktual dan periksa kontrol tidak tertutup UI sistem.
+- [ ] Mainkan kelima level prototype dan pastikan masing-masing terasa seperti ruang reruntuhan berbeda, bukan platform bertingkat yang berulang.
+- [ ] Pastikan koridor dan celah dinding mudah dibaca; dekorasi tidak menutupi karakter, permata, hazard, katup, atau pintu.
+- [ ] Pastikan tidak ada panah/indikator dekoratif yang membingungkan.
+- [ ] Uji balok runtuhan: karakter dapat melompatinya tanpa tersangkut pada sisi atau bagian atasnya.
+- [ ] Uji lompatan antarplatform, khususnya jalur menuju pijakan elemen dan pintu.
+- [ ] Uji air dan lava; masing-masing karakter hanya dapat melewati hazard elemennya sendiri.
+- [ ] Uji gerbang bersama, permata, checkpoint, katup/tuas, dan transisi level.
+- [ ] Uji mode landscape/fullscreen pada dua HP dengan Firebase aktif; periksa kontrol tidak tertutup UI sistem.
+- [ ] Refresh salah satu perangkat saat bermain; pastikan migrasi versi memindahkan posisi ke spawn baru tanpa menghapus statistik pemain.
+
+Tes otomatis tidak menggantikan pengujian visual browser dan dua perangkat fisik.
 
 ---
 

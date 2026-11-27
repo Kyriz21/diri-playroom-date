@@ -41,11 +41,14 @@ test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertah
   assert.match(game,/getElementalPrototypeLevel/);
   assert.match(game,/if \(level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT\)/);
   assert.match(game,/<small>\/ 05<\/small>/);
-  assert.match(game,/prototypeVersion:2/);
-  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 2\)/);
+  assert.match(game,/prototypeVersion:3/);
+  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 3\)/);
   assert.match(game,/await update\(baseRef, \{ levels:null \}\)/);
   assert.match(game,/drawVine\(/);
   assert.match(game,/const brickW = 54, brickH = 27/);
+  assert.match(game,/function drawRuinWalls\(/);
+  assert.match(game,/function drawRuinRelief\(/);
+  assert.doesNotMatch(game,/drawAncientDecor/);
   assert.match(game,/function drawSpirit\(/);
   assert.match(game,/function drawExit\(/);
 });
@@ -86,11 +89,16 @@ test('Seluruh 50 level memakai ruang puzzle bertingkat yang rapi dengan dua pint
   const mapNames = new Set();
   let doorsOnLeft = 0, doorsNearCenter = 0, doorsHigh = 0;
   for (const level of ELEMENTAL_LEVELS) {
-    assert.equal(level.mapTopology?.route,'fixed-screen-coop-puzzle',`level ${level.id}`);
+    assert.equal(level.mapTopology?.route,'ruins-maze-coop',`level ${level.id}`);
     assert.equal(level.mapTopology?.sideRoutes,2,`level ${level.id} side routes`);
+    assert.ok(level.ruinWalls.length>=12,`level ${level.id} must include visible ruin partitions`);
+    assert.ok(level.ruinWalls.some(wall=>wall.solid),`level ${level.id} needs solid jumpable rubble`);
+    assert.ok(level.ruinWalls.some(wall=>!wall.solid),`level ${level.id} needs background maze architecture`);
+    assert.ok(level.hazards.some(hazard=>hazard.type==='water') && level.hazards.some(hazard=>hazard.type==='fire'),`level ${level.id} must include both water and fire channels`);
     assert.equal(level.mapTopology?.randomBranches,0,`level ${level.id} no random branches`);
     assert.equal(level.platforms.length,13,`level ${level.id} uses the authored 13-platform temple grammar`);
     assert.equal(level.floorSegments.length,1);
+    assert.equal(level.mapTopology.wallFragmentCount,level.ruinWalls.length);
     for (const door of [level.doors.fire,level.doors.water]) {
       assert.ok(level.platforms.some(platform => platform.id === door.platformId),`level ${level.id} door must sit on a platform`);
       if (door.x < 300) doorsOnLeft++;
@@ -146,9 +154,9 @@ test('Pijakan wajib berada pada lantai bawah sebelum gerbang ruang atas', () => 
 test('Kedua pintu dapat berada di sisi atau ketinggian berbeda sehingga akhir level tidak selalu di kanan', () => {
   const layoutSource=readSource('../js/games/elemental-duo-logic.js');
   const gameSource=readSource('../js/games/elemental-duo.js');
-  assert.match(layoutSource,/name:'Balairung Dua Sayap'/);
-  assert.match(layoutSource,/name:'Tangga Teras'/);
-  assert.match(layoutSource,/name:'Kubah Kuno'/);
+  assert.match(layoutSource,/ruinRoom\('Labirin Dua Arus'/);
+  assert.match(layoutSource,/ruinRoom\('Akuaduk Retak'/);
+  assert.match(layoutSource,/ruinRoom\('Jantung Labirin'/);
   assert.match(layoutSource,/const makeDoor = \(slot,element/);
   assert.match(gameSource,/const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
   assert.match(gameSource,/drawExplorationNavigator\(level,host,guest\)/);
@@ -160,7 +168,7 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:16, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:17, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
@@ -317,7 +325,8 @@ test('Peta mini menampilkan jalur, pintu, posisi pemain, area kamera dan penunju
   assert.match(game,/for \(const element of \['fire','water'\]\)/);
   assert.match(game,/const camera = \{x:canvasView\.cameraX,y:canvasView\.cameraY/);
   assert.match(game,/const ownDoor = level\.doors\?\.\[ownElement\] \|\| level\.exit/);
-  assert.match(game,/if \(!inside\)/);
+  assert.doesNotMatch(game,/arrowX|arrowY|directional marker/);
+  assert.match(game,/drawRuinWalls\(level,time\)/);
 });
 
 test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi landscape', () => {
@@ -341,9 +350,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.39\.1/);
-  assert.match(app, /elemental-duo\.js\?v=0\.39\.1/);
-  assert.match(index, /app\.js\?v=0\.39\.1/);
+  assert.match(index, /elemental-duo\.css\?v=0\.39\.2/);
+  assert.match(app, /elemental-duo\.js\?v=0\.39\.2/);
+  assert.match(index, /app\.js\?v=0\.39\.2/);
 });
 
 
@@ -981,12 +990,15 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
   assert.match(game, /getElementalSurfaceFriction\(localPlayer, level\)/);
   assert.match(game, /function attemptValve\(valve\)/);
   assert.match(game, /function attemptWindLever\(lever\)/);
-  assert.match(game, /drawAncientDecor\(level,time\)/);
+  assert.match(game, /drawRuinRelief\(level,time\)/);
+  const relief = game.match(/function drawRuinRelief\(level, time\) \{([\s\S]*?)\n  \}/)?.[1] || '';
+  assert.match(relief, /const panels = \[/, 'relief uses broken rectangular aqueduct panels');
+  assert.doesNotMatch(relief, /quadraticCurveTo|ellipse\(/, 'old circular/arched rune decoration is removed');
 });
 
 
-test('Room map v16 keeps coherent platform geometry and reachable exits across all 50 authored levels', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,16);
+test('Room map v17 uses coherent ruin-maze geometry and reachable exits across all 50 authored levels', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,17);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {

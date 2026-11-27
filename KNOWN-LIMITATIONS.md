@@ -1,10 +1,11 @@
-## v0.39.1 — batasan prototype yang masih perlu diuji
-- 10 pola ruang terstruktur digunakan pada 50 level dengan variasi mekanik per dunia; pengujian rasa tiap level tetap perlu playtest manusia.
-- Sistem kotak dorong dan tombol yang harus ditahan seperti pada beberapa puzzle Fireboy and Watergirl belum diimplementasikan pada revisi ini; interaksi yang ada adalah pijakan, katup, dan tuas.
-- Tinggi lompatan teoretis sekitar 104,5 unit dengan tier arena sekitar 80–95 unit; feel kontrol dan tinggi lompatan pada skala fisik HP tetap perlu dinilai langsung.
-- Analog memang hanya gerak horizontal; tombol LOMPAT digunakan terpisah.
-- Mode landscape dipertahankan, tetapi kompatibilitas fullscreen dan area aman tergantung browser/OS.
-- `ELEMENTAL_MAP_VERSION=16` memindahkan posisi pemain pada level aktif ke spawn saat migrasi, tetapi mengatur ulang puzzle aktif ke layout baru sambil mempertahankan statistik pemain dan keanggotaan room.
+## v0.39.2 — batasan prototype yang masih perlu diuji
+- Lima level aktif memakai lima tema, dengan 10 pola ruang reruntuhan akuaduk tersimpan di engine. Variasi dan ritme setiap level tetap perlu dinilai melalui playtest manusia.
+- Dinding partisi non-solid memberi bentuk visual koridor/ruang; hanya balok runtuhan tertentu yang memiliki collision. Ini menjaga rute tetap terbuka, tetapi pembacaan lorong dan bukaan perlu diperiksa di browser pada layar desktop dan HP.
+- Sistem kotak dorong dan tombol yang harus ditahan seperti beberapa puzzle klasik belum diimplementasikan. Mekanik aktif masih berfokus pada platform, katup/tuas, pijakan, permata, hazard, gerbang bersama, dan pintu elemen.
+- Tinggi lompatan teoretis sekitar 104,5 unit (`560² / (2 × 1500)`). Kenyamanan kontrol, jarak lompatan aktual, dan kemungkinan pemain tersangkut di balok reruntuhan tetap perlu diuji langsung.
+- Analog hanya mengatur gerak horizontal; tombol LOMPAT tetap terpisah.
+- Mode landscape dipertahankan, tetapi fullscreen, safe-area, dan orientasi bergantung dukungan browser/OS.
+- `ELEMENTAL_MAP_VERSION=17` dan `prototypeVersion=3` memindahkan posisi pemain dan state puzzle lama ke spawn/layout baru. Statistik pemain dan keanggotaan room dipertahankan.
 - Firebase Rules tidak berubah. Pengujian dua perangkat dengan Firebase aktif tetap diperlukan.
 
 ---

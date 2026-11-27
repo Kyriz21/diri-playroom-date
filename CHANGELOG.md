@@ -1,3 +1,14 @@
+## v0.39.2 — Ruins Water & Fire Maze
+
+- Mengganti grammar arena berulang menjadi 10 pola reruntuhan akuaduk/labirin dengan lorong bertingkat, jalur kiri-kanan, platform penghubung, dan komposisi berbeda.
+- Menambahkan balok runtuhan batu yang memiliki collision dan dapat dilompati. Tinggi setiap fragmen dijaga di bawah tinggi lompatan normal.
+- Menata ulang saluran air dan lava pada tiap layout agar menjadi bagian dari navigasi arena, bukan dua kolam identik di bagian bawah.
+- Mengganti relief rune melingkar yang membingungkan dengan relief gerbang akuaduk retak; penunjuk panah di tepi kamera dihapus karena tidak jelas dan tidak diperlukan pada layout prototype satu layar landscape.
+- Checkpoint kini menghindari hazard dengan margin aman yang lebih lebar, termasuk semburan uap.
+- Mempertahankan fisika lompatan v0.39.1 (`jumpSpeed=560`, `gravity=1500`).
+- Menaikkan `ELEMENTAL_MAP_VERSION` ke 17 dan `prototypeVersion` ke 3 agar posisi karakter dan state puzzle lama dimigrasikan. Statistik pemain, room, dan Firebase Rules tidak diubah.
+- Cache key dan package version menjadi v0.39.2. Verifikasi: 194/194 tes otomatis lulus dan seluruh JavaScript lolos `node --check`.
+
 ## v0.39.1 — Classic Temple Layout & Jump Repair
 
 - Memperbaiki arena yang sebelumnya terlalu rapat: lima level prototype kini memilih lima pola ruang berbeda, dengan jarak vertikal lebih lega dan jalur bertingkat yang terbaca.

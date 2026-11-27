@@ -1,32 +1,30 @@
-# Elemental Duo — Classic Temple Prototype (v0.39.1)
+# Elemental Duo — Ruins Water & Fire Maze (v0.39.2)
 
 ## Prototype 5 level lintas tema
+Level aktif 01–05 tetap mewakili Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno. Masing-masing memakai komposisi reruntuhan akuaduk yang berbeda. 45 blueprint lanjutan tetap tersimpan untuk ekspansi berikutnya.
 
-Level aktif 01–05 masing-masing memakai satu blueprint pembuka dari lima dunia. Lima level ini ditujukan sebagai sampel kualitas visual dan mekanik sebelum pengembangan 45 blueprint lainnya diteruskan.
+## Tata letak reruntuhan labirin
+- Platform disusun sebagai lorong bertingkat dan cabang kiri/kanan, bukan tangga yang berulang.
+- Balok runtuhan batu menjadi penghalang fisik yang dapat dilompati; fragmen dibuat lebih rendah dari tinggi lompatan normal.
+- Pijakan Bara dan Nira tetap berada pada rute bawah sebelum gerbang bersama.
+- Permata, checkpoint, katup/tuas, dan dua pintu ditempatkan pada platform stabil.
+- Setiap layout memiliki saluran air dan lava sendiri, sehingga hazard membentuk jalur yang perlu dipahami dan diseberangi.
+- Relief dinding menggunakan bentuk gerbang akuaduk retak. Ornamen rune melingkar dan panah di tepi kamera dihapus agar tidak mengganggu pembacaan arena.
 
-## Tata letak ruang puzzle yang terarah
-Peta dirancang sebagai ruang puzzle layar-tetap, bukan maze acak atau koridor satu arah. Setiap pola mempertahankan tata bahasa yang mudah dibaca: dua jalur elemen dari area bawah, pijakan dan permata berbeda, area pertemuan di tengah, lalu jalur atas atau sisi menuju dua pintu karakter.
+## Fisika dan migrasi
+- `ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`; tinggi puncak teoretis sekitar 104,5 unit.
+- Collision platform tetap 8 unit dengan visual batu tebal; fragmen reruntuhan memakai collision 2D dan dapat dipijak/dilompati.
+- `ELEMENTAL_MAP_VERSION=17` dan `prototypeVersion=3` memindahkan posisi serta state puzzle dari layout sebelumnya ke spawn baru. Statistik pemain dan keanggotaan room dipertahankan.
+- Firebase Rules tidak berubah.
 
-- **Jalur Bara dan Nira:** Bara dan Nira memulai dari sisi berbeda dan melewati hazard yang aman untuk elemennya sendiri.
-- **Pijakan dan gerbang:** dua pijakan karakter mengaktifkan penghalang bersama. Katup/tuas tambahan hanya menjadi syarat pada level yang memang memperkenalkannya.
-- **Permata:** permata merah dan biru berada pada jalur karakter masing-masing. Mengambil permata mendorong eksplorasi, tetapi tidak membuat pintu mustahil dicapai bila tertinggal.
-- **Rute bertingkat:** tier utama terpisah sekitar 80–95 unit; lompatan memiliki puncak teoretis sekitar 104,5 unit.
-- **Pintu keluar:** dapat berada di sisi kiri/kanan, galeri atas, atau ruang tengah; pemain tetap harus mencapai pintu elemen sendiri.
-- **Platform khusus:** platform bergerak/berkala dialokasikan ke slot samping yang tidak dipakai spawn, pintu, pijakan, permata, atau kontrol wajib.
-
-10 pola ruang dasar digunakan sebagai kerangka bagi 50 level. Variasi tantangan berasal dari hazard dan perangkat dunia: es/arus, lava/uap/katup, angin/tuas, dan kombinasi dunia final. Prinsip puzzle diadaptasi dari Fireboy and Watergirl, tetapi aset, bentuk, posisi, dan desain level tetap orisinal.
-
-## Fisika peta v0.38.0
-- `jumpSpeed = 280`, `gravity = 1300`, tinggi puncak teoretis sekitar 30,2 unit.
-- Jarak vertikal tier utama 24 unit. Celah horizontal platform diperiksa menggunakan waktu lintasan dan kecepatan gerak.
-- Collision platform setinggi 8 unit; renderer menampilkan tinggi visual 16 unit.
-- Pijakan, pintu, permata, kontrol, dan checkpoint ditempatkan pada platform stabil; checkpoint menghindari hazard.
-- Moving/timed platform tetap deterministik dari jam Firebase bersama.
-
-## Kontrol v0.38.0
-Analog hanya mengatur gerakan kiri/kanan. Sumbu vertikal analog diabaikan dan tidak mengantrekan lompatan. Tombol LOMPAT/Space tetap terpisah. Tampilan landscape/fullscreen tidak dirombak.
+## Verifikasi
+- `npm test`: 194/194 tes lulus.
+- Seluruh file JavaScript lolos `node --check`.
+- Geometri, keterjangkauan platform, hazard, checkpoint, gate, dan collision reruntuhan diperiksa otomatis.
+- Playtest visual browser dan dua HP dengan Firebase aktif tetap diperlukan.
 
 ---
+
 
 ---
 

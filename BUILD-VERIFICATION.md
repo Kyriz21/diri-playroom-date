@@ -1,13 +1,18 @@
-# Build Verification — Diri. Playroom Date v0.39.1
+# Build Verification — Diri. Playroom Date v0.39.2
 
-## v0.39.1 — Classic Temple Layout & Jump Repair
+## v0.39.2 — Ruins Water & Fire Maze
 - `npm test`: **194/194 tes lulus**.
 - Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
-- Lima level prototype sekarang memakai lima pola ruang berbeda (dipilih dari 10 layout hand-authored). Platform disusun dengan jarak vertikal sekitar 80–95 unit, jalur dua sisi, dan pintu pasangan di galeri atas.
-- Tinggi lompatan teoretis `560² / (2 × 1500) ≈ 104,5` unit; jangkauan horizontal sekitar 139 unit pada kenaikan 85 unit.
-- Ketebalan visual platform menjadi 22 unit (collision tetap 8 unit).
-- `ELEMENTAL_MAP_VERSION=16` dan `prototypeVersion=2` memindahkan pemain/sesi lama ke posisi dan puzzle layout baru; statistik pemain dipertahankan.
-- Cache key `index.html`, `js/app.js`, modul Elemental Duo, dan logic engine memakai v0.39.1. Firebase Rules tidak berubah.
+- 10 layout ruang menggunakan grammar reruntuhan labirin dengan platform 13 per level, pecahan dinding solid yang bisa dilompati, gerbang bersama, serta dua pintu elemen.
+- Kelima prototype memilih lima komposisi berbeda. Kedua jalur pemain dan seluruh platform tetap terjangkau dalam pengujian geometri lompatan.
+- Saluran air dan lava dibuat berbeda per layout; checkpoint diuji dengan margin aman yang menghindari hazard termasuk uap.
+- Ornamen rune melingkar dan penunjuk panah tepi kamera dihapus; diganti relief gerbang akuaduk.
+- Tinggi lompatan dipertahankan pada `560² / (2 × 1500) ≈ 104,5` unit.
+- `ELEMENTAL_MAP_VERSION=17` dan `prototypeVersion=3` memigrasikan posisi pemain serta state puzzle. Firebase Rules tidak berubah.
+- Cache key `index.html`, `js/app.js`, modul Elemental Duo, dan logic engine memakai v0.39.2.
+
+## Batas verifikasi
+Tes otomatis memeriksa struktur blueprint, geometri lompatan, collision reruntuhan, objek puzzle, dan integrasi source. Belum dilakukan playtest visual di browser dan dua HP fisik dengan Firebase aktif; kenyamanan jalur, sentuhan, dan sinkronisasi tetap perlu dinilai setelah deployment.
 
 ## v0.39.0 — Classic Temple Prototype
 - `npm test`: **194/194 tes lulus**.

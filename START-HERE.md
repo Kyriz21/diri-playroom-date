@@ -1,18 +1,19 @@
-# Mulai di sini — Diri. Playroom Date v0.39.1
+# Mulai di sini — Diri. Playroom Date v0.39.2
 
 ## Yang berubah pada Elemental Duo
 - Prototype hanya membuka 5 level aktif, satu dari setiap tema dunia.
-- Lima tema memakai tata letak arena yang berbeda dengan ruang vertikal lebih lega, cabang platform bertingkat, dan permukaan batu yang lebih tebal.
-- Lompatan dinaikkan menjadi sekitar 104,5 unit agar pemain bisa mencapai pijakan berikutnya dengan kontrol udara yang sama.
+- Lima tema memakai tata letak reruntuhan labirin air dan api: lorong akuaduk, cabang bertingkat, pintu elemen, kolam saluran, dan balok batu yang bisa dilompati.
+- Ornamen rune melingkar dan panah petunjuk yang membingungkan dihilangkan. Relief gerbang batu retak menggantikan ornamen tersebut.
+- Fisika lompatan v0.39.1 dipertahankan pada puncak sekitar 104,5 unit.
 - Engine tetap menyimpan 45 blueprint lanjutan untuk ekspansi setelah lima prototype diuji.
 - Firebase Rules dan mini-game lain tidak berubah.
 
-## Memasang v0.39.1
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.1_Classic_Temple_Prototype.zip`.
+## Memasang v0.39.2
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.2_Ruins_Water_Fire_Maze.zip`.
 2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
 3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
-4. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=2`; state puzzle lama dibersihkan.
-5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=16`. Firebase Rules tidak perlu dipublikasikan ulang.
+4. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=3`; state puzzle lama dibersihkan.
+5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=17`. Firebase Rules tidak perlu dipublikasikan ulang.
 
 ## Urutan 5 prototype
 1. Hutan Berbisik — Jejak Cahaya.

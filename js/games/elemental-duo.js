@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.39.1';
+} from './elemental-duo-logic.js?v=0.39.2';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -591,14 +591,14 @@ export function mountElementalDuo(root, context) {
       let needsPrototypeMigration = false;
       await runTransaction(metaRef, current => {
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:2
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:3
         };
-        if (Number(current.prototypeVersion) === 2) return current;
+        if (Number(current.prototypeVersion) === 3) return current;
         needsPrototypeMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, prototypeVersion:2
+          results:{}, prototypeVersion:3
         };
       });
       if (needsPrototypeMigration) {
@@ -990,13 +990,25 @@ export function mountElementalDuo(root, context) {
       else if (localPlayer.vx < 0 && previousX - halfW >= platform.x + platform.w - 4) localPlayer.x = platform.x + platform.w + halfW;
       localPlayer.vx = 0;
     }
+    // Broken masonry fragments are solid, low enough to be cleared by the
+    // normal jump, and create real narrow passages in the ruin maze.
+    const previousXBeforeRubble = previousPlayerX;
+    for (const wall of (level.ruinWalls || []).filter(item=>item.solid)) {
+      const body = {x:localPlayer.x-halfW,y:localPlayer.y-halfH+2,w:halfW*2,h:halfH*2-2};
+      if (!rectsOverlap(body,wall)) continue;
+      if (localPlayer.vx > 0 && previousXBeforeRubble+halfW <= wall.x+4) localPlayer.x = wall.x-halfW-1;
+      else if (localPlayer.vx < 0 && previousXBeforeRubble-halfW >= wall.x+wall.w-4) localPlayer.x = wall.x+wall.w+halfW+1;
+      localPlayer.vx = 0;
+    }
+    const previousTop = localPlayer.y-halfH;
     const previousBottom = localPlayer.y + halfH;
     localPlayer.vy += ELEMENTAL_GRAVITY * dt * (level.modifier === 'wind' ? 0.98 : 1);
     localPlayer.y += localPlayer.vy * dt;
     localPlayer.grounded = false;
     localPlayer.supportPlatformId = null;
     const floorPlatforms = (level.floorSegments || [{ id:'main-floor', x:0, y:ELEMENTAL_FLOOR_Y, w:ELEMENTAL_WORLD_WIDTH, h:60 }]).map(segment => ({ ...segment, kind:'floor' }));
-    const collisionPlatforms = [...platforms.filter(item => item.current.active).map(item => item.current), ...floorPlatforms];
+    const rubblePlatforms = (level.ruinWalls || []).filter(wall=>wall.solid).map(wall=>({...wall,kind:'ruin-wall'}));
+    const collisionPlatforms = [...platforms.filter(item => item.current.active).map(item => item.current), ...floorPlatforms, ...rubblePlatforms];
     for (const platform of collisionPlatforms) {
       const horizontal = localPlayer.x + halfW > platform.x && localPlayer.x - halfW < platform.x + platform.w;
       const bottom = localPlayer.y + halfH;
@@ -1264,39 +1276,67 @@ export function mountElementalDuo(root, context) {
   }
 
 
-  function drawAncientDecor(level, time) {
-    if (level.worldIndex !== 5) return;
+  function drawRuinRelief(level, time) {
+    const palette = classicPalette(level);
+    const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
+    const height = level.worldHeight || ELEMENTAL_WORLD_HEIGHT;
     ctx.save();
-    // Ancient runic halos and floating shards are decorative only; collisions
-    // remain entirely data-driven by the authored platforms and hazards.
-    const centers = [[245,205,74],[505,170,96],[760,225,68]];
-    for (let i=0;i<centers.length;i++) {
-      const [x,y,r] = centers[i];
-      const rotation = time * (i%2 ? -.00012 : .00009) + i*.8;
-      ctx.save(); ctx.translate(x,y); ctx.rotate(rotation);
-      ctx.globalAlpha = .12 + .035*Math.sin(time*.001+i);
-      ctx.strokeStyle = i===1 ? '#fff0c9' : '#c9c0ef';
-      ctx.lineWidth = 3; ctx.setLineDash([7,9]);
-      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
-      ctx.setLineDash([]); ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(0,0,r*.72,0,Math.PI*2); ctx.stroke();
-      for (let n=0;n<8;n++) {
-        const a = n*Math.PI/4;
-        ctx.save(); ctx.rotate(a); ctx.translate(r,0);
-        ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(5,0); ctx.lineTo(0,7); ctx.lineTo(-5,0); ctx.closePath(); ctx.stroke();
-        ctx.restore();
-      }
-      ctx.restore();
+    // Carved rectangular aqueduct panels with missing lintel stones. The old
+    // circular/ring relief is intentionally gone so the background reads as
+    // a real collapsed maze wall, not a floating symbol or direction cue.
+    const panels = [
+      {x:92,y:112,w:205,h:142,side:'left'},
+      {x:width-300,y:146,w:208,h:132,side:'right'},
+      {x:width*.5-112,y:60,w:224,h:108,side:'center'}
+    ];
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = palette.stoneDark;
+    for (const panel of panels) {
+      ctx.globalAlpha = .22;
+      ctx.beginPath();
+      ctx.moveTo(panel.x,panel.y+panel.h);
+      ctx.lineTo(panel.x,panel.y+25);
+      ctx.lineTo(panel.x+18,panel.y+7);
+      ctx.lineTo(panel.x+panel.w*.38,panel.y+7);
+      ctx.moveTo(panel.x+panel.w*.56,panel.y+7);
+      ctx.lineTo(panel.x+panel.w-18,panel.y+7);
+      ctx.lineTo(panel.x+panel.w,panel.y+27);
+      ctx.lineTo(panel.x+panel.w,panel.y+panel.h);
+      ctx.stroke();
+      ctx.globalAlpha = .13;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = palette.accent;
+      ctx.beginPath();
+      ctx.moveTo(panel.x+14,panel.y+panel.h-8);
+      ctx.lineTo(panel.x+14,panel.y+38);
+      ctx.lineTo(panel.x+panel.w*.35,panel.y+38);
+      ctx.moveTo(panel.x+panel.w*.66,panel.y+38);
+      ctx.lineTo(panel.x+panel.w-14,panel.y+38);
+      ctx.lineTo(panel.x+panel.w-14,panel.y+panel.h-8);
+      ctx.stroke();
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = palette.stoneDark;
     }
-    for (let i=0;i<18;i++) {
-      const drift = time*.009 + i*53;
-      const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
-      const x = (i*67 + Math.sin(drift*.012)*17 + width) % width;
-      const y = 90 + (i*61)%315 + Math.sin(drift*.02)*7;
-      const size = 3 + (i%3)*1.5;
-      ctx.globalAlpha = .16 + .1*Math.sin(drift*.018+i);
-      ctx.fillStyle = i%2 ? '#fff0c9' : '#c9e9f3';
-      ctx.beginPath(); ctx.moveTo(x,y-size); ctx.lineTo(x+size*.7,y); ctx.lineTo(x,y+size); ctx.lineTo(x-size*.7,y); ctx.closePath(); ctx.fill();
+    // Water stains and soot trails emphasize the different themed chambers.
+    for(let i=0;i<9;i++) {
+      const x = 68+i*126;
+      const y = 72+(i%4)*44;
+      ctx.globalAlpha = .055 + ((i%3)*.012);
+      ctx.fillStyle = level.worldIndex===3 ? '#7ad9ec' : (level.worldIndex===2 ? '#fa8a54' : palette.moss);
+      ctx.fillRect(x,y,5,22+(i%3)*15);
+      ctx.fillRect(x+9,y+12,3,13+(i%2)*11);
+    }
+    // Broken masonry seams: short straight cracks, never arrows or glyphs.
+    ctx.globalAlpha = .16;
+    ctx.strokeStyle = palette.stoneDark;
+    ctx.lineWidth = 2;
+    for (let i=0;i<7;i++) {
+      const x = 145+i*145;
+      const y = 275+(i%3)*46;
+      ctx.beginPath();
+      ctx.moveTo(x,y); ctx.lineTo(x+10,y+12); ctx.lineTo(x+4,y+25);
+      ctx.lineTo(x+17,y+37);
+      ctx.stroke();
     }
     ctx.restore();
   }
@@ -1444,6 +1484,54 @@ export function mountElementalDuo(root, context) {
         } else {
           ctx.moveTo(source.x-source.motion.amplitude,source.y+20); ctx.lineTo(source.x+source.w+source.motion.amplitude,source.y+20);
         }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawRuinWalls(level, time = 0) {
+    const palette = classicPalette(level);
+    for (const wall of level.ruinWalls || []) {
+      ctx.save();
+      ctx.globalAlpha = wall.solid ? 1 : .62;
+      ctx.shadowColor = wall.solid ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.18)';
+      ctx.shadowBlur = wall.solid ? 9 : 3; ctx.shadowOffsetY = wall.solid ? 4 : 1;
+      const gradient = ctx.createLinearGradient(0,wall.y,0,wall.y+wall.h);
+      gradient.addColorStop(0, palette.bricks[(wall.variant||0)%palette.bricks.length]);
+      gradient.addColorStop(.58, palette.stone);
+      gradient.addColorStop(1, palette.stoneDark);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(wall.x+2,wall.y+5);
+      ctx.lineTo(wall.x+8,wall.y);
+      ctx.lineTo(wall.x+wall.w-7,wall.y+2);
+      ctx.lineTo(wall.x+wall.w,wall.y+8);
+      ctx.lineTo(wall.x+wall.w-2,wall.y+wall.h);
+      ctx.lineTo(wall.x+3,wall.y+wall.h-1);
+      ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = 'rgba(15,17,12,.76)'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = 'rgba(28,27,18,.62)'; ctx.lineWidth = 1;
+      for(let y=wall.y+18;y<wall.y+wall.h-3;y+=18) {
+        ctx.beginPath(); ctx.moveTo(wall.x+3,y); ctx.lineTo(wall.x+wall.w-3,y+1); ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(wall.x+wall.w*.48,wall.y+8);
+      ctx.lineTo(wall.x+wall.w*.40,wall.y+wall.h*.42);
+      ctx.lineTo(wall.x+wall.w*.58,wall.y+wall.h*.61);
+      ctx.stroke();
+      ctx.fillStyle = palette.moss;
+      ctx.globalAlpha = .82;
+      ctx.fillRect(wall.x+4,wall.y+2,wall.w*.34,3);
+      ctx.fillRect(wall.x+wall.w*.66,wall.y+wall.h*.55,wall.w*.22,2);
+      ctx.globalAlpha = 1;
+      if (wall.h >= 48) {
+        ctx.strokeStyle = 'rgba(18,25,15,.62)'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(wall.x+wall.w*.73,wall.y+wall.h*.16);
+        ctx.lineTo(wall.x+wall.w*.62,wall.y+wall.h*.31);
+        ctx.lineTo(wall.x+wall.w*.78,wall.y+wall.h*.43);
         ctx.stroke();
       }
       ctx.restore();
@@ -1779,34 +1867,6 @@ export function mountElementalDuo(root, context) {
     ctx.font=`600 ${5.5*pixelScale}px system-ui`; ctx.textAlign='right'; ctx.textBaseline='bottom';
     ctx.fillText('✦ Bara  ✧ Air',panelX+panelW-7*pixelScale,panelY+panelH-3*pixelScale);
 
-    // When a player's own door is outside the camera, place a directional
-    // marker at the edge of the visible screen so exploration never feels lost.
-    if (ownDoor && !localPlayer.complete) {
-      const targetX=(ownDoor.x+ownDoor.w/2-canvasView.cameraX)*canvasView.zoom;
-      const targetY=(ownDoor.y+ownDoor.h/2-canvasView.cameraY)*canvasView.zoom;
-      const inside=targetX>=0 && targetX<=canvas.width && targetY>=0 && targetY<=canvas.height;
-      if (!inside) {
-        const centerX=canvas.width/2, centerY=canvas.height/2;
-        const angle=Math.atan2(targetY-centerY,targetX-centerX);
-        const inset=17*pixelScale;
-        const candidates=[];
-        const dx=Math.cos(angle), dy=Math.sin(angle);
-        if (dx>0) candidates.push((canvas.width-inset-centerX)/dx);
-        if (dx<0) candidates.push((inset-centerX)/dx);
-        if (dy>0) candidates.push((canvas.height-inset-centerY)/dy);
-        if (dy<0) candidates.push((inset-centerY)/dy);
-        const distance=Math.min(...candidates.filter(value=>value>0));
-        let arrowX=centerX+dx*distance, arrowY=centerY+dy*distance;
-        if (arrowX>panelX-7*pixelScale && arrowY<panelY+panelH+7*pixelScale) {
-          arrowX=Math.max(inset,Math.min(canvas.width-panelW-18*pixelScale,arrowX));
-          arrowY=Math.max(panelY+panelH+9*pixelScale,arrowY);
-        }
-        ctx.save(); ctx.translate(arrowX,arrowY); ctx.rotate(angle);
-        ctx.fillStyle=ownColor; ctx.shadowColor=ownColor; ctx.shadowBlur=9*pixelScale;
-        ctx.beginPath(); ctx.moveTo(10*pixelScale,0); ctx.lineTo(-7*pixelScale,-6*pixelScale); ctx.lineTo(-4*pixelScale,0); ctx.lineTo(-7*pixelScale,6*pixelScale); ctx.closePath(); ctx.fill();
-        ctx.restore();
-      }
-    }
     ctx.restore();
   }
 
@@ -1821,7 +1881,8 @@ export function mountElementalDuo(root, context) {
     drawBackground(level,time);
     drawFloorSegments(level);
     drawSkyDecor(level,time);
-    drawAncientDecor(level,time);
+    drawRuinRelief(level,time);
+    drawRuinWalls(level,time);
     const elapsedMs = levelElapsedMs();
     drawIceZones(level,time);
     drawCurrentZones(level,time,elapsedMs);
@@ -1867,7 +1928,7 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 2)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 3)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {

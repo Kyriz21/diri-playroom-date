@@ -1,39 +1,26 @@
-# Elemental Duo — Panduan Game (build v0.39.1)
+# Elemental Duo — Panduan Game (build v0.39.2)
 
-## Pembaruan v0.39.1 — layout dan lompatan
-- Lima level prototype sekarang memakai lima tata letak ruang berbeda, satu untuk setiap tema. Sepuluh layout tersusun dalam jalur dua sisi yang naik ke galeri atas.
-- Platform tidak lagi rapat dengan selisih 24 unit; ruang antartingkat kini sekitar 80–95 unit.
-- Lompatan memakai `ELEMENTAL_JUMP_SPEED=560` dan `ELEMENTAL_GRAVITY=1500`, dengan puncak sekitar 104,5 unit.
-- Tebal visual platform menjadi 22 unit, tetapi collision fisik tetap 8 unit.
-- `ELEMENTAL_MAP_VERSION=16` dan `prototypeVersion=2` memulai ulang posisi serta state puzzle lama agar sesuai geometri baru. Statistik pemain dan keanggotaan room dipertahankan.
+## Pembaruan v0.39.2 — Ruins Water & Fire Maze
+- Arena dibentuk sebagai reruntuhan labirin akuaduk dengan lorong, ruang bercabang, platform penghubung, dan balok runtuhan yang dapat dilompati.
+- Lima level prototype tetap mewakili lima tema dunia; masing-masing menggunakan komposisi arena yang berbeda.
+- Saluran air dan lava memiliki posisi yang bervariasi. Bara aman dari lava dan menghindari air; Nira aman dari air dan menghindari lava.
+- Penunjuk panah tepi kamera dan lingkaran rune besar dihapus. Relief gerbang retak menjadi dekorasi dinding utama.
+- Lompatan v0.39.1 dipertahankan (`ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`, puncak sekitar 104,5 unit).
+- `ELEMENTAL_MAP_VERSION=17` dan `prototypeVersion=3` memigrasikan posisi dan state puzzle lama ke map baru.
 
-## Prinsip gameplay puzzle klasik
-Elemental Duo menggunakan ruang puzzle dua karakter yang dirancang untuk kolaborasi. Bara melewati jalur lava tetapi menghindari air; Nira melewati air tetapi menghindari lava; keduanya menghindari rawa beracun. Setiap pemain mencari permata elemennya, mengaktifkan pijakan/sakelar, membantu membuka rute, dan mencapai pintu yang sesuai warna karakter.
+## Prinsip gameplay
+Bara dan Nira harus melintasi rute yang berbeda sesuai elemennya, mengambil permata masing-masing, mengaktifkan pijakan, melewati reruntuhan dan saluran berbahaya, membuka gerbang bersama, lalu mencapai pintu elemen sendiri. Peta mempertahankan gaya platform-puzzle klasik dengan desain aset dan geometri orisinal Diri Playroom.
 
-Riset gameplay Fireboy and Watergirl menunjukkan prinsip utama berupa jalur aman berbeda untuk setiap karakter, permata merah/biru, dua pintu tujuan, tuas yang mengubah lift/gerbang, tombol yang perlu ditahan, serta kotak yang dapat dipakai sebagai pijakan. v0.38.0 mengadaptasi tata ruang, hazard elemen, permata, pijakan/gerbang, dan pintu pasangan dengan geometri dan aset orisinal Diri Playroom. Mekanik kotak dorong dan tombol tahan lama belum termasuk pada revisi ini.
+Mekanik kotak dorong dan tombol tahan masih menjadi kandidat pengembangan berikutnya; belum semua blueprint menerapkannya pada prototype lima level ini.
 
-## Peta ruang v0.38.0
-- 10 pola ruang dasar diterapkan pada 50 level dengan variasi pintu, platform khusus, hazard, katup, dan tuas sesuai dunia.
-- Dua jalur elemen dimulai dari sisi bawah kiri/kanan; keduanya bertemu di platform tengah, lalu bercabang ke galeri atas atau pintu sisi.
-- Pijakan Bara dan Nira serta permata ditempatkan pada platform terpisah; jembatan tengah menjadi area penghubung dan checkpoint dipilih dari platform stabil yang aman.
-- Pintu dapat berada di sisi bawah, galeri atas, atau platform tengah. Tujuan bukan selalu di ujung kanan.
-- Tier utama pada y `[522, 498, 474, 450, 426, 402]`; perbedaan 24 unit agar lompatan tetap terkendali.
-
-## Fisika dan kontrol v0.38.0
-- `ELEMENTAL_JUMP_SPEED = 280`, `ELEMENTAL_GRAVITY = 1300`; tinggi lompatan teoretis sekitar 30,2 unit.
-- Jump buffer 170 ms dan coyote time 140 ms membantu input lompat lebih konsisten.
-- Analog virtual hanya mengatur kiri/kanan. Gerakan jari ke atas/bawah di analog tidak memicu lompat; LOMPAT/Space adalah tombol terpisah.
-- Tombol INTERAKSI hanya muncul dekat objek yang dapat diaktifkan; pijakan biasa aktif otomatis saat diinjak.
-- Tampilan landscape/fullscreen dipertahankan dari build yang disukai.
-- `ELEMENTAL_MAP_VERSION = 14`; posisi pemain pada level aktif kembali ke spawn saat migrasi, sedangkan progres level, serpihan, dan statistik jatuh dipertahankan.
-
-## Verifikasi v0.38.0
-- `npm test`: 191/191 tes lulus.
+## Verifikasi v0.39.2
+- `npm test`: 194/194 tes lulus.
 - Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
-- Geometri, jalur platform, checkpoint, variasi pintu, dan input analog/lompat diperiksa otomatis untuk seluruh 50 level.
-- Tes otomatis tidak menggantikan playtest dua HP dengan Firebase aktif.
+- Geometri platform, jalur lompatan, posisi hazard, checkpoint, dan collision reruntuhan diperiksa otomatis.
+- Tes otomatis bukan pengganti playtest visual di browser dan dua HP fisik dengan Firebase aktif.
 
 ---
+
 
 # Elemental Duo — Panduan Game (build v0.33.0)
 

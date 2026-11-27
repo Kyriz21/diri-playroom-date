@@ -1,14 +1,15 @@
-# Diri. Playroom Date v0.39.1 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.39.2 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.39.1 — Classic Temple Layout & Jump Repair
+## Pembaruan terbaru v0.39.2 — Ruins Water & Fire Maze
 
-- Prototype Elemental Duo kini berisi **5 level aktif**, satu level pembuka dari masing-masing tema: Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno.
-- 45 blueprint lanjutan tetap disimpan pada engine untuk fase pengembangan berikutnya, tetapi tidak dapat dimainkan pada build prototype ini.
-- Visual Canvas diarahkan ke puzzle platformer klasik: dinding bata kuil gelap, batu bertekstur, lumut, akar/tanaman rambat, relief, partikel, cairan hazard, permata bersegi, portal batu, serta karakter Bara dan Nira yang lebih terbaca.
-- Progress bar, nomor level, dan halaman hasil akhir kini memakai hitungan prototype 5 level.
-- Tata letak lima arena kini berbeda per tema, jarak antartingkat dibuat lebih lega, tinggi visual platform ditambah, dan tinggi lompatan menjadi sekitar 104,5 unit. Metadata sesi versi lama dimigrasikan ke prototype baru; posisi karakter dimulai ulang karena `ELEMENTAL_MAP_VERSION=16`, sementara statistik dasar pemain dipertahankan.
-- GitHub Pages cache key menggunakan v0.39.1. Firebase Rules dan fitur selain Elemental Duo tidak diubah.
-- Verifikasi: 194/194 tes otomatis lulus; semua file JavaScript lolos `node --check`.
+- Arena Elemental Duo dirombak dari susunan platform tangga menjadi **reruntuhan labirin air dan api**: lorong akuaduk bertingkat, cabang kiri/kanan, ruang penghubung, reruntuhan batu yang bisa dilompati, gerbang bersama, serta dua pintu elemen.
+- Kelima level prototype tetap mewakili lima tema dunia, tetapi kini menggunakan komposisi arena reruntuhan yang lebih khas dan tidak hanya mengulang pola platform bertumpuk.
+- Kolam air dan lava ditempatkan pada saluran yang berbeda untuk setiap layout. Posisi checkpoint diperiksa dengan area aman yang lebih besar agar tidak terlalu dekat dengan semburan uap.
+- Ornamen lingkaran/rune besar dan penunjuk panah tepi layar yang membingungkan dihapus. Diganti relief gerbang akuaduk yang samar serta tekstur reruntuhan batu.
+- Lompatan yang sudah disetel pada v0.39.1 dipertahankan (`560 / 1500`, puncak sekitar 104,5 unit). Reruntuhan fisik dibuat rendah agar bisa dilompati.
+- `ELEMENTAL_MAP_VERSION=17` dan `prototypeVersion=3` memindahkan pemain serta sesi lama ke spawn dan puzzle map baru; statistik pemain dipertahankan. Firebase Rules dan fitur selain Elemental Duo tidak diubah.
+- GitHub Pages cache key menggunakan v0.39.2. Verifikasi: 194/194 tes otomatis lulus dan semua file JavaScript lolos `node --check`.
+
 
 Lihat `ELEMENTAL-DUO.md`, `ELEMENTAL-EXPLORATION-MAPS.md`, `BUILD-VERIFICATION.md`, dan `REVIEW-BUILD-QA.md` untuk detail build.
 

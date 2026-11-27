@@ -4,7 +4,7 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 16;
+export const ELEMENTAL_MAP_VERSION = 17;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1500;
 export const ELEMENTAL_MOVE_SPEED = 260;
@@ -1384,17 +1384,73 @@ function findSafeFloorPoint(preferred, hazards, element = null, min = 70, max = 
 // Each route climbs in readable steps (roughly 80–95 world units), then
 // branches to the paired upper doors before reconnecting at the crown.
 // The prototype selects a different room grammar for each of its five worlds.
+function ruinRoom(name, platforms, rubble, pools, options = {}) {
+  // Every room receives its own broken aqueduct partition plan. Segments with
+  // solid=false are painted masonry; solid rubble pieces remain low enough to
+  // vault and create actual choke points without sealing a route.
+  const {architecture = [], ...roomOptions} = options;
+  return {
+    name, platforms, walls:[...architecture,...rubble], pools,
+    switches:[2,3], gems:[4,5], doors:[9,10], controls:[6,11], checkpoint:12,
+    gate:{x:566,y:280,w:28,h:125},
+    ...roomOptions
+  };
+}
+
+// Purpose-built ruin-maze grammars. Each room has long broken aqueduct ledges,
+// offset chambers, rubble blocks that can be jumped over, and a different
+// water/lava channel arrangement instead of repeated staircase formations.
 const ELEMENTAL_ROOM_LAYOUTS = [
-  { name:'Balairung Dua Sayap', platforms:[[35,500,155],[970,500,155],[200,415,145],[815,415,145],[365,330,140],[655,330,140],[490,245,180],[200,245,145],[815,245,145],[365,160,140],[655,160,140],[490,75,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Tangga Teras', platforms:[[25,500,160],[975,500,160],[200,412,145],[815,412,145],[365,324,140],[655,324,140],[490,236,180],[200,236,145],[815,236,145],[170,148,140],[850,148,140],[300,60,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:300,w:18,h:100} },
-  { name:'Ruang Silang', platforms:[[20,500,160],[980,500,160],[190,408,150],[820,408,150],[360,316,145],[655,316,145],[485,224,190],[190,224,150],[820,224,150],[360,132,145],[655,132,145],[485,48,190],[485,500,190]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Menara Empat Pilar', platforms:[[30,500,160],[970,500,160],[205,420,140],[815,420,140],[365,340,140],[655,340,140],[490,260,180],[205,260,140],[815,260,140],[365,180,140],[655,180,140],[490,100,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Gerbang Tengah', platforms:[[25,500,160],[975,500,160],[195,410,145],[820,410,145],[355,320,145],[660,320,145],[490,230,180],[195,230,145],[820,230,145],[355,140,145],[660,140,145],[490,60,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Lorong Dua Lantai', platforms:[[35,500,155],[970,500,155],[205,418,140],[815,418,140],[365,336,140],[655,336,140],[490,254,180],[205,254,140],[815,254,140],[365,172,140],[655,172,140],[490,90,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Halaman Empat Pilar', platforms:[[20,500,160],[980,500,160],[190,414,150],[820,414,150],[355,328,145],[660,328,145],[490,242,180],[190,242,150],[820,242,150],[355,156,145],[660,156,145],[490,70,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Jembatan Kristal', platforms:[[30,500,160],[970,500,160],[205,416,140],[815,416,140],[365,332,140],[655,332,140],[490,248,180],[205,248,140],[815,248,140],[365,164,140],[655,164,140],[490,80,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Ruang Resonansi', platforms:[[30,500,160],[970,500,160],[220,412,140],[800,412,140],[380,324,130],[650,324,150],[480,236,200],[190,236,140],[830,236,140],[320,148,140],[700,148,140],[480,60,200],[480,500,200]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} },
-  { name:'Kubah Kuno', platforms:[[35,500,155],[970,500,155],[205,420,140],[815,420,140],[365,340,140],[655,340,140],[490,260,180],[205,260,140],[815,260,140],[365,180,140],[655,180,140],[490,100,180],[490,500,180]], switches:[2,3],gems:[4,5],doors:[9,10],controls:[6,11],checkpoint:12,gate:{x:570,y:302,w:18,h:100} }
+  ruinRoom('Labirin Dua Arus',
+    [[30,500,185],[945,500,185],[75,430,250],[835,430,250],[300,360,205],[655,360,205],[435,290,290],[315,220,205],[640,220,205],[210,150,180],[700,150,190],[430,80,300],[420,500,320]],
+    [[268,374,38,56],[858,374,38,56],[485,440,38,60],[615,440,38,60],[545,234,38,56]],
+    [{type:'water',x:420,w:155},{type:'fire',x:665,w:180}],
+    {architecture:[[240,240,30,145,false],[880,220,30,165,false],[70,315,178,20,false],[906,292,170,20,false],[382,168,188,18,false],[620,350,245,18,false],[520,390,22,72,false],[300,105,98,18,false]]}),
+  ruinRoom('Akuaduk Retak',
+    [[35,500,180],[945,500,180],[90,430,240],[830,430,240],[315,360,185],[660,360,185],[445,290,270],[325,220,190],[645,220,190],[275,150,180],[705,150,180],[440,80,280],[410,500,340]],
+    [[282,374,40,56],[850,374,40,56],[465,440,38,60],[610,440,38,60],[540,234,38,56]],
+    [{type:'water',x:445,w:155},{type:'fire',x:685,w:165}],
+    {architecture:[[180,205,28,170,false],[430,260,210,18,false],[650,125,28,138,false],[850,320,205,20,false],[80,355,160,18,false],[350,110,160,18,false],[760,425,150,18,false]],gate:{x:565,y:280,w:30,h:125}}),
+  ruinRoom('Gerbang Magma',
+    [[25,500,190],[945,500,190],[65,430,255],[840,430,255],[295,360,210],[655,360,210],[435,290,290],[310,220,210],[640,220,210],[265,150,195],[700,150,195],[425,80,310],[410,500,340]],
+    [[278,374,40,56],[865,374,40,56],[470,440,38,60],[625,440,38,60],[575,234,40,56]],
+    [{type:'water',x:430,w:145},{type:'fire',x:670,w:195,visual:'lava'}],
+    {architecture:[[275,185,28,165,false],[560,210,30,210,false],[870,250,28,155,false],[80,330,210,18,false],[690,340,205,18,false],[370,115,165,18,false],[700,95,150,18,false]]}),
+  ruinRoom('Menara Banjir',
+    [[40,500,180],[940,500,180],[95,430,235],[830,430,235],[320,360,180],[660,360,180],[450,290,260],[330,220,185],[645,220,185],[280,150,175],[705,150,175],[445,80,270],[405,500,350]],
+    [[280,374,38,56],[850,374,38,56],[470,440,38,60],[625,440,38,60],[545,234,38,56]],
+    [{type:'water',x:455,w:175},{type:'fire',x:700,w:160}],
+    {architecture:[[145,220,30,165,false],[335,285,215,18,false],[770,185,30,185,false],[910,330,170,18,false],[60,370,170,18,false],[550,105,170,18,false],[630,410,225,18,false]]}),
+  ruinRoom('Jantung Labirin',
+    [[30,500,185],[945,500,185],[80,430,245],[835,430,245],[305,360,200],[655,360,200],[435,290,290],[315,220,205],[640,220,205],[270,150,190],[700,150,190],[430,80,300],[420,500,320]],
+    [[270,374,40,56],[860,374,40,56],[485,440,38,60],[620,440,38,60],[555,234,40,56]],
+    [{type:'water',x:420,w:175},{type:'fire',x:680,w:195,visual:'lava'}],
+    {architecture:[[225,180,30,170,false],[460,250,30,180,false],[805,205,30,170,false],[70,325,190,18,false],[920,300,150,18,false],[340,95,190,18,false],[655,380,230,18,false]]}),
+  ruinRoom('Lorong Pilar Patah',
+    [[35,500,180],[945,500,180],[85,430,245],[835,430,245],[310,360,190],[660,360,190],[445,290,270],[320,220,195],[645,220,195],[275,150,185],[705,150,185],[435,80,290],[410,500,340]],
+    [[275,374,38,56],[855,374,38,56],[465,440,38,60],[610,440,38,60],[545,234,38,56]],
+    [{type:'water',x:445,w:155},{type:'fire',x:685,w:165}],
+    {architecture:[[115,250,28,145,false],[365,185,28,150,false],[675,255,28,145,false],[925,185,28,155,false],[180,355,210,18,false],[735,345,210,18,false],[455,100,220,18,false]]}),
+  ruinRoom('Saluran Tenggelam',
+    [[25,500,190],[945,500,190],[70,430,250],[840,430,250],[300,360,205],[655,360,205],[435,290,290],[310,220,210],[640,220,210],[265,150,195],[700,150,195],[425,80,310],[410,500,340]],
+    [[268,374,40,56],[865,374,40,56],[480,440,38,60],[620,440,38,60],[575,234,38,56]],
+    [{type:'water',x:430,w:180},{type:'fire',x:680,w:175}],
+    {architecture:[[210,210,28,180,false],[500,165,28,160,false],[835,225,28,180,false],[65,345,195,18,false],[920,325,155,18,false],[315,105,175,18,false],[655,395,245,18,false]]}),
+  ruinRoom('Kubah Terbelah',
+    [[40,500,180],[940,500,180],[100,430,230],[830,430,230],[325,360,175],[660,360,175],[450,290,260],[330,220,185],[645,220,185],[280,150,175],[705,150,175],[445,80,270],[405,500,350]],
+    [[275,374,38,56],[850,374,38,56],[470,440,38,60],[615,440,38,60],[545,234,38,56]],
+    [{type:'water',x:455,w:160},{type:'fire',x:700,w:155,visual:'lava'}],
+    {architecture:[[155,180,28,170,false],[390,255,210,18,false],[720,175,28,175,false],[945,285,28,135,false],[75,345,180,18,false],[840,390,180,18,false],[490,95,205,18,false]]}),
+  ruinRoom('Ruang Katup Kuno',
+    [[30,500,185],[945,500,185],[75,430,245],[835,430,245],[300,360,205],[655,360,205],[435,290,290],[315,220,205],[640,220,205],[270,150,190],[700,150,190],[430,80,300],[420,500,320]],
+    [[270,374,38,56],[865,374,38,56],[485,440,38,60],[615,440,38,60],[560,234,38,56]],
+    [{type:'water',x:430,w:160},{type:'fire',x:680,w:180,visual:'lava'}],
+    {architecture:[[255,215,28,175,false],[560,165,28,185,false],[850,235,28,160,false],[70,325,195,18,false],[900,350,170,18,false],[340,100,155,18,false],[650,405,215,18,false]]}),
+  ruinRoom('Gerbang Sumber Purba',
+    [[35,500,180],[945,500,180],[90,430,240],[830,430,240],[315,360,185],[660,360,185],[445,290,270],[325,220,190],[645,220,190],[275,150,180],[705,150,180],[440,80,280],[410,500,340]],
+    [[282,374,38,56],[850,374,38,56],[465,440,38,60],[620,440,38,60],[545,234,38,56]],
+    [{type:'water',x:450,w:170},{type:'fire',x:700,w:170,visual:'lava'}],
+    {architecture:[[135,195,28,180,false],[415,235,28,165,false],[705,180,28,180,false],[970,245,28,150,false],[65,350,185,18,false],[830,335,205,18,false],[475,95,215,18,false]]})
 ];
 
 function roomPlatform(levelId, slot, spec, source = null) {
@@ -1516,15 +1572,15 @@ function createExplorationMap(level, sourceIndex) {
   level.currents = (level.currents || []).map((source,i)=>mapZoneToPlatform(source,platformAt(safeZoneSlots[(i+1)%safeZoneSlots.length]),i,'current'));
   level.windZones = (level.windZones || []).map((source,i)=>mapZoneToPlatform(source,platformAt(safeZoneSlots[(i+2)%safeZoneSlots.length]),i,'wind'));
 
-  // Both opposing elemental pools are always present in the lower chamber.
-  // Fire crosses lava but must avoid water; Nira has the inverse rule.
+  // Each ruin has its own aqueduct channels; their positions form the route
+  // rather than repeating two identical pools under every level.
   const sourceHazards = level.hazards || [];
   const waterSource = sourceHazards.find(item=>item.type==='water') || {id:`room-${level.id}-water-pool`,type:'water'};
   const fireSource = sourceHazards.find(item=>item.type==='fire') || {id:`room-${level.id}-lava-pool`,type:'fire',visual:'lava'};
-  level.hazards = [
-    {...waterSource,x:410,y:ELEMENTAL_FLOOR_Y-26,w:112,h:26},
-    {...fireSource,x:638,y:ELEMENTAL_FLOOR_Y-26,w:112,h:26}
-  ];
+  level.hazards = room.pools.map((pool,index) => {
+    const source = pool.type === 'water' ? waterSource : fireSource;
+    return {...source,id:`room-${level.id}-${pool.type}-channel-${index+1}`,x:pool.x,y:ELEMENTAL_FLOOR_Y-26,w:pool.w,h:26,...(pool.visual ? {visual:pool.visual} : {})};
+  });
   // Steam vents remain as compact upper-room obstacles and never sit on a
   // switch, collectible, exit, checkpoint or moving platform.
   const steamSources = sourceHazards.filter(item=>item.type==='steam');
@@ -1565,22 +1621,25 @@ function createExplorationMap(level, sourceIndex) {
     x:platform.x + platform.w/2,
     y:platform.y - 13
   })).find(candidate => {
-    const body = {x:candidate.x-14,y:candidate.y-13,w:28,h:26};
-    return level.hazards.every(hazard => !rectsOverlap(body,hazard));
+    const safetyBody = {x:candidate.x-42,y:candidate.y-41,w:84,h:82};
+    return level.hazards.every(hazard => !rectsOverlap(safetyBody,hazard));
   }) || {platform:platformAt(0),x:platformAt(0).x+platformAt(0).w/2,y:platformAt(0).y-13};
   level.checkpoint = {x:checkpointSpot.x,y:checkpointSpot.y,radius:30,platformId:checkpointSpot.platform.id};
   level.gate = {...room.gate,id:`room-${level.id}-shared-gate`,orientation:'vertical'};
+  level.ruinWalls = room.walls.map(([x,y,w,h,solid=true],index)=>({id:`room-${level.id}-rubble-${index+1}`,x,y,w,h,solid,variant:(index+worldIndex)%4}));
   level.mapVersion = ELEMENTAL_MAP_VERSION;
   level.mapName = room.name;
   level.mapTopology = {
-    route:'fixed-screen-coop-puzzle',
+    route:'ruins-maze-coop',
     tiers:[...new Set(platforms.map(platform=>platform.y))].sort((a,b)=>a-b),
     platformCount:platforms.length,
+    wallFragmentCount:level.ruinWalls.length,
+    solidRubbleCount:level.ruinWalls.filter(wall=>wall.solid).length,
     sideRoutes:2,
     randomBranches:0,
-    roomGrammar:'two-elemental-stair-routes-central-rejoin',
+    roomGrammar:'offset-aqueduct-corridors-with-rubble-gates',
     centralRejoin:true,
-    exitLayout:'paired-elemental-doors',
+    exitLayout:'paired-elemental-door-alcoves',
     roomBased:true
   };
   level.worldWidth = ELEMENTAL_WORLD_WIDTH;
