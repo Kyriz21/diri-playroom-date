@@ -1,4 +1,4 @@
-# Mulai di sini — Diri. Playroom Date v0.39.2
+# Mulai di sini — Diri. Playroom Date v0.39.3
 
 ## Yang berubah pada Elemental Duo
 - Prototype hanya membuka 5 level aktif, satu dari setiap tema dunia.
@@ -8,12 +8,13 @@
 - Engine tetap menyimpan 45 blueprint lanjutan untuk ekspansi setelah lima prototype diuji.
 - Firebase Rules dan mini-game lain tidak berubah.
 
-## Memasang v0.39.2
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.2_Ruins_Water_Fire_Maze.zip`.
+## Memasang v0.39.3
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.3_Side_View_Labyrinth_Maze.zip`.
 2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
 3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
-4. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=3`; state puzzle lama dibersihkan.
-5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=17`. Firebase Rules tidak perlu dipublikasikan ulang.
+4. Arena kini berupa labirin dungeon tampak samping dengan koridor pendek yang berbelok, partisi batu dan kamar penghubung; lompatan tetap seperti build sebelumnya.
+5. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=5`; state puzzle lama dibersihkan.
+6. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=19`. Firebase Rules tidak perlu dipublikasikan ulang.
 
 ## Urutan 5 prototype
 1. Hutan Berbisik — Jejak Cahaya.

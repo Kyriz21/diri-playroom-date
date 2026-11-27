@@ -1,6 +1,13 @@
-# Elemental Duo — Panduan Game (build v0.39.2)
+# Elemental Duo — Panduan Game (build v0.39.3)
 
-## Pembaruan v0.39.2 — Ruins Water & Fire Maze
+## Pembaruan v0.39.3 — Side-View Labyrinth Maze
+- Arena menggunakan perspektif dungeon tampak samping dengan koridor pendek dan kamar yang tersusun berbelok, bukan rak platform panjang seperti platformer biasa.
+- Lima prototype memiliki geometri koridor, ruang penghubung, partisi batu dan pintu elemen yang bervariasi.
+- Lantai dasar tersambung secara visual dengan lantai dungeon; lompatan tetap tersedia untuk melintasi reruntuhan dan celah.
+- Fisika lompatan dipertahankan (`ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`). Analog tetap hanya untuk kiri/kanan.
+- `ELEMENTAL_MAP_VERSION=19` dan `prototypeVersion=5` memigrasikan posisi serta puzzle state ke tata letak baru; Firebase Rules tidak berubah.
+
+## Riwayat pembaruan v0.39.2
 - Arena dibentuk sebagai reruntuhan labirin akuaduk dengan lorong, ruang bercabang, platform penghubung, dan balok runtuhan yang dapat dilompati.
 - Lima level prototype tetap mewakili lima tema dunia; masing-masing menggunakan komposisi arena yang berbeda.
 - Saluran air dan lava memiliki posisi yang bervariasi. Bara aman dari lava dan menghindari air; Nira aman dari air dan menghindari lava.
@@ -13,7 +20,7 @@ Bara dan Nira harus melintasi rute yang berbeda sesuai elemennya, mengambil perm
 
 Mekanik kotak dorong dan tombol tahan masih menjadi kandidat pengembangan berikutnya; belum semua blueprint menerapkannya pada prototype lima level ini.
 
-## Verifikasi v0.39.2
+## Verifikasi v0.39.3
 - `npm test`: 194/194 tes lulus.
 - Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
 - Geometri platform, jalur lompatan, posisi hazard, checkpoint, dan collision reruntuhan diperiksa otomatis.

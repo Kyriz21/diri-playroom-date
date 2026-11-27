@@ -1,6 +1,15 @@
-# Build Verification — Diri. Playroom Date v0.39.2
+# Build Verification — Diri. Playroom Date v0.39.3
 
-## v0.39.2 — Ruins Water & Fire Maze
+## v0.39.3 — Side-View Labyrinth Maze
+
+- Lima level prototype dirancang sebagai kamar dungeon dan koridor yang berbelok; tidak lagi menggunakan platform panjang bertingkat dengan tiang penyangga.
+- Tiga jangkar lantai bawah menyatu dengan lantai dungeon, sedangkan rute atas berpindah di antara kamar pendek kiri/kanan.
+- Renderer menambah recess ruang, kusen lintasan persegi dan tekstur balok; ornamen panah dan rune melingkar tetap tidak digunakan.
+- `ELEMENTAL_MAP_VERSION=19`, `prototypeVersion=5`, `jumpSpeed=560`, `gravity=1500`; Firebase Rules tidak berubah.
+- `npm test`: 194/194 lulus. Seluruh file JavaScript lolos `node --check`. Firebase Rules JSON valid.
+- Uji visual browser dan uji dua perangkat dengan Firebase aktif tetap diperlukan.
+
+## v0.39.2 — Ruins Water & Fire Maze (historis)
 - `npm test`: **194/194 tes lulus**.
 - Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
 - 10 layout ruang menggunakan grammar reruntuhan labirin dengan platform 13 per level, pecahan dinding solid yang bisa dilompati, gerbang bersama, serta dua pintu elemen.

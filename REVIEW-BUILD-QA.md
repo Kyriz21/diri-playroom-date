@@ -1,6 +1,14 @@
-# QA — Diri. Playroom Date v0.39.2
+# QA — Diri. Playroom Date v0.39.3
 
-## Hasil verifikasi otomatis v0.39.2
+## Hasil verifikasi otomatis v0.39.3
+- `npm test`: 194/194 lulus.
+- Semua file JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- `ELEMENTAL_MAP_VERSION=19`, `prototypeVersion=5`; Firebase Rules tidak berubah.
+- Lima layout aktif diperiksa untuk variasi ruang, arah belokan, jalur spawn-ke-ruang atas, jangkauan lompatan, pintu, hazard dan checkpoint.
+- Renderer menggunakan koridor kamar dungeon, bukan platform panjang berpenyangga.
+- Belum dilakukan playtest manual pada browser dan dua HP dengan Firebase aktif.
+
+## Hasil verifikasi otomatis v0.39.2 (historis)
 - 194/194 tes otomatis lulus.
 - Seluruh file JavaScript lolos `node --check`; `firebase-database.rules.json` valid.
 - 10 layout ruang menggunakan partisi reruntuhan berbeda, platform puzzle, dua saluran elemen, gerbang bersama, dan pintu Bara/Nira.

@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.39.2';
+} from './elemental-duo-logic.js?v=0.39.3';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -591,14 +591,14 @@ export function mountElementalDuo(root, context) {
       let needsPrototypeMigration = false;
       await runTransaction(metaRef, current => {
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:3
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:5
         };
-        if (Number(current.prototypeVersion) === 3) return current;
+        if (Number(current.prototypeVersion) === 5) return current;
         needsPrototypeMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, prototypeVersion:3
+          results:{}, prototypeVersion:5
         };
       });
       if (needsPrototypeMigration) {
@@ -1247,34 +1247,38 @@ export function mountElementalDuo(root, context) {
 
   function drawSkyDecor(level, time) {
     if (level.worldIndex !== 4) return;
+    const palette = classicPalette(level);
     ctx.save();
-    // Soft, layered cloud banks distinguish the sky world from earlier biomes.
-    for (let i=0;i<8;i++) {
-      const drift = (time * (.006 + i*.0007) * (i%2 ? 1 : -1));
-      const x = ((i*151 + drift) % 1120 + 1120) % 1120 - 80;
-      const y = 105 + (i%4)*62;
-      const r = 24 + (i%3)*9;
-      ctx.globalAlpha = .2 + (i%2)*.08;
-      ctx.fillStyle = '#fff';
+    // The sky world is still a ruined interior: broken galleries, hanging
+    // chainwork and wind passing through tall openings, never floating islands.
+    for (let i=0;i<6;i++) {
+      const x = 70 + i*205;
+      const drop = 82 + (i%3)*28;
+      ctx.globalAlpha=.5;
+      ctx.strokeStyle=palette.stoneDark; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+((i%2)?7:-5),drop); ctx.stroke();
+      ctx.strokeStyle=palette.stone; ctx.lineWidth=2;
       ctx.beginPath();
-      ctx.ellipse(x,y,r*1.8,r*.48,0,0,Math.PI*2);
-      ctx.ellipse(x-r*.65,y+2,r*.78,r*.54,0,0,Math.PI*2);
-      ctx.ellipse(x+r*.55,y-3,r*.92,r*.62,0,0,Math.PI*2);
-      ctx.fill();
+      for(let y=8;y<drop;y+=13){ctx.moveTo(x-4,y);ctx.lineTo(x+5,y+4);}
+      ctx.stroke();
+      ctx.globalAlpha=.58;
+      ctx.fillStyle=palette.stoneDark;
+      ctx.fillRect(x-25,drop,50,10);
+      ctx.fillStyle=palette.moss;
+      ctx.fillRect(x-18,drop+2,13,3);
     }
-    // Distant floating islands are decorative only; collision remains on authored platforms.
-    for (let i=0;i<4;i++) {
-      const x = 105 + i*245 + Math.sin(time*.0005+i)*8;
-      const y = 270 + (i%2)*64;
-      ctx.globalAlpha = .28;
-      ctx.fillStyle = level.colors.far;
-      ctx.beginPath(); ctx.moveTo(x-48,y); ctx.lineTo(x+48,y); ctx.lineTo(x+27,y+15); ctx.lineTo(x+8,y+34); ctx.lineTo(x-18,y+22); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = .48; ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.ellipse(x,y-2,51,7,0,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=.2;
+    ctx.strokeStyle=palette.glow; ctx.lineWidth=2;
+    for(let i=0;i<10;i++){
+      const y=105+i*34;
+      const drift=Math.sin(time*.0014+i*.8)*17;
+      ctx.beginPath();
+      ctx.moveTo(80+drift,y);ctx.lineTo(250+drift,y-5);ctx.lineTo(365+drift,y+2);
+      ctx.moveTo(700-drift,y+12);ctx.lineTo(865-drift,y+4);ctx.lineTo(1080-drift,y+10);
+      ctx.stroke();
     }
     ctx.restore();
   }
-
 
   function drawRuinRelief(level, time) {
     const palette = classicPalette(level);
@@ -1340,6 +1344,7 @@ export function mountElementalDuo(root, context) {
     }
     ctx.restore();
   }
+
 
   function drawIceZones(level, time) {
     for (const zone of (level.iceZones || [])) {
@@ -1423,6 +1428,10 @@ export function mountElementalDuo(root, context) {
     for (const source of level.platforms) {
       const p = getElementalPlatformState(source, elapsedMs);
       if (!p.active) continue;
+      // The three bottom route anchors are flush with the full dungeon floor.
+      // They remain collision/navigation anchors but are not painted as
+      // separate platforms, removing the Mario-style row of ground shelves.
+      if (source.corridor && p.y >= ELEMENTAL_FLOOR_Y - 1) continue;
       ctx.save();
       ctx.globalAlpha = p.opacity;
       const visualH = p.visualH || p.h;
@@ -1463,8 +1472,15 @@ export function mountElementalDuo(root, context) {
         ctx.fillStyle='rgba(238,222,158,.58)';
         ctx.fillRect(p.x+7,p.y+4,Math.max(0,p.w-14),1.4);
         ctx.strokeStyle='rgba(28,27,18,.48)'; ctx.lineWidth=1;
+        // Broad floor fascia is drawn as a masonry wall face, not a thin
+        // floating plank. Offset joints make each corridor feel hand-built.
+        ctx.strokeStyle='rgba(31,29,19,.50)'; ctx.lineWidth=1;
+        for (const courseY of [p.y+13,p.y+25]) {
+          ctx.beginPath();ctx.moveTo(p.x+5,courseY);ctx.lineTo(p.x+p.w-5,courseY);ctx.stroke();
+        }
         for(let seam=p.x+34;seam<p.x+p.w-12;seam+=48){
           ctx.beginPath();ctx.moveTo(seam,p.y+7);ctx.lineTo(seam-3,p.y+visualH-3);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(seam+24,p.y+15);ctx.lineTo(seam+21,p.y+24);ctx.stroke();
         }
         for(let mark=0;mark<Math.max(1,Math.floor(p.w/72));mark++){
           const mx=p.x+18+mark*67;
@@ -1494,9 +1510,9 @@ export function mountElementalDuo(root, context) {
     const palette = classicPalette(level);
     for (const wall of level.ruinWalls || []) {
       ctx.save();
-      ctx.globalAlpha = wall.solid ? 1 : .62;
+      ctx.globalAlpha = wall.solid ? 1 : .9;
       ctx.shadowColor = wall.solid ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.18)';
-      ctx.shadowBlur = wall.solid ? 9 : 3; ctx.shadowOffsetY = wall.solid ? 4 : 1;
+      ctx.shadowBlur = wall.solid ? 9 : 5; ctx.shadowOffsetY = wall.solid ? 4 : 2;
       const gradient = ctx.createLinearGradient(0,wall.y,0,wall.y+wall.h);
       gradient.addColorStop(0, palette.bricks[(wall.variant||0)%palette.bricks.length]);
       gradient.addColorStop(.58, palette.stone);
@@ -1537,6 +1553,80 @@ export function mountElementalDuo(root, context) {
       ctx.restore();
     }
   }
+
+  function drawMazeChambers(level, time = 0) {
+    const palette = classicPalette(level);
+    const routes = [[0,2,4,6,7,9],[1,3,5,11,8,10]];
+    const nextSideBySlot = new Map();
+    for (const route of routes) {
+      for (let i=0;i<route.length-1;i++) {
+        const current = level.platforms[route[i]];
+        const next = level.platforms[route[i+1]];
+        if (!current || !next) continue;
+        nextSideBySlot.set(route[i], (next.x+next.w/2) >= (current.x+current.w/2) ? 'right' : 'left');
+      }
+    }
+    for (let slot=2;slot<level.platforms.length;slot++) {
+      const platform = level.platforms[slot];
+      if (!platform?.corridor || platform.y >= ELEMENTAL_FLOOR_Y-1) continue;
+      const top = Math.max(28,platform.y-76);
+      const left = platform.x+7;
+      const right = platform.x+platform.w-7;
+      const width = Math.max(24,right-left);
+      const opening = nextSideBySlot.get(slot) || (slot % 2 ? 'left' : 'right');
+      ctx.save();
+      // Dark recess gives each walkable floor the feeling of a room inside a
+      // larger connected dungeon, while the interrupted lintel marks the
+      // passage leading to the next chamber.
+      const recess = ctx.createLinearGradient(0,top,0,platform.y-4);
+      recess.addColorStop(0,'rgba(8,10,8,.22)');
+      recess.addColorStop(1,'rgba(8,10,8,.48)');
+      ctx.fillStyle = recess;
+      ctx.fillRect(left+14,top+12,Math.max(8,width-28),Math.max(12,platform.y-top-12));
+      ctx.fillStyle = palette.stoneDark;
+      ctx.fillRect(left,top,width,13);
+      ctx.fillStyle = palette.stone;
+      ctx.fillRect(left+5,top+2,width-10,4);
+      ctx.strokeStyle = 'rgba(16,17,12,.84)'; ctx.lineWidth = 2;
+      ctx.strokeRect(left,top,width,13);
+      // A full buttress closes one side; the other side is interrupted to
+      // create an obvious doorway into the next section of the maze.
+      const jambW = Math.min(20,width*.12);
+      const jambH = Math.max(20,platform.y-top-12);
+      const closedX = opening === 'right' ? left : right-jambW;
+      const closedGradient = ctx.createLinearGradient(closedX,top+12,closedX+jambW,top+12);
+      closedGradient.addColorStop(0,palette.stoneDark);
+      closedGradient.addColorStop(.45,palette.stone);
+      closedGradient.addColorStop(1,'#29271d');
+      ctx.fillStyle = closedGradient;
+      ctx.fillRect(closedX,top+12,jambW,jambH);
+      ctx.strokeStyle='rgba(15,17,11,.8)'; ctx.lineWidth=2;
+      ctx.strokeRect(closedX,top+12,jambW,jambH);
+      for(let sy=top+28;sy<platform.y-6;sy+=23){
+        ctx.beginPath();ctx.moveTo(closedX+2,sy);ctx.lineTo(closedX+jambW-2,sy);ctx.stroke();
+      }
+      // Broken stones around the open doorway make the turn legible without
+      // using floating arrows, glowing rings, or platform-style signposts.
+      const openX = opening === 'right' ? right-jambW : left;
+      ctx.fillStyle=palette.stoneDark;
+      ctx.fillRect(openX,top+12,jambW,Math.max(14,jambH*.24));
+      ctx.fillStyle=palette.stone;
+      ctx.fillRect(openX,platform.y-22,jambW,10);
+      ctx.strokeStyle='rgba(21,21,14,.75)'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(left+26,top+17); ctx.lineTo(left+width*.34,top+22);
+      ctx.moveTo(left+width*.66,top+22); ctx.lineTo(right-26,top+17);
+      ctx.stroke();
+      // Small mortar courses deepen the corridor recess.
+      ctx.globalAlpha=.26;
+      ctx.strokeStyle=palette.accent; ctx.lineWidth=1;
+      for(let sy=top+34;sy<platform.y-8;sy+=28){
+        ctx.beginPath();ctx.moveTo(left+24,sy);ctx.lineTo(right-24,sy);ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
 
   function drawHazards(level, time, elapsedMs = 0) {
     for (const source of level.hazards) {
@@ -1809,9 +1899,14 @@ export function mountElementalDuo(root, context) {
     ctx.strokeStyle = 'rgba(255,255,255,.36)'; ctx.lineWidth = Math.max(1,pixelScale); ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,.92)';
     ctx.font = `800 ${7.5*pixelScale}px system-ui`; ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText('PETA EKSPLORASI',panelX+8*pixelScale,panelY+9*pixelScale);
+    ctx.fillText('PETA LABIRIN',panelX+8*pixelScale,panelY+9*pixelScale);
 
-    // Floor, platforms and shortcut bridges show the room's multiple routes.
+    // Masonry partitions are part of the route map, not decorative arrows.
+    for (const wall of level.ruinWalls || []) {
+      ctx.fillStyle = wall.solid ? 'rgba(238,208,143,.92)' : 'rgba(183,177,139,.68)';
+      ctx.fillRect(toMapX(wall.x),toMapY(wall.y),Math.max(1,wall.w/(level.worldWidth||ELEMENTAL_WORLD_WIDTH)*mapW),Math.max(1,wall.h/(level.worldHeight||ELEMENTAL_WORLD_HEIGHT)*mapH));
+    }
+    // Corridor floors and the remaining special surfaces show the walkable routes.
     ctx.lineCap='round';
     for (const floor of level.floorSegments || []) {
       ctx.strokeStyle='rgba(255,255,255,.34)'; ctx.lineWidth=3*pixelScale;
@@ -1883,6 +1978,7 @@ export function mountElementalDuo(root, context) {
     drawSkyDecor(level,time);
     drawRuinRelief(level,time);
     drawRuinWalls(level,time);
+    drawMazeChambers(level,time);
     const elapsedMs = levelElapsedMs();
     drawIceZones(level,time);
     drawCurrentZones(level,time,elapsedMs);
@@ -1928,7 +2024,7 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 3)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 5)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {

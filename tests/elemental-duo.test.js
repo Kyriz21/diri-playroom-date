@@ -26,7 +26,9 @@ test('Prototype 5 level menyajikan satu level pembuka dari setiap tema dunia', (
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.worldIndex), [1,2,3,4,5]);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.id), [1,2,3,4,5]);
   assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.mapName)).size, 5, 'each theme uses a distinct room layout');
-  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => JSON.stringify(level.platforms.map(p => [p.x,p.y,p.w])))).size, 5, 'each prototype arena has its own platform composition');
+  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => JSON.stringify(level.platforms.map(p => [p.x,p.y,p.w])))).size, 5, 'each prototype arena has its own corridor composition');
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS.every(level=>level.ruinWalls.filter(wall=>!wall.solid).length>=10),'each prototype room needs visible maze partitions');
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS.every(level=>level.hazards.some(h=>h.type==='fire'&&h.y===524)&&level.hazards.some(h=>h.type==='water'&&h.y===524)),'water and lava channels should sit inside the lower corridors');
   assert.equal(getElementalPrototypeLevel(0).worldIndex,1);
   assert.equal(getElementalPrototypeLevel(5).worldIndex,5);
   assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].iceZones.length || ELEMENTAL_PROTOTYPE_LEVELS[1].currents.length);
@@ -41,12 +43,14 @@ test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertah
   assert.match(game,/getElementalPrototypeLevel/);
   assert.match(game,/if \(level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT\)/);
   assert.match(game,/<small>\/ 05<\/small>/);
-  assert.match(game,/prototypeVersion:3/);
-  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 3\)/);
+  assert.match(game,/prototypeVersion:5/);
+  assert.match(game,/Number\(data\.meta\.prototypeVersion\) !== 5/);
+  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 5\)/);
   assert.match(game,/await update\(baseRef, \{ levels:null \}\)/);
   assert.match(game,/drawVine\(/);
   assert.match(game,/const brickW = 54, brickH = 27/);
   assert.match(game,/function drawRuinWalls\(/);
+  assert.match(game,/function drawMazeChambers\(/);
   assert.match(game,/function drawRuinRelief\(/);
   assert.doesNotMatch(game,/drawAncientDecor/);
   assert.match(game,/function drawSpirit\(/);
@@ -75,13 +79,24 @@ test('Arena prototype memiliki ruang antartingkat yang lega dan lompatan mampu m
   const apex = ELEMENTAL_JUMP_SPEED * ELEMENTAL_JUMP_SPEED / (2 * ELEMENTAL_GRAVITY);
   assert.ok(apex >= 100 && apex <= 110, `jump apex should be about 105 units, got ${apex}`);
   for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
-    const tiers = [...new Set(level.platforms.map(platform => platform.y))].sort((a,b)=>a-b);
-    assert.ok(tiers.length >= 5, `level ${level.id} should use multiple vertical tiers`);
-    for (let i=1;i<tiers.length;i++) {
-      assert.ok(tiers[i]-tiers[i-1] >= 60, `level ${level.id} should leave clear vertical space between tiers`);
-      assert.ok(tiers[i]-tiers[i-1] <= apex, `level ${level.id} next tier should fit inside a normal jump`);
+    const jumpRange = rise => {
+      if (rise > apex) return -1;
+      const time = (ELEMENTAL_JUMP_SPEED + Math.sqrt(ELEMENTAL_JUMP_SPEED**2 - 2*ELEMENTAL_GRAVITY*Math.max(0,rise))) / ELEMENTAL_GRAVITY;
+      return ELEMENTAL_MOVE_SPEED * time;
+    };
+    const leftRoute = [0,2,4,6,7,9].map(slot=>level.platforms[slot]);
+    const rightRoute = [1,3,5,11,8,10].map(slot=>level.platforms[slot]);
+    for (const route of [leftRoute,rightRoute]) {
+      for (let i=1;i<route.length;i++) {
+        const rise = route[i-1].y-route[i].y;
+        assert.ok(rise > 0 && rise <= apex, `level ${level.id} each labyrinth passage must rise gradually within jump reach`);
+        const overlapX = Math.min(route[i-1].x+route[i-1].w,route[i].x+route[i].w)-Math.max(route[i-1].x,route[i].x);
+        const horizontalGap = Math.max(0,route[i].x-(route[i-1].x+route[i-1].w),route[i-1].x-(route[i].x+route[i].w));
+        assert.ok(horizontalGap <= jumpRange(rise), `level ${level.id} adjacent labyrinth chambers should remain reachable without a long platform gap`);
+      }
     }
-    assert.ok(level.platforms.every(platform => platform.visualH === 22), `level ${level.id} ledges should have the thicker classic stone look`);
+    assert.ok(level.platforms.every(platform => platform.visualH === 36 && platform.corridor), `level ${level.id} should use thick connected corridor galleries, not thin floating ledges`);
+    assert.ok(level.platforms.every(platform => platform.w >= 240 && platform.w <= 320), `level ${level.id} should use compact rooms and passage lengths, not oversized shelves`);
   }
 });
 
@@ -154,9 +169,9 @@ test('Pijakan wajib berada pada lantai bawah sebelum gerbang ruang atas', () => 
 test('Kedua pintu dapat berada di sisi atau ketinggian berbeda sehingga akhir level tidak selalu di kanan', () => {
   const layoutSource=readSource('../js/games/elemental-duo-logic.js');
   const gameSource=readSource('../js/games/elemental-duo.js');
-  assert.match(layoutSource,/ruinRoom\('Labirin Dua Arus'/);
-  assert.match(layoutSource,/ruinRoom\('Akuaduk Retak'/);
-  assert.match(layoutSource,/ruinRoom\('Jantung Labirin'/);
+  assert.match(layoutSource,/mazeRoom\('Labirin Dua Arus'/);
+  assert.match(layoutSource,/mazeRoom\('Lorong Akua Tersembunyi'/);
+  assert.match(layoutSource,/mazeRoom\('Jantung Labirin'/);
   assert.match(layoutSource,/const makeDoor = \(slot,element/);
   assert.match(gameSource,/const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
   assert.match(gameSource,/drawExplorationNavigator\(level,host,guest\)/);
@@ -168,7 +183,7 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:17, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:19, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
@@ -321,7 +336,7 @@ test('Landscape menampilkan satu ruang puzzle penuh; portrait mengikuti pemain s
 test('Peta mini menampilkan jalur, pintu, posisi pemain, area kamera dan penunjuk pintu', () => {
   const game=readSource('../js/games/elemental-duo.js');
   assert.match(game,/function drawExplorationNavigator\(level, host, guest\)/);
-  assert.match(game,/PETA EKSPLORASI/);
+  assert.match(game,/PETA LABIRIN/);
   assert.match(game,/for \(const element of \['fire','water'\]\)/);
   assert.match(game,/const camera = \{x:canvasView\.cameraX,y:canvasView\.cameraY/);
   assert.match(game,/const ownDoor = level\.doors\?\.\[ownElement\] \|\| level\.exit/);
@@ -350,9 +365,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.39\.2/);
-  assert.match(app, /elemental-duo\.js\?v=0\.39\.2/);
-  assert.match(index, /app\.js\?v=0\.39\.2/);
+  assert.match(index, /elemental-duo\.css\?v=0\.39\.3/);
+  assert.match(app, /elemental-duo\.js\?v=0\.39\.3/);
+  assert.match(index, /app\.js\?v=0\.39\.3/);
 });
 
 
@@ -577,7 +592,8 @@ test('Physics dan renderer benar-benar menggunakan arus serta permukaan es Dunia
 
 test('Hazard kristal dapat menyala dan padam mengikuti siklus bersama', () => {
   const level = getElementalLevel(16);
-  const hazard = level.hazards[0];
+  const hazard = level.hazards.find(item=>item.cycle && getElementalHazardState(item,4500).active===false);
+  assert.ok(hazard,'level contains a timed hazard with an inactive phase at the test timestamp');
   const active = getElementalHazardState(hazard, 100);
   const inactive = getElementalHazardState(hazard, 4500);
   assert.equal(active.active, true);
@@ -997,8 +1013,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Room map v17 uses coherent ruin-maze geometry and reachable exits across all 50 authored levels', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,17);
+test('Room map v19 uses connected corridor-maze geometry and reachable exits across all 50 authored levels', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,19);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {
@@ -1008,7 +1024,11 @@ test('Room map v17 uses coherent ruin-maze geometry and reachable exits across a
       assert.ok(!(overlapX>0 && overlapY>0),`level ${level.id}: ${a.id} overlaps ${b.id}`);
       const gapX=Math.max(0,a.x-(b.x+b.w),b.x-(a.x+a.w));
       const gapY=Math.max(0,a.y-(b.y+b.h),b.y-(a.y+a.h));
-      assert.ok(Math.hypot(gapX,gapY)>=12,`level ${level.id}: ${a.id} and ${b.id} must remain visually distinct`);
+      const touchingCorridors = a.corridor && b.corridor && gapX===0 && gapY===0 && (
+        Math.abs((a.x+a.w)-b.x)<2 || Math.abs((b.x+b.w)-a.x)<2 ||
+        Math.abs((a.y+a.h)-b.y)<2 || Math.abs((b.y+b.h)-a.y)<2
+      );
+      assert.ok(touchingCorridors || Math.hypot(gapX,gapY)>=12,`level ${level.id}: ${a.id} and ${b.id} must not overlap or nearly collide`);
     }
     for (const platform of platforms) {
       assert.ok(platform.x>=0 && platform.x+platform.w<=ELEMENTAL_WORLD_WIDTH,`level ${level.id} ${platform.id} remains inside world bounds`);
@@ -1016,6 +1036,9 @@ test('Room map v17 uses coherent ruin-maze geometry and reachable exits across a
     }
     assert.ok(level.mapTopology.platformCount === platforms.length);
     assert.equal(level.mapTopology.randomBranches,0);
+    assert.equal(level.mapTopology.roomGrammar,'side-view-dungeon-labyrinth-with-turning-corridors');
+    assert.equal(level.mapTopology.corridorCount,13);
+    assert.ok(level.mapTopology.partitionCount>=10);
     for (const zone of [...(level.iceZones||[]),...(level.currents||[]),...(level.windZones||[])]) {
       assert.ok(zone.w<=110 && zone.h<=62,`level ${level.id} environmental zone should stay compact`);
     }

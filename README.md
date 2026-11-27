@@ -1,6 +1,15 @@
-# Diri. Playroom Date v0.39.2 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.39.3 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.39.2 — Ruins Water & Fire Maze
+## Pembaruan terbaru v0.39.3 — Side-View Labyrinth Maze
+
+- Arena prototype diubah lebih jauh dari susunan platform ala game side-scroller biasa menjadi **labirin dungeon tampak samping**: kamar yang lebih pendek, koridor bergantian kiri/kanan, pintu penghubung, pilar pemisah, dan jalur yang berbelok.
+- Lantai dasar kini menyatu secara visual dengan lantai dungeon; platform jangkar spawn/checkpoint tidak lagi digambar sebagai rak terpisah. Tiang penyangga di bawah platform dihilangkan.
+- Lima level tetap mewakili lima tema dunia. Masing-masing menggunakan variasi geometri ruang, posisi koridor, dinding dan pembukaan lorong yang berbeda.
+- Lompatan tetap menggunakan setelan nyaman sebelumnya (`560 / 1500`, puncak sekitar 104,5 unit); lompatan menjadi alat melewati reruntuhan/celah, bukan cara utama menavigasi deretan platform.
+- `ELEMENTAL_MAP_VERSION=19` dan `prototypeVersion=5` memigrasikan posisi serta state puzzle dari layout v0.39.2 ke spawn/layout labirin. Statistik pemain dan keanggotaan room dipertahankan; Firebase Rules tidak berubah.
+- GitHub Pages cache key dan package version menggunakan v0.39.3. Verifikasi: 194/194 tes otomatis lulus, JavaScript lolos `node --check`, dan Firebase Rules JSON valid.
+
+## Pembaruan v0.39.2 (historis)
 
 - Arena Elemental Duo dirombak dari susunan platform tangga menjadi **reruntuhan labirin air dan api**: lorong akuaduk bertingkat, cabang kiri/kanan, ruang penghubung, reruntuhan batu yang bisa dilompati, gerbang bersama, serta dua pintu elemen.
 - Kelima level prototype tetap mewakili lima tema dunia, tetapi kini menggunakan komposisi arena reruntuhan yang lebih khas dan tidak hanya mengulang pola platform bertumpuk.

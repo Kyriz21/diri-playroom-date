@@ -1,3 +1,10 @@
+## v0.39.3 — batasan prototype labirin yang masih perlu diuji
+- Labirin masih memakai perspektif side-view agar kompatibel dengan kontrol kiri/kanan dan tombol lompat yang sudah ada; ini bukan maze top-down dengan gerakan bebas atas/bawah.
+- Partisi dinding dekoratif membentuk ruang dan koridor secara visual; hanya fragmen runtuhan yang ditandai solid yang menjadi penghalang collision. Perlu playtest untuk menilai apakah belokan dan pintu terbaca jelas saat dimainkan.
+- Lima level prototype sudah berbeda secara geometri, tetapi belum menjalani uji navigasi dua pemain secara langsung di browser/HP.
+- Lompatan dipertahankan pada `560 / 1500`; perlu divalidasi dengan ukuran layar, frame rate dan kontrol aktual di perangkat pengguna.
+- `ELEMENTAL_MAP_VERSION=19` dan `prototypeVersion=5` mengatur migrasi posisi serta state puzzle ke map baru. Statistik pemain dan keanggotaan room dipertahankan.
+
 ## v0.39.2 — batasan prototype yang masih perlu diuji
 - Lima level aktif memakai lima tema, dengan 10 pola ruang reruntuhan akuaduk tersimpan di engine. Variasi dan ritme setiap level tetap perlu dinilai melalui playtest manusia.
 - Dinding partisi non-solid memberi bentuk visual koridor/ruang; hanya balok runtuhan tertentu yang memiliki collision. Ini menjaga rute tetap terbuka, tetapi pembacaan lorong dan bukaan perlu diperiksa di browser pada layar desktop dan HP.

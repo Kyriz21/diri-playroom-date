@@ -1,3 +1,14 @@
+## v0.39.3 — Side-View Labyrinth Maze
+
+- Mengubah komposisi lima level prototype agar terbaca sebagai **labirin dungeon tampak samping**, bukan deretan rak/platform panjang: koridor lebih pendek, kamar ber-offset, jalur kiri/kanan yang berbelok, ruang penghubung dan gerbang elemen.
+- Lantai bawah menyatu dengan lantai utama. Tiga jangkar koridor bawah tetap dipakai untuk spawn/checkpoint/hazard, tetapi tidak lagi digambar sebagai platform terpisah.
+- Menghapus tiang penyangga di bawah lantai koridor dan mempertegas fasia batu serta tekstur balok agar lantai terasa menjadi bagian dari arsitektur dungeon.
+- Mempertegas dinding partisi dan menambahkan frame lorong persegi yang menandai pintu masuk ke kamar berikutnya. Tidak menambahkan panah dekoratif atau rune melingkar.
+- Lima layout prototype memiliki geometri jalur yang berbeda. 45 blueprint level lanjutan tetap tersedia di engine.
+- Fisika lompatan dipertahankan (`ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`, puncak teoretis ±104,5 unit); kontrol analog tetap hanya menggerakkan kiri/kanan.
+- Menaikkan `ELEMENTAL_MAP_VERSION` ke 19 dan `prototypeVersion` ke 5 agar sesi dengan geometri v0.39.2 dimigrasikan ke spawn/layout baru. Statistik pemain dan membership room dipertahankan; Firebase Rules tidak berubah.
+- Cache key/package version menjadi v0.39.3. Verifikasi: 194/194 tes otomatis lulus; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
+
 ## v0.39.2 — Ruins Water & Fire Maze
 
 - Mengganti grammar arena berulang menjadi 10 pola reruntuhan akuaduk/labirin dengan lorong bertingkat, jalur kiri-kanan, platform penghubung, dan komposisi berbeda.

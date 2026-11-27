@@ -1,4 +1,13 @@
-# Elemental Duo — Ruins Water & Fire Maze (v0.39.2)
+# Elemental Duo — Side-View Labyrinth Maze (v0.39.3)
+
+## Tata letak prototype labirin
+- Perspektif tetap side-view agar selaras dengan gerak kiri/kanan dan tombol lompat, tetapi arena dibangun sebagai jaringan kamar dungeon yang berbelok.
+- Koridor dibuat lebih pendek dan bergeser ke kiri/kanan; lantai bawah menyatu dengan lantai utama, bukan menjadi tiga platform terpisah.
+- Dinding partisi, kusen lorong persegi, dan ruang penghubung membingkai jalur. Tiang penyangga ala platform melayang dihapus.
+- Dua rute elemen bergerak melalui beberapa kamar dan bertemu di area penghubung sebelum gerbang serta pintu keluar.
+- `ELEMENTAL_MAP_VERSION=19`, `prototypeVersion=5`; lompatan tetap 560/1500.
+
+## Riwayat layout v0.39.2
 
 ## Prototype 5 level lintas tema
 Level aktif 01–05 tetap mewakili Hutan Berbisik, Kedalaman Kristal, Kerajaan Bara, Reruntuhan Langit, dan Jantung Kuno. Masing-masing memakai komposisi reruntuhan akuaduk yang berbeda. 45 blueprint lanjutan tetap tersimpan untuk ekspansi berikutnya.
