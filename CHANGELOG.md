@@ -244,3 +244,13 @@
 - Level 3 mempertahankan hazard berwaktu dengan jendela aman; semua lintasan karakter diuji ulang.
 - Map version dinaikkan ke 26 dan prototype version ke 11 untuk membersihkan state posisi/puzzle dari build sebelumnya.
 - 199 tes otomatis lulus; ini bukan pengganti uji langsung dua perangkat.
+
+
+## v0.46.0 — Player Lobby & Result Recap Cards
+- Menambahkan lobi pemain khusus Love Match, Color Match, dan IQ Duel dengan identitas host/guest, status koneksi Firebase Presence, status Ready, serta Start host setelah keduanya online dan siap.
+- Memperketat `setReady`, `startSelectedGame`, dan Firebase Rules agar Ready/Start mini-game memerlukan kedua perangkat terhubung.
+- Love Match kini langsung menyajikan satu rekap akhir setelah kedua jawaban lengkap; menghapus reveal slide per pertanyaan.
+- Color Match mengakumulasi hasil lima ronde dan menampilkan satu rekap kartu; ronde berikutnya dimulai otomatis. Skor rata-rata remote dihitung sebagai total skor dibagi jumlah ronde.
+- IQ Duel tetap memakai satu halaman rekap final, dengan kartu skor dan daftar review soal.
+- Firebase Rules perlu dipublikasikan ulang untuk fase `scoring` Color Match serta presence gate lobi.
+- Automated tests: 214/214 passed; live browser/two-device Firebase playtest remains outstanding.

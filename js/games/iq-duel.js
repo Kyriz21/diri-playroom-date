@@ -34,7 +34,7 @@ export function mountIQDuel(root, context) {
   function setupPanel() {
     if (standalone) return `<section class="bm-panel iq-setup"><span class="bm-tag">BRAIN DUEL · SOLO PRACTICE</span><h2>Uji logika dan kecepatanmu</h2><p>Pilih jumlah soal. Setiap soal punya batas waktu 30 detik. Jawaban benar dan pembahasan baru dibuka di hasil akhir.</p><label>Jumlah ronde<select data-iq-local-rounds><option value="12">12 ronde · cepat</option><option value="20">20 ronde · lengkap</option></select></label><button class="button button-primary" data-iq-action="local-start">Mulai IQ Duel →</button></section>`;
     const rounds = Number(pub.settings?.rounds || 12);
-    return `<section class="bm-panel iq-setup"><span class="bm-tag">HEAD-TO-HEAD</span><h2>Siapa yang paling cepat berpikir?</h2><p>Kalian mendapat soal yang sama. Kunci jawaban sebelum waktu habis. Tidak ada jawaban benar yang dibuka sampai semua ronde selesai.</p><label>Jumlah ronde<select data-iq-setting="rounds" ${role !== 'host' ? 'disabled' : ''}><option value="12" ${rounds === 12 ? 'selected' : ''}>12 ronde · cepat</option><option value="20" ${rounds === 20 ? 'selected' : ''}>20 ronde · lengkap</option></select></label><div class="bm-ready-grid"><span>${esc(names.host)} <b>${pub.ready?.host ? 'Siap ✓' : 'Belum siap'}</b></span><span>${esc(names.guest)} <b>${pub.ready?.guest ? 'Siap ✓' : 'Belum siap'}</b></span></div><div class="bm-result-actions"><button class="button button-secondary" data-iq-action="ready">${pub.ready?.[role] ? 'Batalkan siap' : 'Aku siap'}</button>${role === 'host' ? `<button class="button button-primary" data-iq-action="start" ${pub.ready?.host && pub.ready?.guest ? '' : 'disabled'}>Mulai ${rounds} ronde →</button>` : '<span class="bm-muted">Menunggu pembuat sesi.</span>'}</div></section>`;
+    return `<section class="bm-panel iq-setup"><span class="bm-tag">HEAD-TO-HEAD</span><h2>Siapa yang paling cepat berpikir?</h2><p>Kalian mendapat soal yang sama. Kunci jawaban sebelum waktu habis. Tidak ada jawaban benar yang dibuka sampai semua ronde selesai.</p><label>Jumlah ronde<select data-iq-setting="rounds" ${role !== 'host' ? 'disabled' : ''}><option value="12" ${rounds === 12 ? 'selected' : ''}>12 ronde · cepat</option><option value="20" ${rounds === 20 ? 'selected' : ''}>20 ronde · lengkap</option></select></label><div class="iq-prestart-note">${role === 'host' ? 'Pengaturan sudah siap. Mulai saat kalian berdua sudah berada di ruang permainan.' : 'Pembuat sesi sedang memilih jumlah ronde.'}</div><div class="bm-result-actions">${role === 'host' ? `<button class="button button-primary" data-iq-action="start">Mulai ${rounds} ronde →</button>` : '<span class="bm-muted">Menunggu pembuat sesi memulai.</span>'}</div></section>`;
   }
 
   function questionPanel(question, index, rounds, selected, locked, timeLeft) {
@@ -73,14 +73,14 @@ export function mountIQDuel(root, context) {
     if (role !== 'host') return;
     const snap = await get(baseRef);
     if (snap.exists()) return;
-    await set(baseRef, { settings: { rounds: 12 }, ready: { host: false, guest: false }, meta: { phase: 'setup' }, submissions: {} });
+    await set(baseRef, { settings: { rounds: 12 }, meta: { phase: 'setup' }, submissions: {} });
   }
 
   async function startRemote() {
-    if (role !== 'host' || !pub.ready?.host || !pub.ready?.guest) return;
+    if (role !== 'host' || pub.meta?.phase === 'playing' || pub.meta?.phase === 'result') return;
     const rounds = Number(pub.settings?.rounds) === 20 ? 20 : 12;
     const selected = seededShuffle(IQ_QUESTIONS, Number(session.startedAt || Date.now())).slice(0, rounds);
-    await set(baseRef, { settings: { rounds }, ready: { host: true, guest: true }, questionIds: selected.map(q => q.id), meta: { phase: 'playing', questionIndex: 0, startedAt: Date.now(), durationSeconds: ROUND_SECONDS }, submissions: {} });
+    await set(baseRef, { settings: { rounds }, questionIds: selected.map(q => q.id), meta: { phase: 'playing', questionIndex: 0, startedAt: Date.now(), durationSeconds: ROUND_SECONDS }, submissions: {} });
   }
 
   async function submitRemote() {
@@ -203,7 +203,6 @@ export function mountIQDuel(root, context) {
     if (action === 'back') onBack?.();
     if (action === 'local-start') localStart();
     if (action === 'local-submit') localSubmit(false);
-    if (action === 'ready') void toggleReady();
     if (action === 'start') void startRemote();
     if (action === 'submit') void submitRemote();
     if (action === 'replay') { if (standalone) { local.phase = 'setup'; render(); } else onBack?.(); }
@@ -213,14 +212,6 @@ export function mountIQDuel(root, context) {
     if (event.target.matches('[data-iq-setting]') && role === 'host') {
       void set(ref(db, `${base}/settings/rounds`), Number(event.target.value));
     }
-  }
-
-  async function toggleReady() {
-    if (busy) return;
-    busy = true;
-    try { await set(ref(db, `${base}/ready/${role}`), !pub.ready?.[role]); }
-    catch (error) { toast(`Status siap belum tersimpan: ${error.message}`, 'error'); }
-    finally { busy = false; }
   }
 
   root.addEventListener('click', clickHandler);

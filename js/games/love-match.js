@@ -22,7 +22,6 @@ export function mountLoveMatch(root, context) {
   let localAnswers = { host: {}, guest: {} };
   let localTurn = 'host';
   let localIndex = 0;
-  let currentLocalReveal = 0;
   let unsubscribePublic = null;
   let unsubscribeMine = null;
   let unsubscribePartner = null;
@@ -44,10 +43,9 @@ export function mountLoveMatch(root, context) {
     else if (standalone && phase === 'result') view = resultView(calculateLoveMatch(localAnswers.host, localAnswers.guest), localNames, localAnswers, true);
     else if (!standalone && !pub.meta) view = waitingRemote();
     else if (!standalone && meta.phase === 'answering') view = questionView(index, role, answers[index], false);
-    else if (!standalone && meta.phase === 'reveal') view = revealView(Number(meta.revealIndex || 0));
     else if (!standalone && meta.phase === 'result') view = resultView(calculateLoveMatch(partnerAnswers.host || {}, partnerAnswers.guest || {}), names, { host: partnerAnswers.host || {}, guest: partnerAnswers.guest || {} }, false);
     root.innerHTML = `<section class="bm-shell lm-shell"><header class="bm-header"><div><span class="bm-kicker">DIRI. · PERSONALITY MATCH</span><h1>Love Match <span>♡</span></h1><p>Kenali pola kepribadian, lalu lihat seberapa selaras jawaban kalian.</p></div><div class="bm-header-actions">${standalone ? '<span class="bm-mode-pill">SATU PERANGKAT</span>' : `<span class="bm-room-code">${esc(code)}</span>`}<button class="button button-quiet button-small" data-bm-action="back">Kembali</button></div></header>${view}</section>`;
-    lastRendered = `${standalone ? phase : meta.phase}:${index}:${meta.revealIndex || 0}:${JSON.stringify(pub.submissions || {})}`;
+    lastRendered = `${standalone ? phase : meta.phase}:${index}:${JSON.stringify(pub.questionStatus || {})}`;
   }
 
   function setupLocal() {
@@ -72,22 +70,13 @@ export function mountLoveMatch(root, context) {
     return `<section class="bm-panel lm-question-panel"><div class="bm-topline"><div><span class="bm-tag">TES KEPRIBADIAN</span><strong>Pertanyaan ${index + 1} / ${questions.length}</strong></div><span class="bm-progress-label">${progress}%</span></div><div class="bm-progress"><i style="width:${progress}%"></i></div><div class="lm-question-card"><span class="bm-category">DIMENSI ${esc(q.axis)}</span><h2>${esc(q.prompt)}</h2><div class="lm-option-grid"><button class="lm-option ${choice === 'A' ? 'is-selected' : ''}" data-lm-answer="A" ${locked ? 'disabled' : ''}><span>A</span>${esc(q.a)}</button><button class="lm-option ${choice === 'B' ? 'is-selected' : ''}" data-lm-answer="B" ${locked ? 'disabled' : ''}><span>B</span>${esc(q.b)}</button></div></div><div class="bm-question-footer"><span>${local ? `Giliran ${esc(currentName)}` : `Kamu menjawab sebagai ${esc(currentName)}`}</span><button class="button button-primary" data-bm-action="${local ? 'local-next' : 'submit-answer'}" ${!choice || locked ? 'disabled' : ''}>${local ? (index === 19 ? 'Selesaikan jawaban' : 'Pertanyaan berikutnya') : 'Kunci jawaban' } <span>→</span></button></div>${locked ? '<p class="bm-muted">Jawaban terkunci. Menunggu pasangan menjawab pertanyaan yang sama…</p>' : ''}</section>`;
   }
 
-  function revealView(index) {
-    const q = questions[index];
-    if (!q || !partnerAnswers.host || !partnerAnswers.guest) return `<section class="bm-panel bm-center-panel"><h2>Membuka jawaban…</h2><p>Menunggu data jawaban pasangan.</p></section>`;
-    const hostAnswer = partnerAnswers.host[index] || '—';
-    const guestAnswer = partnerAnswers.guest[index] || '—';
-    const match = hostAnswer === guestAnswer;
-    return `<section class="bm-panel lm-reveal-panel"><div class="bm-topline"><span class="bm-tag">JAWABAN TERBUKA</span><strong>${index + 1} / ${questions.length}</strong></div><h2>${esc(q.prompt)}</h2><div class="lm-reveal-grid"><article class="lm-answer-card is-pink"><small>${esc(names.host)}</small><strong>${hostAnswer === 'A' ? esc(q.a) : hostAnswer === 'B' ? esc(q.b) : 'Belum menjawab'}</strong></article><article class="lm-answer-card is-blue"><small>${esc(names.guest)}</small><strong>${guestAnswer === 'A' ? esc(q.a) : guestAnswer === 'B' ? esc(q.b) : 'Belum menjawab'}</strong></article></div><div class="lm-match-note ${match ? 'is-match' : ''}">${match ? '♡ Kalian memilih jawaban yang sama' : '✦ Jawaban berbeda — menarik untuk dibicarakan'}</div><div class="bm-question-footer"><span>Pertanyaan ${index + 1} sudah dibuka</span><button class="button button-primary" data-bm-action="next-reveal" ${role !== 'host' ? 'disabled' : ''}>${index === questions.length - 1 ? 'Lihat hasil akhir' : 'Pertanyaan berikutnya'} →</button></div>${role !== 'host' ? '<p class="bm-muted">Pembuat sesi mengatur urutan reveal untuk kalian berdua.</p>' : ''}</section>`;
-  }
-
   function resultView(result, resultNames, answerSets, local) {
     if (!result || !result.hostProfile || !result.guestProfile) return `<section class="bm-panel bm-center-panel"><h2>Menghitung kecocokan…</h2><p>Menyiapkan ringkasan jawaban kalian.</p></section>`;
     const profileCard = (playerRole, tone) => {
       const profile = result[`${playerRole}Profile`];
       return `<article class="lm-profile-card ${tone}"><span>${esc(resultNames[playerRole])}</span><strong>${esc(profile.code)}</strong><h3>${esc(profile.name)}</h3><p>${esc(profile.description)}</p></article>`;
     };
-    return `<section class="bm-panel lm-result-panel"><span class="bm-tag">HASIL LOVE MATCH</span><div class="lm-score-wrap"><strong>${result.score}%</strong><span>KECOCOKAN JAWABAN</span><small>${result.matched} dari ${result.total} jawaban sama</small></div><div class="lm-profile-grid">${profileCard('host','is-pink')}${profileCard('guest','is-blue')}</div><div class="lm-axis-grid">${Object.entries(result.axes).map(([axis, value]) => `<div><span>${axis}</span><strong>${value}%</strong><i><b style="width:${value}%"></b></i></div>`).join('')}</div><p class="bm-muted">Ini kuis refleksi ringan untuk bahan obrolan, bukan tes psikologi atau diagnosis kepribadian.</p><div class="bm-result-actions"><button class="button button-primary" data-bm-action="replay">${local ? 'Tes lagi' : 'Kembali ke lobi'}</button><button class="button button-quiet" data-bm-action="back">Kembali</button></div></section>`;
+    return `<section class="bm-panel lm-result-panel"><span class="bm-tag">REKAPAN LOVE MATCH</span><div class="lm-score-wrap"><strong>${result.score}%</strong><span>KECOCOKAN JAWABAN</span><small>${result.matched} dari ${result.total} jawaban sama</small></div><div class="lm-profile-grid">${profileCard('host','is-pink')}${profileCard('guest','is-blue')}</div><div class="lm-result-stat-grid"><article><small>JAWABAN SAMA</small><strong>${result.matched}</strong><span>dari ${result.total} pertanyaan</span></article><article><small>JAWABAN BERBEDA</small><strong>${result.total - result.matched}</strong><span>bisa jadi bahan obrolan</span></article></div><div class="lm-axis-grid">${Object.entries(result.axes).map(([axis, value]) => `<div><span>${axis}</span><strong>${value}%</strong><i><b style="width:${value}%"></b></i></div>`).join('')}</div><p class="bm-muted">Ini kuis refleksi ringan untuk bahan obrolan, bukan tes psikologi atau diagnosis kepribadian.</p><div class="bm-result-actions"><button class="button button-primary" data-bm-action="replay">${local ? 'Tes lagi' : 'Kembali ke lobi'}</button><button class="button button-quiet" data-bm-action="back">Kembali</button></div></section>`;
   }
 
   async function seedRemote() {
@@ -111,7 +100,7 @@ export function mountLoveMatch(root, context) {
     try {
       await runTransaction(ref(db, `${base}/meta`), current => {
         if (!current || current.phase !== 'answering' || current.questionIndex !== index) return;
-        if (index >= questions.length - 1) return { ...current, phase: 'reveal', revealIndex: 0, revealStartedAt: Date.now() };
+        if (index >= questions.length - 1) return { ...current, phase: 'result', finishedAt: Date.now() };
         return { ...current, questionIndex: index + 1 };
       }, { applyLocally: false });
     } catch (error) { toast(`Belum bisa lanjut: ${error.message}`, 'error'); }
@@ -119,7 +108,7 @@ export function mountLoveMatch(root, context) {
   }
 
   async function loadPartnerAnswers() {
-    if (standalone || !['reveal', 'result'].includes(pub.meta?.phase) || partnerAnswersLoaded) return;
+    if (standalone || pub.meta?.phase !== 'result' || partnerAnswersLoaded) return;
     try {
       const [mine, theirs] = await Promise.all([
         get(ref(db, `${privateRoot}/${room.host.uid}/answers`)),
@@ -141,19 +130,6 @@ export function mountLoveMatch(root, context) {
       await storeMyAnswers();
       toast('Jawaban tersimpan secara pribadi.', 'success');
     } catch (error) { toast(`Jawaban belum tersimpan: ${error.message}`, 'error'); }
-    finally { busy = false; }
-  }
-
-  async function nextReveal() {
-    if (role !== 'host' || busy || pub.meta?.phase !== 'reveal') return;
-    busy = true;
-    try {
-      await runTransaction(ref(db, `${base}/meta`), current => {
-        if (!current || current.phase !== 'reveal') return;
-        if (Number(current.revealIndex || 0) >= questions.length - 1) return { ...current, phase: 'result', finishedAt: Date.now() };
-        return { ...current, revealIndex: Number(current.revealIndex || 0) + 1 };
-      }, { applyLocally: false });
-    } catch (error) { toast(`Reveal belum bisa dilanjutkan: ${error.message}`, 'error'); }
     finally { busy = false; }
   }
 
@@ -186,7 +162,6 @@ export function mountLoveMatch(root, context) {
     if (action === 'local-handover') { phase = 'answering'; render(); }
     if (action === 'local-next') localNext();
     if (action === 'submit-answer') void submitAnswer();
-    if (action === 'next-reveal') void nextReveal();
     if (action === 'replay') { if (standalone) { phase = 'setup'; localAnswers = { host: {}, guest: {} }; localTurn = 'host'; localIndex = 0; } else onBack?.(); render(); }
   }
 
@@ -197,7 +172,7 @@ export function mountLoveMatch(root, context) {
     unsubscribePublic = onValue(baseRef, snap => {
       pub = snap.val() || {};
       if (pub.meta?.phase === 'answering') void maybeAdvanceQuestion();
-      if (pub.meta?.phase === 'reveal' || pub.meta?.phase === 'result') void loadPartnerAnswers();
+      if (pub.meta?.phase === 'result') void loadPartnerAnswers();
       render();
     });
     void seedRemote().catch(error => toast(`Sesi belum dapat disiapkan: ${error.message}`, 'error'));

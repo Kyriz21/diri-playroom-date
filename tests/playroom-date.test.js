@@ -71,3 +71,20 @@ test('Foto Sendiri requires four camera captures before opening the editor', asy
   assert.match(photobooth, /Ambil foto berikutnya/);
   assert.match(photobooth, /Kembali ke editor|Edit strip fotomu/);
 });
+
+
+test('Love Match, Color Match, and IQ Duel use a shared explicit player lobby before starting', async () => {
+  const app = await readFile(new URL('js/app.js', root), 'utf8');
+  const rooms = await readFile(new URL('js/services/room-service.js', root), 'utf8');
+  assert.match(app, /EXPLICIT_LOBBY_GAMES = new Set\(\['lovematch', 'colormatch', 'iqduel'\]\)/);
+  assert.match(app, /data-action="toggle-room-ready"/);
+  assert.match(app, /data-action="start-room-game"/);
+  assert.match(app, /room\.presence\?\.host\?\.connected === true/);
+  assert.match(app, /room\.presence\?\.guest\?\.connected === true/);
+  assert.match(app, /!needsExplicitLobby\(room\.lobby\?\.selections\?\.host\)/);
+  assert.match(rooms, /ready: \{ host: !needsExplicitLobby\(gameId\), guest: false \}/);
+  assert.match(rooms, /'lobby\/ready\/guest': !needsExplicitLobby/);
+  assert.match(rooms, /Kedua perangkat harus online di lobi/);
+  assert.match(rooms, /Kedua perangkat harus tetap online/);
+  assert.match(rooms, /const explicitLobby = needsExplicitLobby/);
+});

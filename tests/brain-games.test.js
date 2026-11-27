@@ -107,19 +107,26 @@ test('Tiga mini game terdaftar dan memiliki mode room serta solo di landing', ()
   for (const action of ['open-love-create', 'open-love-join', 'open-love-solo', 'open-color-create', 'open-color-join', 'open-color-solo', 'open-iq-create', 'open-iq-join', 'open-iq-solo']) assert.ok(app.includes(`data-action="${action}"`), action);
   const selection = rules.rooms.$roomCode.lobby.selections.$role['.validate'];
   const active = rules.rooms.$roomCode.lobby.activeSession['.validate'];
+  const readyWrite = rules.rooms.$roomCode.lobby.ready.$role['.write'];
+  const activeWrite = rules.rooms.$roomCode.lobby.activeSession['.write'];
+  assert.match(readyWrite, /presence.*host.*connected/);
+  assert.match(readyWrite, /presence.*guest.*connected/);
+  assert.match(activeWrite, /presence.*host.*connected/);
+  assert.match(activeWrite, /presence.*guest.*connected/);
   for (const id of ['lovematch', 'colormatch', 'iqduel']) {
     assert.match(selection, new RegExp(id));
     assert.match(active, new RegExp(id));
   }
 });
 
-test('Firebase Rules membatasi pembacaan jawaban pribadi sampai fase reveal/hasil', () => {
+test('Firebase Rules membatasi pembacaan jawaban privat ke sesi aktif dan fase hasil yang sesuai', () => {
   const rules = JSON.parse(read('../firebase-database.rules.json')).rules;
   const expression = rules.privateRooms.$roomCode.$gameId.$sessionId.$uid['.read'];
   assert.match(expression, /lovematch/);
   assert.match(expression, /colormatch/);
   assert.match(expression, /iqduel/);
   assert.match(expression, /phase/);
+  assert.match(expression, /scoring/);
   assert.match(expression, /activeSession.*gameId/);
   assert.match(expression, /activeSession.*sessionId/);
   const privateWrite = rules.privateRooms.$roomCode.$gameId.$sessionId.$uid['.write'];
@@ -130,4 +137,35 @@ test('Firebase Rules membatasi pembacaan jawaban pribadi sampai fase reveal/hasi
     assert.match(game, /privateRooms/);
     assert.match(game, /onValue/);
   }
+});
+
+
+test('Love Match melompat langsung ke satu kartu rekap setelah kedua pemain menyelesaikan jawaban', () => {
+  const game = read('../js/games/love-match.js');
+  assert.match(game, /phase: 'result', finishedAt/);
+  assert.match(game, /REKAPAN LOVE MATCH/);
+  assert.doesNotMatch(game, /function revealView\(/);
+  assert.doesNotMatch(game, /function nextReveal\(/);
+  assert.doesNotMatch(game, /next-reveal/);
+});
+
+test('Color Match mengumpulkan lima hasil ronde dan menampilkannya sebagai satu rekap kartu', () => {
+  const game = read('../js/games/color-match.js');
+  assert.match(game, /roundResults/);
+  assert.match(game, /phase: 'scoring'/);
+  assert.match(game, /phase: 'finished'/);
+  assert.match(game, /function recapRoundCard/);
+  assert.match(game, /cm-recap-grid/);
+  assert.match(game, /const average = r => standalone \? Number\(totals\[r\] \|\| 0\) : Math\.round\(Number\(totals\[r\] \|\| 0\) \/ Math\.max\(1, results\.length\)\)/);
+  assert.doesNotMatch(game, /function revealPanel\(/);
+  assert.doesNotMatch(game, /function localReveal\(/);
+  assert.doesNotMatch(game, /data-cm-action="continue"/);
+});
+
+test('IQ Duel memakai satu panel hasil akhir dengan skor dan kartu pembahasan, bukan layar hasil per ronde', () => {
+  const game = read('../js/games/iq-duel.js');
+  assert.match(game, /function resultPanel/);
+  assert.match(game, /iq-score-grid/);
+  assert.match(game, /iq-review-list/);
+  assert.doesNotMatch(game, /data-iq-action="next-result"/);
 });

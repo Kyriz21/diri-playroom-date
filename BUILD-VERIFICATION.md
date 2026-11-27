@@ -124,3 +124,12 @@ Tes otomatis memvalidasi logika, geometri, jangkauan, dan input berdasarkan sour
 - Otomatis: 210 tes lulus, 0 gagal.
 - Cakupan mini game: 20 pertanyaan Love Match dan empat dimensi, perhitungan kecocokan, Color Match RGB, 30 soal IQ termasuk dua matriks 3 × 3, deterministic shuffle, 12/20 round selection, entry solo/room, dan pembatasan pembacaan jawaban privat sampai reveal/result pada game serta sesi aktif yang cocok.
 - Pengujian jaringan nyata dua perangkat belum dilaksanakan. Firebase Rules versi v0.45.0 wajib dipublikasikan sebelum game baru dipakai melalui room.
+
+
+## v0.46.0 — Player Lobby & Result Recap Cards
+- Automated suite: 214/214 passed.
+- Shared explicit lobby tested for Love Match, Color Match, and IQ Duel: player identity, presence checks, per-player Ready, and host-only Start.
+- Service-level checks reject Ready/Start when either member is not online; Firebase Rules also gate Ready and activeSession creation on both `presence/*/connected === true` for the three mini-games.
+- Love Match uses one final profile/compatibility recap; Color Match stores five round result records and displays one final recap grid; IQ Duel displays one score/review recap.
+- Color Match remote summary uses mean accuracy rather than the accumulated five-round sum.
+- JavaScript syntax and Firebase Rules JSON validation passed. No live browser or real two-device Firebase playtest was performed.

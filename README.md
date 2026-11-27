@@ -1,6 +1,30 @@
-# Diri. Playroom Date v0.44.0 — Photobooth, Mini-game & Elemental Duo
+# v0.46.0 — Player Lobby & Result Recap Cards
 
-## Pembaruan terbaru v0.44.0 — Authored 50-Level Maps & Playability Repair
+## Alur sebelum permainan
+- Love Match, Color Match, dan IQ Duel kini masuk ke lobi bersama setelah host membuat room atau guest bergabung.
+- Lobi menampilkan nama host dan guest, kode undangan, status koneksi perangkat, serta status siap masing-masing pemain.
+- Tombol Siap hanya aktif ketika kedua anggota room terdeteksi online. Host baru dapat memulai setelah kedua pemain menyatakan siap.
+- Pemeriksaan yang sama dilakukan di `room-service.js` dan Firebase Rules: penulisan status Ready serta pembuatan `activeSession` untuk tiga mini-game ini memerlukan kedua presence `connected=true`.
+- Photobooth dan game lama mempertahankan alur sebelumnya; perubahan lobby eksplisit ini khusus Love Match, Color Match, dan IQ Duel.
+
+## Hasil permainan
+- **Love Match:** tidak ada reveal per pertanyaan; setelah kedua pemain menjawab semua 20 pertanyaan, satu halaman rekap menampilkan skor kecocokan, profil, statistik jawaban, dan ringkasan dimensi.
+- **Color Match:** lima ronde berjalan otomatis tanpa halaman hasil di antara ronde. Satu halaman akhir menampilkan rata-rata akurasi dan lima kartu perbandingan warna.
+- **IQ Duel:** tetap menampilkan satu halaman hasil akhir berisi kartu skor dan daftar pembahasan semua soal.
+- **Solo:** tetap tersedia untuk ketiga mini-game dan menggunakan hasil akhir dalam satu tampilan.
+
+## Pemeriksaan dan deployment
+- `npm test`: 214/214 tes lulus.
+- Pemeriksaan sintaks JavaScript untuk app, room service, dan tiga modul mini-game lulus.
+- `firebase-database.rules.json` valid sebagai JSON; aturan hasil privat Color Match mengizinkan pembacaan silang pada fase `scoring` atau `finished`, sedangkan Ready/Start untuk tiga mini-game mengharuskan kedua perangkat online.
+- **Wajib publikasikan ulang seluruh `firebase-database.rules.json`** dari build ini: Firebase Console → Realtime Database → Rules → ganti seluruh isi → Publish. Jangan menempel potongan aturan saja.
+- Belum dilakukan playtest browser langsung atau uji multiplayer dua perangkat dengan Firebase project aktif; lakukan setelah deployment.
+
+---
+
+# Diri. Playroom Date v0.46.0 — Photobooth & LDR Mini Games
+
+## Riwayat v0.44.0 — Authored 50-Level Maps & Playability Repair
 - Memperbaiki sumber arena terlalu padat: 50 level kini menggunakan blueprint individual yang sudah ada di data kampanye, langsung tanpa generator yang menambahkan susunan 13 platform, koridor, partisi, atau dinding pecahan ekstra.
 - Setiap level memakai 3–8 platform yang ditentukan blueprint; 50 blueprint memiliki ID level masing-masing. Ada 49 susunan geometri platform yang berbeda; level 44 dan 47 berbagi siluet platform tetapi memiliki tujuan/mekanik level yang berbeda.
 - Spawn, switch, permata, katup/tuas, dan pintu dipetakan ke pijakan yang stabil serta diperiksa keterjangkauannya dari spawn Bara/Nira menggunakan fisika lompatan saat ini.

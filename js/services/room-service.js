@@ -10,6 +10,8 @@ import {
 
 const roomRef = (code) => ref(db, `rooms/${normalizeRoomCode(code)}`);
 const roomPath = (code) => `rooms/${normalizeRoomCode(code)}`;
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel']);
+const needsExplicitLobby = (gameId) => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 function cleanName(name) {
   const value = String(name ?? '').trim().replace(/\s+/g, ' ').slice(0, 24);
@@ -37,7 +39,7 @@ export async function createRoom({ uid, name, gameId = 'photobooth' }) {
       lastMeaningfulActivityAt: serverTimestamp(),
       lobby: {
         selections: { host: gameId, guest: '' },
-        ready: { host: true, guest: false },
+        ready: { host: !needsExplicitLobby(gameId), guest: false },
         activeSession: null
       }
     };
@@ -103,7 +105,7 @@ export async function joinRoom({ code, uid, name, expectedGameId = null }) {
 
   await update(roomRef(normalized), {
     'lobby/selections/guest': room.lobby?.selections?.host || 'photobooth',
-    'lobby/ready/guest': true,
+    'lobby/ready/guest': !needsExplicitLobby(room.lobby?.selections?.host || 'photobooth'),
     lastMeaningfulActivityAt: serverTimestamp()
   });
   return { code: normalized, role: 'guest', rejoined: false };
@@ -146,6 +148,9 @@ export async function setReady({ code, role, ready }) {
     if (!hostSelection || hostSelection !== guestSelection) {
       throw new Error('Kedua pemain harus memilih permainan yang sama sebelum menyatakan siap.');
     }
+    if (needsExplicitLobby(hostSelection) && (room.presence?.host?.connected !== true || room.presence?.guest?.connected !== true)) {
+      throw new Error('Kedua perangkat harus online di lobi sebelum menyatakan siap.');
+    }
   }
   await update(roomRef(code), {
     [`lobby/ready/${role}`]: Boolean(ready),
@@ -159,6 +164,9 @@ export async function startSelectedGame({ code, uid }) {
   if (getPlayerRole(room, uid) !== 'host') throw new Error('Hanya Pembuat ruang yang dapat memulai permainan.');
   if (!canStartGame(room)) throw new Error('Kedua pemain harus memilih permainan yang sama dan menyatakan siap.');
   const gameId = room.lobby.selections.host;
+  if (needsExplicitLobby(gameId) && (room.presence?.host?.connected !== true || room.presence?.guest?.connected !== true)) {
+    throw new Error('Kedua perangkat harus tetap online sebelum permainan dimulai.');
+  }
   const session = {
     gameId,
     sessionId: crypto.randomUUID(),
@@ -179,9 +187,10 @@ export async function returnToLobby({ code, uid }) {
   if (getPlayerRole(room, uid) !== 'host') throw new Error('Hanya Pembuat ruang yang dapat mengembalikan ruang ke lobi.');
   await remove(ref(db, `roomGames/${normalizeRoomCode(code)}`));
   await remove(ref(db, `privateRooms/${normalizeRoomCode(code)}`));
+  const explicitLobby = needsExplicitLobby(room.lobby?.selections?.host);
   await update(roomRef(code), {
     'lobby/activeSession': null,
-    'lobby/ready/host': true,
+    'lobby/ready/host': !explicitLobby,
     'lobby/ready/guest': false,
     lastMeaningfulActivityAt: serverTimestamp()
   });

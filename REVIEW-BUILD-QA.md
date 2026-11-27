@@ -623,3 +623,10 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - Memvalidasi data soal, determinisme shuffle IQ Duel, pemetaan profil Love Match, akurasi RGB, mode entry, dan akses Firebase private answers.
 - Tes otomatis build ini: 210/210 lulus.
 - Belum dilakukan playtest browser real-time dua perangkat; lakukan pengujian host/guest sebelum rilis publik.
+
+
+## v0.46.0 — Lobby/recap QA
+- `npm test`: 214/214 passed.
+- `node --check` passed for `js/app.js`, `js/services/room-service.js`, `js/games/love-match.js`, `js/games/color-match.js`, and `js/games/iq-duel.js`.
+- Rules JSON parses. Presence gating is present on the `ready/$role` write and `activeSession` write rules for Love Match, Color Match, and IQ Duel.
+- No live Firebase Emulator or physical two-device session was run; verify connection/reconnect, ready reset/toggle, host start, private answer reveal, Color Match scoring, and final result cards after deployment.

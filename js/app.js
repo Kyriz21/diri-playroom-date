@@ -9,6 +9,8 @@ const createForm = document.querySelector('#create-form');
 const joinForm = document.querySelector('#join-form');
 const dialogError = document.querySelector('#dialog-error');
 const toastRegion = document.querySelector('#toast-region');
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel']);
+const needsExplicitLobby = gameId => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 const state = {
   player: null,
@@ -201,7 +203,7 @@ async function handleRoomSnapshot(sourceCode, room) {
 
   // Photobooth is the first activity in this fresh project. Once the invited player
   // joins, the host starts the shared Photobooth session automatically.
-  if (role === 'host' && canStartGame(room) && !state.startingSession) {
+  if (role === 'host' && canStartGame(room) && !needsExplicitLobby(room.lobby?.selections?.host) && !state.startingSession) {
     state.startingSession = true;
     try {
       await backend.rooms.startSelectedGame({ code: current.code, uid: state.player.uid });
@@ -288,7 +290,36 @@ function renderLanding() {
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
+  const gameId = room.lobby?.selections?.host || 'photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  if (needsExplicitLobby(gameId)) {
+    const ready = room.lobby?.ready || {};
+    const membersJoined = Boolean(room.host?.uid && room.guest?.uid);
+    const online = { host: room.presence?.host?.connected === true, guest: room.presence?.guest?.connected === true };
+    const bothOnline = membersJoined && online.host && online.guest;
+    const bothReady = bothOnline && ready.host === true && ready.guest === true;
+    const playerCard = (playerRole, player, tone) => {
+      const memberJoined = Boolean(player?.uid);
+      const isOnline = online[playerRole];
+      const isReady = ready[playerRole] === true;
+      const isSelf = current.role === playerRole;
+      const status = !memberJoined ? 'Belum bergabung' : !isOnline ? 'Terdaftar · menghubungkan perangkat' : isReady ? 'Online · siap bermain ✓' : 'Online · belum siap';
+      return `<article class="brain-lobby-player ${tone} ${isOnline ? 'is-present' : 'is-waiting'}"><span class="brain-lobby-avatar">${playerRole === 'host' ? '♡' : '✦'}</span><div><small>${playerRole === 'host' ? 'PEMBUAT SESI' : 'PEMAIN KEDUA'}</small><strong>${escapeHtml(player?.name || (playerRole === 'guest' ? 'Menunggu pasangan' : 'Pembuat sesi'))}</strong><span class="brain-lobby-status ${isReady && isOnline ? 'is-ready' : ''}">${status}</span></div>${isSelf && memberJoined ? `<span class="brain-lobby-you">KAMU</span>` : ''}</article>`;
+    };
+    appRoot.innerHTML = `
+      <section class="brain-room-lobby panel">
+        <button class="button button-quiet" data-action="leave-room">← Keluar</button>
+        <div class="brain-lobby-head"><span class="date-kicker">LOBI PEMAIN · ${activityName.toUpperCase()}</span><div class="brain-lobby-symbol">♡</div><h1>${bothOnline ? 'Pastikan kedua pemain siap' : membersJoined ? 'Menghubungkan kedua perangkat' : 'Menunggu pasangan bergabung'}</h1><p>${bothOnline ? 'Periksa nama dan status online. Masing-masing tekan tombol Siap. Permainan baru dimulai setelah pembuat sesi menekan Mulai.' : 'Kedua perangkat harus terhubung dan terdeteksi online sebelum permainan dapat dimulai.'}</p></div>
+        <div class="brain-lobby-code"><small>KODE UNDANGAN</small><strong>${escapeHtml(current.code)}</strong><button class="button button-secondary button-small" data-action="copy-code">Salin kode</button></div>
+        <div class="brain-lobby-players">${playerCard('host', room.host, 'is-pink')}<div class="brain-lobby-versus">VS</div>${playerCard('guest', room.guest, 'is-blue')}</div>
+        <div class="brain-lobby-controls">
+          ${!bothOnline ? `<div class="brain-lobby-wait-note"><span class="brain-lobby-pulse"></span> ${membersJoined ? 'Menunggu koneksi kedua perangkat…' : 'Menunggu pemain kedua…'}</div>` : `<button class="button ${ready[current.role] ? 'button-secondary' : 'button-primary'}" data-action="toggle-room-ready">${ready[current.role] ? 'Batalkan status siap' : 'Saya siap bermain ✓'}</button>`}
+          ${current.role === 'host' ? `<button class="button button-primary brain-lobby-start" data-action="start-room-game" ${bothReady ? '' : 'disabled'}>Mulai ${escapeHtml(activityName)} →</button>` : `<p class="brain-lobby-wait-note">${bothReady ? 'Kalian berdua siap. Menunggu pembuat sesi memulai…' : 'Tunggu sampai kedua pemain online dan siap.'}</p>`}
+        </div>
+        <p class="date-small-note">Sesi hanya dapat diikuti dua pemain. Jangan bagikan kode undangan kepada orang lain.</p>
+      </section>`;
+    return;
+  }
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
@@ -324,11 +355,11 @@ function renderActiveSession(room, current) {
   const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isLoveMatch
-    ? import('./games/love-match.js?v=0.45.0').then(module => ({ mount: module.mountLoveMatch }))
+    ? import('./games/love-match.js?v=0.46.0').then(module => ({ mount: module.mountLoveMatch }))
     : isColorMatch
-      ? import('./games/color-match.js?v=0.45.0').then(module => ({ mount: module.mountColorMatch }))
+      ? import('./games/color-match.js?v=0.46.0').then(module => ({ mount: module.mountColorMatch }))
       : isIQDuel
-        ? import('./games/iq-duel.js?v=0.45.0').then(module => ({ mount: module.mountIQDuel }))
+        ? import('./games/iq-duel.js?v=0.46.0').then(module => ({ mount: module.mountIQDuel }))
         : isElementalDuo
           ? import('./games/elemental-duo.js?v=0.44.0').then(module => ({ mount: module.mountElementalDuo }))
           : isBalloonPop
@@ -384,6 +415,7 @@ function render() {
     renderActiveSession(current.room, current);
     return;
   }
+  if (state.mountedGame || state.loadingGameKey) disposeMountedGame();
   renderWaitingRoom(current.room, current);
 }
 
@@ -412,9 +444,9 @@ async function openSoloMiniGame(gameId) {
   disposeMountedGame();
   const labels = { lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel' };
   const imports = {
-    lovematch: () => import('./games/love-match.js?v=0.45.0').then(module => module.mountLoveMatch),
-    colormatch: () => import('./games/color-match.js?v=0.45.0').then(module => module.mountColorMatch),
-    iqduel: () => import('./games/iq-duel.js?v=0.45.0').then(module => module.mountIQDuel)
+    lovematch: () => import('./games/love-match.js?v=0.46.0').then(module => module.mountLoveMatch),
+    colormatch: () => import('./games/color-match.js?v=0.46.0').then(module => module.mountColorMatch),
+    iqduel: () => import('./games/iq-duel.js?v=0.46.0').then(module => module.mountIQDuel)
   };
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan ${labels[gameId] || 'mini game'}…</p></section>`;
   try {
@@ -542,6 +574,22 @@ async function runAction(action, element) {
   }
   const current = state.currentRoom;
   if (!current) return;
+  if (action === 'toggle-room-ready') {
+    if (!current.room?.guest?.uid || !needsExplicitLobby(current.room?.lobby?.selections?.host) || current.room?.presence?.host?.connected !== true || current.room?.presence?.guest?.connected !== true) return;
+    try {
+      const ready = current.room.lobby?.ready?.[current.role] === true;
+      await backend.rooms.setReady({ code: current.code, role: current.role, ready: !ready });
+    } catch (error) { showToast(friendlyError(error), 'error'); }
+    return;
+  }
+  if (action === 'start-room-game') {
+    if (current.role !== 'host' || !needsExplicitLobby(current.room?.lobby?.selections?.host) || state.startingSession) return;
+    state.startingSession = true;
+    try { await backend.rooms.startSelectedGame({ code: current.code, uid: state.player.uid }); }
+    catch (error) { showToast(friendlyError(error), 'error'); }
+    finally { state.startingSession = false; }
+    return;
+  }
   if (action === 'copy-code') {
     try { await navigator.clipboard.writeText(current.code); showToast('Kode sesi berhasil disalin.', 'success'); }
     catch { window.prompt('Salin kode sesi ini:', current.code); }

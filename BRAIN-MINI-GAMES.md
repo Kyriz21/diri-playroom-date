@@ -1,6 +1,18 @@
-# LDR Mini Games — v0.45.0
+# LDR Mini Games — v0.46.0
 
 Tiga aktivitas baru memakai room dua perangkat dan menyediakan mode main di satu perangkat. Elemental Duo disembunyikan dari landing page dan status katalog menjadi `archived`; source, CSS, Firebase rules, dan dokumentasinya tetap disimpan sebagai konsep/arsip untuk pengembangan berikutnya.
+
+
+## Lobi pemain dan rekap hasil — v0.46.0
+
+- Room Love Match, Color Match, dan IQ Duel tidak langsung masuk permainan setelah guest bergabung. Kedua perangkat masuk ke lobi bersama terlebih dahulu.
+- Kartu pemain memperlihatkan nama, status online, dan status siap. Tombol mulai milik host tetap terkunci sampai host dan guest online serta sama-sama Ready.
+- Jika perangkat terputus, status online pada lobi berubah dan permainan tidak dapat dimulai sampai keduanya tersambung kembali.
+- Love Match mengungkap satu rekap akhir setelah kedua pemain menyelesaikan seluruh pertanyaan; tidak ada slide reveal per pertanyaan.
+- Color Match otomatis berpindah antar lima ronde dan baru menampilkan satu halaman rekap dengan lima kartu warna pada akhir permainan. Skor total ditampilkan sebagai rata-rata akurasi.
+- IQ Duel tetap memakai satu rekap akhir dengan kartu skor pemain dan daftar jawaban/pembahasan seluruh soal.
+- Firebase Rules v0.46.0 membatasi Ready/Start berdasarkan presence online untuk tiga game ini dan mengizinkan pembacaan silang tebakan Color Match hanya pada fase scoring/finished.
+
 
 ## Love Match
 

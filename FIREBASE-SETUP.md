@@ -121,3 +121,8 @@ Rules v0.20 menambahkan path `roomGames/{roomCode}/{sessionId}/balloonPop` dan `
 Rules v0.21 mempertahankan seluruh path sebelumnya. Perubahan aturan Balloon Pop mengizinkan host mengubah fase dari `playing` ke `result` segera ketika statistik `lives` milik host atau guest mencapai 0, selain jalur selesai karena timer atau kedua pemain selesai. Ini diperlukan agar pemain yang masih memiliki nyawa dapat langsung dinyatakan menang. Publikasikan seluruh `firebase-database.rules.json` v0.21 melalui Realtime Database → Rules. Tidak perlu mengganti Firebase Web App config.
 
 Notifikasi kecil, pemanggilan webcam `getUserMedia`, dan pemisahan tombol kamera/galeri tidak mengubah struktur database. Namun, Rules v0.21 tetap wajib karena transisi hasil saat eliminasi berubah.
+
+
+## v0.46.0 — Lobby presence and recap access
+
+Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.46.0. Rules ini menambahkan dua pengaman untuk Love Match, Color Match, dan IQ Duel: pemain hanya dapat menyatakan Ready ketika presence host dan guest sama-sama online; host hanya dapat membuat `activeSession` jika kedua perangkat masih online dan keduanya Ready. Rules juga mengizinkan pembacaan silang tebakan privat Color Match pada fase `scoring` agar host dapat membangun kartu rekap ronde, lalu `finished` untuk hasil akhir. Aturan ini belum diuji dengan project Firebase aktif; lakukan tes dua UID nyata setelah Publish.
