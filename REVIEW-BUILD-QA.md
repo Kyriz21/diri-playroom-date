@@ -614,3 +614,12 @@ Tes otomatis tidak menggantikan checklist dua perangkat di atas.
 - Dynamic lift placements checked at their highest and lowest positions against main climb corridors.
 - Required controls checked for correct element assignment and standing interaction range.
 - No live Firebase multiplayer session was available for manual end-to-end verification.
+
+
+## v0.45.0 — LDR Mini Games
+
+- Menambahkan Love Match, Color Match, dan IQ Duel dalam mode room dan mode satu perangkat.
+- Elemental Duo dipindahkan ke status arsip pada katalog dan dihapus dari landing page; source lama tetap tersedia untuk sesi terdahulu/konsep.
+- Memvalidasi data soal, determinisme shuffle IQ Duel, pemetaan profil Love Match, akurasi RGB, mode entry, dan akses Firebase private answers.
+- Tes otomatis build ini: 210/210 lulus.
+- Belum dilakukan playtest browser real-time dua perangkat; lakukan pengujian host/guest sebelum rilis publik.

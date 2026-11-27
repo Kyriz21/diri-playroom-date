@@ -115,3 +115,12 @@ Tes otomatis memvalidasi logika, geometri, jangkauan, dan input berdasarkan sour
 - All prototype jump routes and hazard clearance simulations passed.
 - JavaScript syntax and Firebase Rules JSON validation passed.
 - Manual browser and two-device multiplayer playtest remains required.
+
+
+## v0.45.0 — LDR Mini Games
+
+- Syntax checks: `js/app.js`, `js/constants.js`, dan tiga modul game serta logic mini game lulus `node --check`.
+- Firebase Rules berhasil diparse sebagai JSON.
+- Otomatis: 210 tes lulus, 0 gagal.
+- Cakupan mini game: 20 pertanyaan Love Match dan empat dimensi, perhitungan kecocokan, Color Match RGB, 30 soal IQ termasuk dua matriks 3 × 3, deterministic shuffle, 12/20 round selection, entry solo/room, dan pembatasan pembacaan jawaban privat sampai reveal/result pada game serta sesi aktif yang cocok.
+- Pengujian jaringan nyata dua perangkat belum dilaksanakan. Firebase Rules versi v0.45.0 wajib dipublikasikan sebelum game baru dipakai melalui room.

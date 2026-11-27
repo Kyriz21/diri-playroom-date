@@ -1,4 +1,16 @@
-## v0.44.0 — Authored 50-Level Maps & Playability Repair
+# Changelog
+
+## v0.45.0 — LDR Mini Games
+
+- Mengarsipkan opsi Elemental Duo dari landing page; konsep dan source lama tetap tersimpan.
+- Menambahkan Love Match, Color Match, dan IQ Duel pada landing page, alur create/join room, serta mode satu perangkat.
+- Love Match: 20 pertanyaan orisinal, jawaban privat lintas perangkat, reveal bersama, skor kecocokan dan empat dimensi profil.
+- Color Match: lima ronde, Versus/Duet, tiga durasi kesulitan, slider RGB, dan skor akurasi.
+- IQ Duel: 30 soal orisinal termasuk matriks 3 × 3, 12/20 ronde, timer 30 detik, jawaban privat, dan pembahasan setelah hasil.
+- Memperluas Firebase Realtime Database Rules untuk ID mini game baru serta pembacaan silang jawaban hanya setelah fase reveal/hasil pada game dan sesi yang sedang aktif.
+- Menambahkan dokumentasi `BRAIN-MINI-GAMES.md` dan 11 tes logika/integrasi mini game.
+- Catatan pengujian: tes otomatis lulus; pengujian langsung dua perangkat dengan Firebase aktif masih diperlukan.
+
 
 - Menelusuri sumber arena tidak terbaca pada v0.43.0: `makeLevel()` mengalihkan blueprint 50 level ke generator peta maze yang menambahkan platform, koridor dan partisi berulang. Level pembuka juga ikut tertimpa oleh template tersebut.
 - Mengubah `makeLevel()` agar menggunakan 50 blueprint per-level secara langsung. Tidak ada lagi platform maze sintetis, koridor atau dinding partisi tambahan yang ditumpuk di atas data desain level.

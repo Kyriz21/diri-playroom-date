@@ -95,7 +95,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -268,17 +268,27 @@ function renderLanding() {
       <div><h2>Balloon Pop 🎈</h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi jangan sampai menyentuh bom!</p></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
     </section>
-    <section class="date-next-preview date-game-preview ed-landing-preview">
-      <span class="date-kicker">MINI GAME KELIMA · PETUALANGAN BARU</span>
-      <div><h2>Elemental Duo ✧</h2><p>Dua roh kecil dengan kekuatan berbeda. Saling bantu membuka jalan, kumpulkan serpihan energi, dan tuntaskan 50 level di lima dunia.</p><div class="ed-landing-tags"><span>50 LEVEL</span><span>5 DUNIA</span><span>CO-OP</span></div></div>
-      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-elemental-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-elemental-join">Gabung sesi</button></div>
+    <section class="brain-games-section">
+      <div class="brain-games-heading"><span class="date-kicker">AKTIVITAS BARU · MINI GAME BERDUA</span><h2>Tiga cara baru untuk saling mengenal</h2><p>Pilih aktivitas, undang pasangan dengan kode, atau mainkan latihan di satu perangkat.</p></div>
+      <article class="brain-game-card brain-love-card">
+        <div class="brain-game-copy"><span class="brain-game-eyebrow">PERSONALITY MATCH</span><h2>Love Match <i>♡</i></h2><p>Tes kepribadian 20 pertanyaan. Jawaban kalian tetap pribadi sampai keduanya selesai, lalu buka kecocokan dan profil bersama.</p><div class="brain-game-tags"><span>20 pertanyaan</span><span>Skor kecocokan</span><span>Profil 4 dimensi</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-love-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-love-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-love-solo">Main di HP ini</button></div></div>
+        <div class="brain-game-preview love-preview" aria-hidden="true"><div class="brain-progress-top"><span>01 / 20</span><i></i></div><div class="love-preview-question">Akhir pekan idealmu lebih seperti…</div><div class="love-preview-answers"><span>Waktu tenang berdua</span><span>Menjelajah tempat baru</span></div><div class="love-preview-match"><b>♡</b><span>Private answers · shared reveal</span><b>♡</b></div></div>
+      </article>
+      <article class="brain-game-card brain-color-card">
+        <div class="brain-game-copy"><span class="brain-game-eyebrow">MEMORY CHALLENGE</span><h2>Color Match <i>◉</i></h2><p>Amati satu warna selama beberapa detik, lalu bangun kembali dari ingatan lewat slider merah, hijau, dan biru.</p><div class="brain-game-tags"><span>Versus atau Duet</span><span>3 kesulitan</span><span>Tanpa kamera</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-color-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-color-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-color-solo">Main di HP ini</button></div></div>
+        <div class="brain-game-preview color-preview" aria-hidden="true"><div class="color-preview-top"><span>ROUND 1 OF 5</span><span>00:03</span></div><div class="color-preview-swatch"></div><div class="color-preview-sliders"><i></i><i></i><i></i></div><div class="color-preview-caption">REMEMBER THE COLOR</div></div>
+      </article>
+      <article class="brain-game-card brain-iq-card">
+        <div class="brain-game-copy"><span class="brain-game-eyebrow">LOGIC CHALLENGE</span><h2>IQ Duel <i>✦</i></h2><p>Hadapi soal pola, matriks, deret angka, logika, analogi, dan hitung cepat. Jawaban benar dibuka setelah ronde terakhir.</p><div class="brain-game-tags"><span>12 atau 20 ronde</span><span>30 detik per soal</span><span>Skor akhir</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-iq-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-iq-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-iq-solo">Main di HP ini</button></div></div>
+        <div class="brain-game-preview iq-preview" aria-hidden="true"><div class="iq-preview-top"><span>QUESTION 1 OF 12</span><span>30s</span></div><p>Which tile completes the grid?</p><div class="iq-preview-grid"><span>•</span><span>••</span><span>•••</span><span>••</span><span>•••</span><span>••••</span><span>•••</span><span>••••</span><span>?</span></div><div class="iq-preview-options"><i>••</i><i>•••</i><i>••••</i><i>•••••</i></div></div>
+      </article>
     </section>`;
 }
 
 function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', photobooth: 'Photobooth' })[room.lobby?.selections?.host] || 'Photobooth';
   appRoot.innerHTML = `
     <section class="date-waiting panel">
       <button class="button button-quiet" data-action="leave-room">← Kembali</button>
@@ -308,11 +318,20 @@ function renderActiveSession(room, current) {
   const isBombStorm = session.gameId === 'bombstorm';
   const isBalloonPop = session.gameId === 'balloonpop';
   const isElementalDuo = session.gameId === 'elementalduo';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : 'Photobooth';
+  const isLoveMatch = session.gameId === 'lovematch';
+  const isColorMatch = session.gameId === 'colormatch';
+  const isIQDuel = session.gameId === 'iqduel';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
-  const modulePromise = isElementalDuo
-    ? import('./games/elemental-duo.js?v=0.44.0').then(module => ({ mount: module.mountElementalDuo }))
-    : isBalloonPop
+  const modulePromise = isLoveMatch
+    ? import('./games/love-match.js?v=0.45.0').then(module => ({ mount: module.mountLoveMatch }))
+    : isColorMatch
+      ? import('./games/color-match.js?v=0.45.0').then(module => ({ mount: module.mountColorMatch }))
+      : isIQDuel
+        ? import('./games/iq-duel.js?v=0.45.0').then(module => ({ mount: module.mountIQDuel }))
+        : isElementalDuo
+          ? import('./games/elemental-duo.js?v=0.44.0').then(module => ({ mount: module.mountElementalDuo }))
+          : isBalloonPop
     ? import('./games/balloon-pop.js?v=0.23.0').then(module => ({ mount: module.mountBalloonPop }))
     : isDrawTogether
     ? import('./games/draw-together.js?v=0.13.0').then(module => ({ mount: module.mountDrawTogether }))
@@ -385,6 +404,33 @@ async function openSoloPhotobooth() {
     state.mountedGame = { key: 'standalone-photobooth', destroy: instance?.destroy };
   } catch (error) {
     appRoot.innerHTML = `<section class="panel date-waiting"><h1>Aktivitas belum bisa dibuka</h1><p>${escapeHtml(error.message)}</p><button class="button button-secondary" data-action="go-home">Kembali</button></section>`;
+  }
+}
+
+async function openSoloMiniGame(gameId) {
+  closeDialog();
+  disposeMountedGame();
+  const labels = { lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel' };
+  const imports = {
+    lovematch: () => import('./games/love-match.js?v=0.45.0').then(module => module.mountLoveMatch),
+    colormatch: () => import('./games/color-match.js?v=0.45.0').then(module => module.mountColorMatch),
+    iqduel: () => import('./games/iq-duel.js?v=0.45.0').then(module => module.mountIQDuel)
+  };
+  appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan ${labels[gameId] || 'mini game'}…</p></section>`;
+  try {
+    const mount = await imports[gameId]();
+    const instance = mount(appRoot, {
+      standalone: true,
+      mode: 'solo',
+      role: 'host',
+      player: { uid: 'local-player' },
+      session: { sessionId: `solo-${Date.now()}`, startedAt: Date.now() },
+      toast: showToast,
+      onBack: () => { disposeMountedGame(); renderLanding(); }
+    });
+    state.mountedGame = { key: `solo-${gameId}`, destroy: instance?.destroy };
+  } catch (error) {
+    appRoot.innerHTML = `<section class="panel date-waiting"><h1>Mini game belum bisa dibuka</h1><p>${escapeHtml(error.message)}</p><button class="button button-secondary" data-action="go-home">Kembali</button></section>`;
   }
 }
 
@@ -473,6 +519,15 @@ async function runAction(action, element) {
   if (action === 'open-balloon-join') return openDialog('join', 'balloonpop');
   if (action === 'open-elemental-create') return openDialog('create', 'elementalduo');
   if (action === 'open-elemental-join') return openDialog('join', 'elementalduo');
+  if (action === 'open-love-create') return openDialog('create', 'lovematch');
+  if (action === 'open-love-join') return openDialog('join', 'lovematch');
+  if (action === 'open-love-solo') return openSoloMiniGame('lovematch');
+  if (action === 'open-color-create') return openDialog('create', 'colormatch');
+  if (action === 'open-color-join') return openDialog('join', 'colormatch');
+  if (action === 'open-color-solo') return openSoloMiniGame('colormatch');
+  if (action === 'open-iq-create') return openDialog('create', 'iqduel');
+  if (action === 'open-iq-join') return openDialog('join', 'iqduel');
+  if (action === 'open-iq-solo') return openSoloMiniGame('iqduel');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

@@ -338,13 +338,13 @@ test('Penilaian level memberikan maksimal tiga bintang', () => {
 import fs from 'node:fs';
 const readSource = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('Elemental Duo terdaftar di katalog dan memiliki rute buat/gabung tersendiri', () => {
+test('Elemental Duo diarsipkan dari menu tetapi konsep dan implementasinya tetap tersimpan', () => {
   const constants = readSource('../js/constants.js');
   const app = readSource('../js/app.js');
   const index = readSource('../index.html');
-  assert.match(constants, /id: 'elementalduo'.*title: 'Elemental Duo'/);
-  assert.match(app, /data-action="open-elemental-create"/);
-  assert.match(app, /data-action="open-elemental-join"/);
+  assert.match(constants, /id: 'elementalduo'.*title: 'Elemental Duo'.*state: 'archived'/);
+  assert.doesNotMatch(app, /data-action=\"open-elemental-create\"/);
+  assert.doesNotMatch(app, /data-action=\"open-elemental-join\"/);
   assert.match(app, /mountElementalDuo/);
   assert.match(app, /elementalduo: 'Elemental Duo'/);
   assert.match(index, /elemental-duo\.css/);
@@ -492,7 +492,7 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
   assert.match(index, /elemental-duo\.css\?v=0\.44\.0/);
   assert.match(app, /elemental-duo\.js\?v=0\.44\.0/);
-  assert.match(index, /app\.js\?v=0\.44\.0/);
+  assert.match(index, /app\.js\?v=0\.45\.0/);
 });
 
 

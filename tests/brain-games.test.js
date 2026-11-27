@@ -1,0 +1,133 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {
+  LOVE_QUESTIONS,
+  loveProfile,
+  calculateLoveMatch,
+  colorAccuracy,
+  colorHex,
+  makeColor,
+  IQ_QUESTIONS,
+  seededShuffle,
+  scoreIqAnswers
+} from '../js/games/brain-game-logic.js';
+
+const read = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
+
+ test('Love Match berisi 20 pertanyaan dengan lima pertanyaan pada tiap dimensi', () => {
+  assert.equal(LOVE_QUESTIONS.length, 20);
+  for (const axis of ['I/E', 'S/N', 'T/F', 'J/P']) {
+    assert.equal(LOVE_QUESTIONS.filter(question => question.axis === axis).length, 5, `${axis} harus memiliki lima pertanyaan`);
+  }
+  for (const question of LOVE_QUESTIONS) {
+    assert.ok(question.prompt && question.a && question.b);
+    assert.notEqual(question.a, question.b);
+  }
+});
+
+test('Love Match memetakan jawaban A tenang ke I dan jawaban B sosial ke E', () => {
+  const profile = loveProfile(Array(20).fill('A'));
+  assert.equal(profile.code, 'ISTJ');
+  const extroverted = loveProfile(Array(20).fill('B'));
+  assert.equal(extroverted.code, 'ENFP');
+});
+
+test('Love Match menghitung kecocokan sempurna dan nol secara konsisten', () => {
+  const same = Array(20).fill('A');
+  const perfect = calculateLoveMatch(same, [...same]);
+  assert.equal(perfect.score, 100);
+  assert.equal(perfect.matched, 20);
+  assert.ok(Object.values(perfect.axes).every(value => value === 100));
+
+  const opposite = calculateLoveMatch(same, Array(20).fill('B'));
+  assert.equal(opposite.score, 0);
+  assert.equal(opposite.matched, 0);
+  assert.ok(Object.values(opposite.axes).every(value => value === 0));
+});
+
+test('Love Match menerima bentuk objek Firebase dengan indeks jawaban numerik', () => {
+  const answers = Object.fromEntries(Array.from({ length: 20 }, (_, index) => [index, 'A']));
+  assert.equal(loveProfile(answers).code, 'ISTJ');
+  assert.equal(calculateLoveMatch(answers, answers).score, 100);
+});
+
+test('Color Match menghasilkan warna dalam batas aman dan mengubahnya ke hex', () => {
+  const color = makeColor(() => 0.5);
+  for (const channel of ['r', 'g', 'b']) {
+    assert.ok(color[channel] >= 35 && color[channel] <= 220);
+  }
+  assert.match(colorHex({ r: 255, g: 0, b: 16 }), /^#[0-9a-f]{6}$/);
+  assert.equal(colorHex({ r: 255, g: 0, b: 16 }), '#ff0010');
+});
+
+test('Color Match memberi akurasi 100 untuk warna yang sama dan menurunkan skor sesuai selisih', () => {
+  assert.deepEqual(colorAccuracy({ r: 10, g: 20, b: 30 }, { r: 10, g: 20, b: 30 }), { error: 0, score: 100 });
+  const imperfect = colorAccuracy({ r: 0, g: 0, b: 0 }, { r: 255, g: 255, b: 255 });
+  assert.equal(imperfect.score, 0);
+  assert.equal(imperfect.error, 255);
+});
+
+test('IQ Duel memiliki bank soal yang cukup dan semua jawaban berada dalam pilihan', () => {
+  assert.ok(IQ_QUESTIONS.length >= 20);
+  assert.ok(new Set(IQ_QUESTIONS.map(question => question.id)).size === IQ_QUESTIONS.length);
+  for (const question of IQ_QUESTIONS) {
+    assert.equal(question.options.length, 4, `${question.id} harus memiliki empat opsi`);
+    assert.ok(Number.isInteger(question.answer) && question.answer >= 0 && question.answer < question.options.length, `${question.id} punya indeks jawaban valid`);
+    assert.ok(question.prompt && question.explanation);
+  }
+  assert.equal(IQ_QUESTIONS.filter(question => question.visualGrid?.length === 9).length, 2, 'dua soal harus memakai matriks 3×3');
+});
+
+test('IQ Duel seeded shuffle konsisten, tidak menghilangkan soal, dan dapat dipakai memilih 12 atau 20 ronde', () => {
+  const first = seededShuffle(IQ_QUESTIONS, 20261127);
+  const again = seededShuffle(IQ_QUESTIONS, 20261127);
+  assert.deepEqual(first, again);
+  assert.equal(new Set(first.map(question => question.id)).size, IQ_QUESTIONS.length);
+  assert.equal(first.slice(0, 12).length, 12);
+  assert.equal(first.slice(0, 20).length, 20);
+});
+
+test('IQ Duel menghitung jawaban benar, salah, dan kosong tanpa membocorkan sebelum hasil', () => {
+  const questionSet = IQ_QUESTIONS.slice(0, 4);
+  const result = scoreIqAnswers(questionSet, { 0: questionSet[0].answer, 1: -1, 2: questionSet[2].answer });
+  assert.equal(result.total, 4);
+  assert.equal(result.correct, 2);
+  assert.equal(result.percentage, 50);
+  assert.equal(result.details[0].isCorrect, true);
+  assert.equal(result.details[1].isCorrect, false);
+  assert.equal(result.details[3].selected, null);
+});
+
+test('Tiga mini game terdaftar dan memiliki mode room serta solo di landing', () => {
+  const constants = read('../js/constants.js');
+  const app = read('../js/app.js');
+  const rules = JSON.parse(read('../firebase-database.rules.json')).rules;
+  for (const id of ['lovematch', 'colormatch', 'iqduel']) assert.match(constants, new RegExp(`id: '${id}'.*state: 'active'`));
+  for (const action of ['open-love-create', 'open-love-join', 'open-love-solo', 'open-color-create', 'open-color-join', 'open-color-solo', 'open-iq-create', 'open-iq-join', 'open-iq-solo']) assert.ok(app.includes(`data-action="${action}"`), action);
+  const selection = rules.rooms.$roomCode.lobby.selections.$role['.validate'];
+  const active = rules.rooms.$roomCode.lobby.activeSession['.validate'];
+  for (const id of ['lovematch', 'colormatch', 'iqduel']) {
+    assert.match(selection, new RegExp(id));
+    assert.match(active, new RegExp(id));
+  }
+});
+
+test('Firebase Rules membatasi pembacaan jawaban pribadi sampai fase reveal/hasil', () => {
+  const rules = JSON.parse(read('../firebase-database.rules.json')).rules;
+  const expression = rules.privateRooms.$roomCode.$gameId.$sessionId.$uid['.read'];
+  assert.match(expression, /lovematch/);
+  assert.match(expression, /colormatch/);
+  assert.match(expression, /iqduel/);
+  assert.match(expression, /phase/);
+  assert.match(expression, /activeSession.*gameId/);
+  assert.match(expression, /activeSession.*sessionId/);
+  const privateWrite = rules.privateRooms.$roomCode.$gameId.$sessionId.$uid['.write'];
+  assert.match(privateWrite, /activeSession.*gameId/);
+  assert.match(privateWrite, /activeSession.*sessionId/);
+  for (const source of ['love-match.js', 'color-match.js', 'iq-duel.js']) {
+    const game = read(`../js/games/${source}`);
+    assert.match(game, /privateRooms/);
+    assert.match(game, /onValue/);
+  }
+});

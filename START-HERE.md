@@ -97,3 +97,10 @@ Blueprint tema, hazard, sakelar, katup, tuas angin, dan urutan puzzle dari lima 
 
 
 Catatan historis v0.42.2: build tersebut memperbaiki akses lift Level 2 dan posisi katup Level 5. Build terbaru v0.43.0 memakai migrasi kampanye penuh.
+
+
+## Build v0.45.0 — LDR Mini Games
+
+Landing page kini menampilkan Love Match, Color Match, dan IQ Duel sebagai aktivitas baru. Masing-masing mendukung buat sesi, gabung kode, dan main di satu perangkat. Elemental Duo disembunyikan dari menu, tetapi konsep dan source tetap diarsipkan.
+
+Baca [BRAIN-MINI-GAMES.md](./BRAIN-MINI-GAMES.md) untuk mekanik, privasi jawaban, dan mode permainan. **Saat deployment, publikasikan `firebase-database.rules.json` versi ini di Firebase Console** agar tiga game baru dapat membuat dan membaca data sesi sesuai fase.

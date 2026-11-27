@@ -319,3 +319,10 @@ Reruntuhan Langit level 31–40 menggunakan 10 blueprint khusus. Mekanik aktif m
 Jantung Kuno level 41–50 kini memiliki 10 blueprint final khusus. Semua level menggabungkan kemampuan dari dunia sebelumnya secara bertahap: es dan arus, lava dan uap, angin berbalik, platform bergerak, dual-valve, dual-wind-lever, serta urutan pijakan Nira lalu Bara. Level 50 menjadi ujian gabungan seluruh mekanik. Semua kontrol wajib dan checkpoint diuji agar dapat dijangkau serta tidak berada dalam zona bahaya. Fase mekanik tetap memakai jam Firebase bersama dan Firebase Rules tidak berubah. Lihat `ELEMENTAL-WORLD-5.md`.
 
 Pada v0.29.0, seluruh level 01–50 sudah memiliki blueprint khusus.
+
+
+## Build v0.45.0 — LDR Mini Games
+
+Landing page kini menampilkan Love Match, Color Match, dan IQ Duel sebagai aktivitas baru. Masing-masing mendukung buat sesi, gabung kode, dan main di satu perangkat. Elemental Duo disembunyikan dari menu, tetapi konsep dan source tetap diarsipkan.
+
+Baca [BRAIN-MINI-GAMES.md](./BRAIN-MINI-GAMES.md) untuk mekanik, privasi jawaban, dan mode permainan. **Saat deployment, publikasikan `firebase-database.rules.json` versi ini di Firebase Console** agar tiga game baru dapat membuat dan membaca data sesi sesuai fase.
