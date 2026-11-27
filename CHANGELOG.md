@@ -1,3 +1,15 @@
+## v0.44.0 — Authored 50-Level Maps & Playability Repair
+
+- Menelusuri sumber arena tidak terbaca pada v0.43.0: `makeLevel()` mengalihkan blueprint 50 level ke generator peta maze yang menambahkan platform, koridor dan partisi berulang. Level pembuka juga ikut tertimpa oleh template tersebut.
+- Mengubah `makeLevel()` agar menggunakan 50 blueprint per-level secara langsung. Tidak ada lagi platform maze sintetis, koridor atau dinding partisi tambahan yang ditumpuk di atas data desain level.
+- Memetakan spawn, switch, permata, katup/tuas, dan pintu ke platform yang stabil dan dapat dijangkau. Posisi Bara/Nira, switch, permata dan pintu mempertahankan sisi elemen masing-masing.
+- Menyelaraskan ID platform, hazard, katup, dan tuas agar referensi puzzle sesuai setelah blueprint dipakai langsung. Interaksi tuas netral dapat dilakukan oleh karakter yang mendekat.
+- Mematikan relief/ornamen generik yang menutupi ruang pada peta authored. Tampilan latar batu, platform tematik, hazard, dan objek puzzle inti dipertahankan.
+- `ELEMENTAL_MAP_VERSION=29`, `ELEMENTAL_CAMPAIGN_VERSION=2`; `jumpSpeed=560`, `gravity=1500`. Firebase Rules tidak berubah.
+- `npm test`: **199/199 tes lulus**; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- Tes otomatis memeriksa 50 blueprint, 3–8 platform per level, jangkauan dari spawn ke switch/permata/kontrol/pintu, sisi elemen, dukungan objek, ID katup/tuas/hazard, dan transisi kampanye.
+- Playtest langsung di browser dan dua perangkat dengan Firebase aktif masih diperlukan; tes geometri tidak menggantikan uji rasa permainan.
+
 ## v0.43.0 — Full 50-Level Campaign & Gem Scoring
 
 - Membuka seluruh 50 level Elemental Duo sebagai kampanye aktif berurutan; tidak lagi berhenti setelah lima level prototype.

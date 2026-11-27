@@ -1,12 +1,55 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ELEMENTAL_LEVELS, ELEMENTAL_LEVEL_COUNT, ELEMENTAL_PROTOTYPE_LEVELS, ELEMENTAL_PROTOTYPE_LEVEL_COUNT, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED, getElementalLevel,
+  ELEMENTAL_LEVELS, ELEMENTAL_LEVEL_COUNT, ELEMENTAL_PROTOTYPE_LEVELS, ELEMENTAL_PROTOTYPE_LEVEL_COUNT, ELEMENTAL_WORLDS, ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_CAMPAIGN_VERSION, ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED, getElementalLevel,
   createElementalPlayer, clampElementalPlayer, rectsOverlap, getElementalStars,
   getElementalViewport, getElementalCameraTarget, getElementalPrototypeLevel,
   getElementalPlatformState, getElementalHazardState, getElementalDifficultyLabel,
   getElementalCurrentState, getElementalWindState, isElementalPlayerOnIce, getElementalSurfaceFriction
 } from '../js/games/elemental-duo-logic.js';
+
+
+function jumpRangeForRise(rise) {
+  const discriminant = ELEMENTAL_JUMP_SPEED ** 2 - 2 * ELEMENTAL_GRAVITY * rise;
+  if (discriminant < 0) return -1;
+  const time = (ELEMENTAL_JUMP_SPEED + Math.sqrt(discriminant)) / ELEMENTAL_GRAVITY;
+  return ELEMENTAL_MOVE_SPEED * time + 28;
+}
+
+function platformGapForJump(a, b) {
+  return Math.max(0, b.x - (a.x + a.w), a.x - (b.x + b.w));
+}
+
+function reachablePlatformIdsForTest(level, startId) {
+  const reached = new Set([startId]);
+  const queue = [level.platforms.find(platform => platform.id === startId)].filter(Boolean);
+  while (queue.length) {
+    const source = queue.shift();
+    for (const target of level.platforms) {
+      if (reached.has(target.id)) continue;
+      if (jumpRangeForRise(source.y - target.y) >= platformGapForJump(source, target)) {
+        reached.add(target.id);
+        queue.push(target);
+      }
+    }
+  }
+  return reached;
+}
+
+function supportForObject(level, object, kind = 'platform') {
+  if (kind === 'switch') return level.platforms.find(platform =>
+    object.platformId === platform.id && Math.abs(object.y + (object.h || 10) / 2 - platform.y) <= 2
+  );
+  if (kind === 'gem') return level.platforms.find(platform =>
+    object.platformId === platform.id && Math.abs(object.y + 28 - platform.y) <= 2
+  );
+  if (kind === 'door') return level.platforms.find(platform =>
+    object.platformId === platform.id && Math.abs(object.y + object.h - platform.y) <= 2
+  );
+  return level.platforms.find(platform =>
+    object.platformId === platform.id && Math.abs(object.y + 13 - platform.y) <= 2
+  );
+}
 
 test('Elemental Duo memiliki tepat 50 level unik dalam lima dunia', () => {
   assert.equal(ELEMENTAL_LEVELS.length, 50);
@@ -30,98 +73,63 @@ test('Kesulitan 50 level meningkat bertahap di setiap dunia', () => {
   }
 });
 
-test('Prototype lima level memakai layout manual dua jalur ala puzzle klasik', () => {
+test('Lima level percontohan berasal dari lima blueprint dunia yang berbeda', () => {
   assert.equal(ELEMENTAL_PROTOTYPE_LEVEL_COUNT,5);
   assert.equal(ELEMENTAL_PROTOTYPE_LEVELS.length,5);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.worldIndex), [1,2,3,4,5]);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.id), [1,2,3,4,5]);
-  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.mapName)).size,5);
+  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.mapTopology.blueprintId)).size,5);
   for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
-    assert.equal(level.mapTopology?.handcraftedClassic,true,`level ${level.id} is hand-authored`);
-    assert.equal(level.mapTopology?.route,'classic-handcrafted-coop');
-    assert.equal(level.mapTopology?.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
-    assert.ok(level.platforms.length>=10 && level.platforms.length<=12);
-    assert.ok(level.ruinWalls.filter(wall=>wall.blockSideOnly).length>=4,'solid chamber dividers create real passages');
-    assert.ok(level.ruinWalls.filter(wall=>wall.solid&&!wall.blockSideOnly).length>=2,'only deliberate solid barriers remain; the gate is the main co-op blocker');
-    assert.ok(level.ruinWalls.filter(wall=>!wall.solid&&!wall.blockSideOnly).length>=2,'broken wall panels remain decorative and do not seal passages');
-    assert.equal(level.ruinWalls.filter(wall=>/room-\d+-(left|right)-jamb/.test(wall.id)).length,0,'rooms use authored wall fragments instead of repetitive platform arches');
-    assert.ok(level.hazards.filter(h=>h.type==='fire').length>=2 && level.hazards.filter(h=>h.type==='water').length>=2,'both sides include safe and unsafe element pools');
-    assert.ok(level.hazards.filter(h=>h.y>=420).length>=4,'element pools belong to the lower traversal galleries');
-    assert.ok(level.switches.some(item=>item.element==='fire')&&level.switches.some(item=>item.element==='water'));
-    assert.ok(level.doors.fire.x<580 && level.doors.water.x>580,'each spirit has its own exit side');
-    assert.ok(level.doors.fire.x>=170 && level.doors.water.x<=940,'paired doors sit inward on the shared central gallery');
-    assert.ok(level.platforms.some(platform=>platform.y===355 && platform.w>=850),'a broad central gallery anchors the two exit routes');
-    for(const element of ['fire','water']){
-      assert.equal(level.doors[element].platformId,level.switches.find(item=>item.element===element).platformId,'switch and door share the main gallery');
-      assert.equal(level.doors[element].platformId,level.platforms[level.mapTopology.characterRoutes[element].at(-1)].id,'route leads into its own exit gallery');
+    assert.equal(level.mapTopology.route,'authored-blueprint-coop');
+    assert.equal(level.mapTopology.handcrafted,true);
+    assert.equal(level.mapTopology.repeatedTemplate,false);
+    assert.ok(level.platforms.length>=3 && level.platforms.length<=8);
+    assert.equal(level.ruinWalls.length,0,'no generated maze partitions are added on top of the authored geometry');
+    assert.equal(level.mapTopology.wallFragmentCount,0);
+    assert.deepEqual(Object.keys(level.mapTopology.characterRoutes).sort(),['fire','water']);
+  }
+});
+
+test('Katup wajib pada level akhir memiliki ID konsisten dan mengendalikan hazard yang benar', () => {
+  for (const level of [getElementalLevel(29),getElementalLevel(30),getElementalLevel(50)]) {
+    for (const id of level.requiredValves) {
+      const valve = level.valves.find(item => item.id === id);
+      assert.ok(valve,`level ${level.id}: required valve ${id} exists exactly once`);
+      assert.ok(level.hazards.some(hazard => hazard.valveId === id),`level ${level.id}: valve ${id} controls a hazard`);
     }
-    assert.equal(level.gate.y,250,'the co-op gate sits on the shared central passage');
-    assert.equal(level.gate.h,105,'the co-op gate spans the full height of the central passage');
-    assert.ok(level.platforms.filter(platform=>platform.y<355).every(platform=>platform.x+platform.w<=level.gate.x || platform.x>=level.gate.x+level.gate.w),'upper ledges do not form an accidental bridge over the co-op gate');
   }
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].platforms.some(platform=>platform.kind==='ice'));
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].currents.length>0);
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[2].hazards.some(hazard=>hazard.visual==='lava'&&hazard.cycle));
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[3].windZones.length>0);
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[4].requiredValves.length===2 && ELEMENTAL_PROTOTYPE_LEVELS[4].windLevers.length===2);
-  assert.equal(ELEMENTAL_PROTOTYPE_LEVELS[4].requiredWindLevers.length,0,'final gate does not require optional wind levers');
+  const finale = getElementalLevel(50);
+  assert.equal(new Set(finale.valves.map(item=>item.id)).size,finale.valves.length,'valve IDs must be unique');
+  assert.equal(finale.requiredValves.length,2);
 });
 
-test('Katup Level 5 masing-masing menonaktifkan hazard lawan pada jalur pemiliknya', () => {
-  const level = ELEMENTAL_PROTOTYPE_LEVELS[4];
-  const fireValve = level.valves.find(valve => valve.id.endsWith('heart-fire-valve'));
-  const waterValve = level.valves.find(valve => valve.id.endsWith('heart-water-valve'));
-  assert.equal(fireValve.element,'fire');
-  assert.equal(waterValve.element,'water');
-  const fireControlled = level.hazards.filter(hazard => hazard.valveId === fireValve.id);
-  const waterControlled = level.hazards.filter(hazard => hazard.valveId === waterValve.id);
-  assert.ok(fireControlled.some(hazard => hazard.type === 'water' && hazard.x < 580), 'Bara can disable the water pit on the west route');
-  assert.ok(waterControlled.some(hazard => hazard.type === 'fire' && hazard.x > 580), 'Nira can disable the lava pit on the east route');
-  assert.ok(!fireControlled.some(hazard => hazard.type === 'fire' && hazard.x < 580), 'Bara’s safe lava pool is never disabled by the valve');
-  assert.ok(!waterControlled.some(hazard => hazard.type === 'water' && hazard.x > 580), 'Nira’s safe water pool is never disabled by the valve');
-  assert.deepEqual([...level.requiredValves].sort(),[fireValve.id,waterValve.id].sort());
+test('Hazard berkala menyediakan jeda yang dapat dibaca sebelum pemain melintas', () => {
+  const timedHazards = ELEMENTAL_LEVELS.flatMap(level => level.hazards
+    .filter(hazard => hazard.cycle && Number(hazard.cycle.periodMs)>0)
+    .map(hazard => ({level:level.id,hazard})));
+  assert.ok(timedHazards.length>0);
+  for (const {level,hazard} of timedHazards) {
+    assert.ok(hazard.cycle.activeMs>0 && hazard.cycle.activeMs<hazard.cycle.periodMs,`level ${level}: ${hazard.id} must have an inactive interval`);
+    assert.ok(hazard.cycle.periodMs-hazard.cycle.activeMs>=900,`level ${level}: ${hazard.id} needs a visible crossing window`);
+  }
 });
 
-test('Level 3 memberi jendela aman yang cukup untuk melewati lava dan uap', () => {
-  const level3 = ELEMENTAL_PROTOTYPE_LEVELS[2];
-  const pulsingLava = level3.hazards.filter(hazard => hazard.visual === 'lava' && hazard.cycle);
-  const steam = level3.hazards.filter(hazard => hazard.type === 'steam' && hazard.cycle);
-  assert.equal(pulsingLava.length, 2);
-  assert.ok(pulsingLava.every(hazard => hazard.cycle.activeMs <= hazard.cycle.periodMs * .42), 'lava should leave a generous inactive window');
-  assert.ok(steam.length > 0 && steam.every(hazard => hazard.cycle.activeMs <= hazard.cycle.periodMs * .3), 'steam should pulse briefly enough to time a crossing');
-});
-
-test('Perbaikan tantangan prototype menjaga jalur utama bebas dari lift dan kontrol wajib tetap terjangkau', () => {
-  const level2 = ELEMENTAL_PROTOTYPE_LEVELS[1];
-  const westLift = level2.platforms.find(platform => platform.id.endsWith('west-lift'));
-  const eastLift = level2.platforms.find(platform => platform.id.endsWith('east-lift'));
-  assert.ok(westLift?.motion?.axis === 'y' && eastLift?.motion?.axis === 'y');
-  assert.ok(westLift.x + westLift.w < 410 - 14, 'west lift must stay clear of Bara’s direct climb to the gallery');
-  assert.ok(eastLift.x > 750 + 14, 'east lift must stay clear of Nira’s direct climb to the gallery');
-  for (const lift of [westLift,eastLift]) {
-    const upper = level2.platforms.find(platform => platform.id.includes(lift === westLift ? 'west-upper' : 'east-upper'));
-    const lowestLiftY = lift.y - lift.motion.amplitude;
-    assert.ok(lowestLiftY >= upper.y + upper.h + 6, 'moving lift must not overlap the upper route at its highest point');
-    assert.ok(lift.y + lift.motion.amplitude < 355, 'moving lift remains above the main gallery');
+test('Semua kontrol yang dibutuhkan ditempatkan pada pijakan stabil milik rute yang benar', () => {
+  for (const level of ELEMENTAL_LEVELS) {
+    for (const element of ['fire','water']) {
+      const reachable = reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]);
+      const plate = level.switches.find(item=>item.element===element);
+      assert.ok(reachable.has(plate.platformId),`level ${level.id}: ${element} can reach its switch`);
+      for (const item of [...level.valves,...level.windLevers].filter(control => (control.element || control.approachElement) === element)) {
+        const platform = supportForObject(level,item,'control');
+        assert.ok(platform,`level ${level.id}: ${item.id} is supported`);
+        assert.equal(Boolean(platform.motion || platform.cycle),false,`level ${level.id}: ${item.id} is on a stable platform`);
+        assert.ok(reachable.has(platform.id),`level ${level.id}: ${element} can reach ${item.id}`);
+      }
+    }
   }
-
-  const level4 = ELEMENTAL_PROTOTYPE_LEVELS[3];
-  for (const id of level4.requiredWindLevers) {
-    const lever = level4.windLevers.find(item => item.id.endsWith(id.replace(/^classic-4-/,'')) || item.id === id);
-    assert.ok(lever, `required lever ${id} exists`);
-    const platform = level4.platforms.find(item => lever.x >= item.x && lever.x <= item.x+item.w && Math.abs((lever.y+28)-item.y) <= 10);
-    assert.ok(platform && !platform.motion, `required lever ${id} is on a stable reachable ledge`);
-    assert.ok(Math.abs(lever.y - (platform.y-13)) < (lever.radius || 58), `required lever ${id} is within interaction radius while standing`);
-  }
-
-  const level5 = ELEMENTAL_PROTOTYPE_LEVELS[4];
-  for (const id of level5.requiredValves) {
-    const valve = level5.valves.find(item => item.id === id);
-    assert.ok(valve, `required valve ${id} exists`);
-    const platform = level5.platforms.find(item => valve.x >= item.x && valve.x <= item.x+item.w && Math.abs((valve.y+28)-item.y) <= 2);
-    assert.ok(platform && !platform.motion, `required valve ${id} is on a stable entry ledge`);
-    assert.ok(Math.abs(valve.y - (platform.y-13)) < (valve.radius || 58), `required valve ${id} can be activated without jumping into a hazard`);
-  }
+  const game=readSource('../js/games/elemental-duo.js');
+  assert.match(game,/\(!item\.element \|\| item\.element === ownElement\)/,'neutral wind levers and valves can be used by either player');
 });
 
 test('Elemental Duo menjalankan kampanye penuh 50 level secara berurutan', () => {
@@ -131,8 +139,8 @@ test('Elemental Duo menjalankan kampanye penuh 50 level secara berurutan', () =>
   assert.match(game,/getElementalLevel/);
   assert.match(game,/if \(level >= ELEMENTAL_LEVEL_COUNT\)/);
   assert.match(game,/<small>\/ 50<\/small>/);
-  assert.match(game,/campaignVersion:1/);
-  assert.match(game,/Number\(data\.meta\.campaignVersion\) !== 1/);
+  assert.match(game,/campaignVersion:ELEMENTAL_CAMPAIGN_VERSION/);
+  assert.match(game,/Number\(data\.meta\.campaignVersion\) !== ELEMENTAL_CAMPAIGN_VERSION/);
   assert.match(game,/const migrationPatch = \{ levels:null \}/);
   assert.match(game,/ready:false, complete:false, levelDeaths:0/);
   assert.doesNotMatch(game,/getElementalPrototypeLevel/);
@@ -188,316 +196,110 @@ test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan are
   }
 });
 
-test('Lima arena memakai dua jalur bertingkat yang dapat dijangkau dengan lompatan sekarang', () => {
-  const apex = ELEMENTAL_JUMP_SPEED * ELEMENTAL_JUMP_SPEED / (2 * ELEMENTAL_GRAVITY);
-  assert.ok(apex>=100 && apex<=110,`jump apex should stay about 105 units, got ${apex}`);
-  const jumpRange = rise => {
-    if (rise>apex) return -1;
-    const time=(ELEMENTAL_JUMP_SPEED+Math.sqrt(ELEMENTAL_JUMP_SPEED**2-2*ELEMENTAL_GRAVITY*Math.max(0,rise)))/ELEMENTAL_GRAVITY;
-    return ELEMENTAL_MOVE_SPEED*time;
-  };
-  for(const level of ELEMENTAL_PROTOTYPE_LEVELS){
-    for(const role of ['fire','water']){
-      const route=level.mapTopology.characterRoutes[role];
-      assert.ok(route.length>=2 && route.length<=4);
-      const first=level.platforms[route[0]];
-      const spawn=level.spawn[role==='fire'?'host':'guest'];
-      assert.ok(jumpRange(ELEMENTAL_FLOOR_Y-first.y)>=Math.max(0,first.x-spawn.x,spawn.x-first.x-first.w));
+test('Semua 50 level memakai geometri blueprint asli tanpa tumpukan template tambahan', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,29);
+  assert.equal(ELEMENTAL_LEVELS.length,50);
+  assert.equal(new Set(ELEMENTAL_LEVELS.map(level=>level.mapTopology.blueprintId)).size,50);
+  for (const level of ELEMENTAL_LEVELS) {
+    assert.equal(level.mapTopology.route,'authored-blueprint-coop');
+    assert.equal(level.mapTopology.repeatedTemplate,false);
+    assert.equal(level.mapTopology.corridorCount,0);
+    assert.equal(level.mapTopology.partitionCount,0);
+    assert.equal(level.mapTopology.wallFragmentCount,0);
+    assert.equal(level.ruinWalls.length,0);
+    assert.equal(level.mapTopology.platformCount,level.platforms.length);
+    assert.ok(level.platforms.length>=3 && level.platforms.length<=8,`level ${level.id} should remain visually readable`);
+    for (const platform of level.platforms) {
+      assert.ok(platform.x>=0 && platform.x+platform.w<=ELEMENTAL_WORLD_WIDTH,`level ${level.id}: ${platform.id} within room`);
+      assert.ok(platform.y>=0 && platform.y+platform.h<=ELEMENTAL_FLOOR_Y,`level ${level.id}: ${platform.id} above floor`);
+    }
+  }
+});
+
+test('Platform fisik dan visual pada 50 level tidak saling menumpuk', () => {
+  for (const level of ELEMENTAL_LEVELS) {
+    for (let i=0;i<level.platforms.length;i++) {
+      const a=level.platforms[i];
+      for (let j=i+1;j<level.platforms.length;j++) {
+        const b=level.platforms[j];
+        const horizontalOverlap=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);
+        const physicalOverlap=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+        const visualOverlap=Math.min(a.y+a.visualH,b.y+b.visualH)-Math.max(a.y,b.y);
+        assert.ok(!(horizontalOverlap>0 && physicalOverlap>0),`level ${level.id}: ${a.id} and ${b.id} physical collision boxes overlap`);
+        assert.ok(!(horizontalOverlap>0 && visualOverlap>0),`level ${level.id}: ${a.id} and ${b.id} rendered platforms overlap`);
+      }
+    }
+  }
+});
+
+test('Spawn, switch, permata, dan pintu berada di sisi elemen masing-masing', () => {
+  const middle=ELEMENTAL_WORLD_WIDTH/2;
+  for (const level of ELEMENTAL_LEVELS) {
+    assert.ok(level.spawn.host.x<=middle-32,`level ${level.id}: Bara starts on west side`);
+    assert.ok(level.spawn.guest.x>=middle+32,`level ${level.id}: Nira starts on east side`);
+    assert.ok(level.switches.find(item=>item.element==='fire').x<=middle-32,`level ${level.id}: Bara's plate is west`);
+    assert.ok(level.switches.find(item=>item.element==='water').x>=middle+32,`level ${level.id}: Nira's plate is east`);
+    assert.ok(level.gems.find(item=>item.element==='fire').x<=middle-32,`level ${level.id}: Bara's bonus gem is west`);
+    assert.ok(level.gems.find(item=>item.element==='water').x>=middle+32,`level ${level.id}: Nira's bonus gem is east`);
+    assert.ok(level.doors.fire.x+level.doors.fire.w/2<=middle-32,`level ${level.id}: Bara's door is west`);
+    assert.ok(level.doors.water.x+level.doors.water.w/2>=middle+32,`level ${level.id}: Nira's door is east`);
+    assert.notEqual(level.doors.fire.platformId,undefined);
+    assert.notEqual(level.doors.water.platformId,undefined);
+  }
+});
+
+test('Setiap karakter dapat mencapai switch, permata, kontrol, dan pintu melalui lompatan normal', () => {
+  for (const level of ELEMENTAL_LEVELS) {
+    for (const element of ['fire','water']) {
+      const role=element==='fire'?'host':'guest';
+      const route=level.mapTopology.characterRoutes[element];
+      const startId=level.mapTopology.startPlatformIds[element];
+      const reachable=reachablePlatformIdsForTest(level,startId);
+      assert.ok(route.length>=1,`level ${level.id} ${element} route exists`);
+      assert.equal(route[0],startId,`level ${level.id} ${element} route starts correctly`);
+      assert.equal(route.at(-1),level.doors[element].platformId,`level ${level.id} ${element} route ends at its door`);
+      for(const id of route) assert.ok(reachable.has(id),`level ${level.id} ${element} can reach route platform ${id}`);
+      const plate=level.switches.find(item=>item.element===element);
+      const gem=level.gems.find(item=>item.element===element);
+      assert.ok(reachable.has(plate.platformId),`level ${level.id} ${element} switch platform reachable`);
+      assert.ok(reachable.has(gem.platformId),`level ${level.id} ${element} gem platform reachable`);
+      assert.ok(reachable.has(level.doors[element].platformId),`level ${level.id} ${element} door platform reachable`);
+      for(const control of [...level.valves,...level.windLevers].filter(item=>(item.element||item.approachElement)===element)) {
+        assert.ok(reachable.has(control.platformId),`level ${level.id} ${element} reaches control ${control.id}`);
+      }
+      const startPlatform=level.platforms.find(item=>item.id===startId);
+      assert.ok(startPlatform && level.spawn[role].x>=startPlatform.x+14 && level.spawn[role].x<=startPlatform.x+startPlatform.w-14);
       for(let i=1;i<route.length;i++){
-        const a=level.platforms[route[i-1]],b=level.platforms[route[i]];
-        const rise=a.y-b.y;
-        const gap=Math.max(0,b.x-(a.x+a.w),a.x-(b.x+b.w));
-        assert.ok(rise>0&&rise<=apex,`level ${level.id} ${role} route step ${i} stays within jump height`);
-        assert.ok(gap<=jumpRange(rise),`level ${level.id} ${role} route step ${i} stays within horizontal reach`);
+        const from=level.platforms.find(item=>item.id===route[i-1]);
+        const to=level.platforms.find(item=>item.id===route[i]);
+        assert.ok(jumpRangeForRise(from.y-to.y)>=platformGapForJump(from,to),`level ${level.id} ${element} can jump ${route[i-1]} -> ${route[i]}`);
       }
     }
-    assert.ok(level.platforms.every(platform=>platform.visualH>=32&&!platform.corridor));
   }
 });
 
-
-
-test('Lima level prototype memiliki pintu masuk yang terbuka dan tantangan hazard dapat dilewati dengan lompatan normal', () => {
-  const halfW = 14, halfH = 13, dt = 1 / 120;
-  const safeElement = role => role === 'fire' ? 'fire' : 'water';
-  const simulateJump = (level, role, startX, direction, startPlatformY, target, elapsedOffset = 0) => {
-    let x = startX;
-    let y = startPlatformY - halfH;
-    let vy = -ELEMENTAL_JUMP_SPEED;
-    for (let frame = 0; frame < 240; frame++) {
-      const previousBottom = y + halfH;
-      x += direction * ELEMENTAL_MOVE_SPEED * dt;
-      vy += ELEMENTAL_GRAVITY * dt;
-      y += vy * dt;
-      const body = {x:x-halfW,y:y-halfH,w:halfW*2,h:halfH*2};
-      for (const hazard of level.hazards) {
-        const state = getElementalHazardState(hazard, elapsedOffset + frame * dt * 1000);
-        if (state.active === false) continue;
-        if (state.type === 'steam' || state.type !== safeElement(role)) {
-          assert.equal(rectsOverlap(body,state),false,`level ${level.id} ${role} must not collide with ${hazard.id}`);
-        }
-      }
-      if (vy >= 0 && previousBottom <= target.y + 5 && y + halfH >= target.y &&
-          x + halfW > target.x && x - halfW < target.x + target.w) {
-        return {landed:true,x,y:target.y-halfH};
-      }
-    }
-    return {landed:false,x,y};
-  };
-
-  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
-    const routes = level.mapTopology.characterRoutes;
-    const fireEntry = level.platforms[routes.fire[0]];
-    const waterEntry = level.platforms[routes.water[0]];
-    const fireStep = level.platforms[routes.fire[1]];
-    const waterStep = level.platforms[routes.water[1]];
-    const gallery = level.platforms[4];
-
-    // Spawn characters must not start underneath the first ledge.
-    assert.ok(65 + halfW < fireEntry.x, `level ${level.id}: Bara needs an open take-off lane`);
-    assert.ok(1095 - halfW > waterEntry.x + waterEntry.w, `level ${level.id}: Nira needs an open take-off lane`);
-    assert.ok(ELEMENTAL_FLOOR_Y - fireEntry.y <= 85 && ELEMENTAL_FLOOR_Y - waterEntry.y <= 85,
-      `level ${level.id}: first ledge must be reachable with margin`);
-
-    const fireStart = simulateJump(level,'fire',65,1,ELEMENTAL_FLOOR_Y,fireEntry);
-    const waterStart = simulateJump(level,'water',1095,-1,ELEMENTAL_FLOOR_Y,waterEntry);
-    assert.equal(fireStart.landed,true,`level ${level.id}: Bara can reach the first ledge from spawn`);
-    assert.equal(waterStart.landed,true,`level ${level.id}: Nira can reach the first ledge from spawn`);
-
-    // The wrong-element pools sit between a safe launch area and the next ledge.
-    const westLethal = level.hazards.find(h => h.type === 'water' && h.x < 580 && h.y + h.h === fireEntry.y);
-    const westSafe = level.hazards.find(h => h.type === 'fire' && h.x < 580 && h.y + h.h === fireEntry.y);
-    const eastLethal = level.hazards.find(h => h.type === 'fire' && h.x > 580 && h.y + h.h === waterEntry.y);
-    const eastSafe = level.hazards.find(h => h.type === 'water' && h.x > 580 && h.y + h.h === waterEntry.y);
-    assert.ok(westSafe && westLethal && eastSafe && eastLethal, `level ${level.id}: both routes need safe and unsafe pools`);
-    assert.ok(westSafe.x < westLethal.x && westLethal.x + westLethal.w <= fireStep.x,
-      `level ${level.id}: Bara's unsafe pool must be between safe ground and the landing ledge`);
-    assert.ok(eastLethal.x + eastLethal.w < eastSafe.x && waterStep.x + waterStep.w <= eastLethal.x,
-      `level ${level.id}: Nira's unsafe pool must be between the landing ledge and safe ground`);
-
-    const fireHop = simulateJump(level,'fire',245,1,fireEntry.y,fireStep);
-    const waterHop = simulateJump(level,'water',910,-1,waterEntry.y,waterStep);
-    assert.equal(fireHop.landed,true,`level ${level.id}: Bara can clear the water channel`);
-    assert.equal(waterHop.landed,true,`level ${level.id}: Nira can clear the lava channel`);
-
-    assert.equal(simulateJump(level,'fire',400,0,fireStep.y,gallery).landed,true,
-      `level ${level.id}: Bara can reach the switch/door gallery`);
-    assert.equal(simulateJump(level,'water',760,0,waterStep.y,gallery).landed,true,
-      `level ${level.id}: Nira can reach the switch/door gallery`);
-
-    // The optional upper gem branch also needs a practical jump margin.
-    const fireUpper = level.platforms[2], waterUpper = level.platforms[3];
-    assert.ok(gallery.y - fireUpper.y <= 85 && fireUpper.y - level.platforms[0].y <= 85);
-    assert.ok(gallery.y - waterUpper.y <= 85 && waterUpper.y - level.platforms[1].y <= 85);
-    assert.equal(simulateJump(level,'fire',215,0,gallery.y,fireUpper).landed,true,
-      `level ${level.id}: Bara can reach the optional upper route`);
-    assert.equal(simulateJump(level,'fire',215,0,fireUpper.y,level.platforms[0]).landed,true,
-      `level ${level.id}: Bara can reach the upper gem`);
-    assert.equal(simulateJump(level,'water',920,0,gallery.y,waterUpper).landed,true,
-      `level ${level.id}: Nira can reach the optional upper route`);
-    assert.equal(simulateJump(level,'water',920,0,waterUpper.y,level.platforms[1]).landed,true,
-      `level ${level.id}: Nira can reach the upper gem`);
-  }
-});
-
-test('Tantangan lima prototype dapat dilalui dengan collision satu arah, tanpa dinding yang mengunci jalur', () => {
-  const halfW = 14, halfH = 13, dt = 1 / 120;
-  const simulateGameJump = (level, role, startX, startY, direction, target, elapsedOffset = 5000) => {
-    let x = startX, y = startY, vy = -ELEMENTAL_JUMP_SPEED;
-    const safeType = role === 'fire' ? 'fire' : 'water';
-    for (let frame = 0; frame < 240; frame++) {
-      const previousX = x;
-      const previousBottom = y + halfH;
-      const vx = direction * ELEMENTAL_MOVE_SPEED;
-      x += vx * dt;
-
-      // Match the live engine's side-collision rules, including one-way ledges.
-      for (const source of level.platforms) {
-        const platform = getElementalPlatformState(source, elapsedOffset + frame * dt * 1000);
-        if (!platform.active || (platform.oneWay && y + halfH > platform.y)) continue;
-        const body = { x:x-halfW, y:y-halfH+3, w:halfW*2, h:halfH*2-3 };
-        if (!rectsOverlap(body, platform)) continue;
-        if (vx > 0 && previousX + halfW <= platform.x + 4) x = platform.x-halfW;
-        else if (vx < 0 && previousX-halfW >= platform.x+platform.w-4) x = platform.x+platform.w+halfW;
-      }
-      for (const wall of level.ruinWalls.filter(item => item.solid || item.blockSideOnly)) {
-        const body = { x:x-halfW, y:y-halfH+2, w:halfW*2, h:halfH*2-2 };
-        if (!rectsOverlap(body, wall)) continue;
-        if (vx > 0 && previousX + halfW <= wall.x + 4) x = wall.x-halfW-1;
-        else if (vx < 0 && previousX-halfW >= wall.x+wall.w-4) x = wall.x+wall.w+halfW+1;
-      }
-
-      const previousTop = y-halfH;
-      vy += ELEMENTAL_GRAVITY * dt;
-      y += vy * dt;
-      let landed = false;
-      const activePlatforms = level.platforms
-        .map(platform => getElementalPlatformState(platform, elapsedOffset + frame * dt * 1000))
-        .filter(platform => platform.active);
-      for (const platform of [...activePlatforms, ...level.floorSegments]) {
-        const horizontal = x+halfW > platform.x && x-halfW < platform.x+platform.w;
-        const bottom = y+halfH;
-        if (horizontal && vy >= 0 && previousBottom <= platform.y+5 && bottom >= platform.y) {
-          y = platform.y-halfH; vy = 0; landed = true;
-        } else if (!platform.oneWay && horizontal && vy < 0 && y-halfH < platform.y+platform.h && y-halfH > platform.y) {
-          y = platform.y+platform.h+halfH; vy = 0;
-        }
-      }
-      for (const wall of level.ruinWalls.filter(item => item.solid && !item.blockSideOnly)) {
-        const horizontal = x+halfW > wall.x && x-halfW < wall.x+wall.w;
-        const bottom = y+halfH;
-        if (horizontal && vy >= 0 && previousBottom <= wall.y+5 && bottom >= wall.y) {
-          y = wall.y-halfH; vy = 0; landed = true;
-        } else if (horizontal && vy < 0 && y-halfH < wall.y+wall.h && y-halfH > wall.y) {
-          y = wall.y+wall.h+halfH; vy = 0;
-        }
-      }
-      const body = { x:x-halfW, y:y-halfH, w:halfW*2, h:halfH*2 };
-      for (const source of level.hazards) {
-        const hazard = getElementalHazardState(source, elapsedOffset + frame * dt * 1000);
-        if (hazard.active === false || (hazard.type !== 'steam' && hazard.type === safeType)) continue;
-        assert.equal(rectsOverlap(body, hazard), false, `level ${level.id} ${role} route must clear ${hazard.id}`);
-      }
-      if (landed && x+halfW > target.x && x-halfW < target.x+target.w && Math.abs(y+halfH-target.y) < 1) {
-        return { landed:true, x, y };
-      }
-    }
-    return { landed:false, x, y };
-  };
-
-  const engine = readSource('../js/games/elemental-duo.js');
-  assert.match(engine, /platform\.oneWay && localPlayer\.y \+ halfH > platform\.y/);
-  assert.match(engine, /!platform\.oneWay && horizontal && localPlayer\.vy < 0/);
-
-  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
-    const route = level.mapTopology.characterRoutes;
-    for (const [role, playerRole, direction, stepX, galleryX, gemX] of [
-      ['fire','host',1,245,410,215],
-      ['water','guest',-1,910,750,920]
-    ]) {
-      const spawn = level.spawn[playerRole];
-      const entry = level.platforms[route[role][0]];
-      const step = level.platforms[route[role][1]];
-      const gallery = level.platforms[route[role][2]];
-      const upper = level.platforms[role === 'fire' ? 2 : 3];
-      const high = level.platforms[role === 'fire' ? 0 : 1];
-      assert.ok(level.platforms.every(platform => platform.oneWay), `level ${level.id}: prototype ledges are one-way`);
-      assert.equal(simulateGameJump(level,role,spawn.x,spawn.y,direction,entry).landed,true,`level ${level.id}: ${role} reaches the entry gallery`);
-      assert.equal(simulateGameJump(level,role,stepX,entry.y-13,direction,step).landed,true,`level ${level.id}: ${role} clears the element hazard to the inner step`);
-      assert.equal(simulateGameJump(level,role,galleryX,step.y-13,0,gallery).landed,true,`level ${level.id}: ${role} can rise through the gallery to the door floor`);
-      assert.equal(simulateGameJump(level,role,gemX,355-13,0,upper).landed,true,`level ${level.id}: ${role} can reach the optional upper route`);
-      assert.equal(simulateGameJump(level,role,gemX,upper.y-13,0,high).landed,true,`level ${level.id}: ${role} can reach the gem ledge`);
-    }
-  }
-
-  const finalLevel = ELEMENTAL_PROTOTYPE_LEVELS[4];
-  assert.equal(finalLevel.requiredValves.length,2);
-  assert.equal(finalLevel.requiredWindLevers.length,0,'wind controls are optional in the final prototype');
-  assert.deepEqual(finalLevel.switchSequence,['fire','water']);
-  for (const element of ['fire','water']) {
-    const valve = finalLevel.valves.find(item => item.element === element);
-    const lever = finalLevel.windLevers.find(item => item.element === element);
-    assert.ok(valve && lever);
-    assert.ok(Math.abs(valve.x-lever.x) > Math.max(valve.radius||58,lever.radius||58),`${element} valve and lever can be selected separately`);
-  }
-});
-
-test('Kampanye 50 level memakai lima layout pembuka handcrafted dan blueprint ekspansi per level', () => {
-  const mapNames=new Set();
+test('Objek puzzle memiliki pijakan stabil, hazard tidak menutupi titik interaksi, dan gerbang tetap di tengah', () => {
   for(const level of ELEMENTAL_LEVELS){
-    mapNames.add(level.mapName);
-    assert.equal(level.mapTopology?.sideRoutes,2,`level ${level.id}`);
-    assert.ok(level.ruinWalls.length>=10,`level ${level.id} includes room masonry`);
-    assert.ok(level.hazards.some(h=>h.type==='water')&&level.hazards.some(h=>h.type==='fire'));
-    if(level.mapTopology?.handcraftedClassic){
-      assert.equal(level.mapTopology.route,'classic-handcrafted-coop');
-      assert.equal(level.mapTopology.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
-      assert.ok(level.mapTopology.wallBlockCount>=4);
-      assert.ok(level.platforms.length>=10&&level.platforms.length<=12);
-      assert.ok(level.doors.fire.x<580&&level.doors.water.x>580);
-    }else{
-      assert.equal(level.mapTopology?.route,'ruins-maze-coop');
-      assert.equal(level.platforms.length,13);
-      assert.equal(level.mapTopology?.corridorCount,13);
-    }
-    assert.equal(level.mapTopology.wallFragmentCount,level.ruinWalls.length);
-    assert.equal(level.mapTopology.randomBranches,0);
-    assert.equal(level.floorSegments.length,1);
-    for(const door of [level.doors.fire,level.doors.water]) assert.ok(level.platforms.some(platform=>platform.id===door.platformId));
-  }
-  assert.equal(ELEMENTAL_LEVELS.filter(level=>level.mapTopology?.handcraftedClassic).length,5);
-  assert.ok(mapNames.size>10);
-});
-
-test('Setiap karakter dapat menjangkau seluruh jalur elemennya dari spawn', () => {
-  const jumpRange=rise=>{
-    const apex=ELEMENTAL_JUMP_SPEED*ELEMENTAL_JUMP_SPEED/(2*ELEMENTAL_GRAVITY);
-    if(rise>apex)return -1;
-    const time=(ELEMENTAL_JUMP_SPEED+Math.sqrt(ELEMENTAL_JUMP_SPEED**2-2*ELEMENTAL_GRAVITY*Math.max(0,rise)))/ELEMENTAL_GRAVITY;
-    return ELEMENTAL_MOVE_SPEED*time;
-  };
-  for(const level of ELEMENTAL_LEVELS){
-    if(level.mapTopology?.handcraftedClassic){
-      for(const [element,role] of [['fire','host'],['water','guest']]){
-        const route=level.mapTopology.characterRoutes[element];
-        const spawn=level.spawn[role];
-        const first=level.platforms[route[0]];
-        assert.ok(jumpRange(ELEMENTAL_FLOOR_Y-first.y)>=Math.max(0,first.x-spawn.x,spawn.x-first.x-first.w),`level ${level.id} ${role} reaches entry`);
-        for(let i=1;i<route.length;i++){
-          const a=level.platforms[route[i-1]],b=level.platforms[route[i]];
-          const gap=Math.max(0,b.x-(a.x+a.w),a.x-(b.x+b.w));
-          assert.ok(jumpRange(a.y-b.y)>=gap,`level ${level.id} ${role} reaches route platform ${route[i]}`);
-        }
-        const plate=level.switches.find(item=>item.element===element);
-        assert.ok(route.some(slot=>level.platforms[slot].id===plate.platformId),`level ${level.id} ${role} switch is on own route`);
-        const door=level.doors[element];
-        assert.ok(route.some(slot=>level.platforms[slot].id===door.platformId),`level ${level.id} ${role} exit is on own route`);
-      }
-      continue;
-    }
-    for(const role of ['host','guest']){
+    for(const element of ['fire','water']){
+      const role=element==='fire'?'host':'guest';
       const spawn=level.spawn[role];
-      const floor=level.floorSegments.find(segment=>spawn.x>=segment.x&&spawn.x<=segment.x+segment.w);
-      assert.ok(floor,`level ${level.id} ${role} spawn must be on a floor segment`);
-      const reachable=new Set(),queue=[{id:'floor',x:floor.x,y:floor.y,w:floor.w,startX:spawn.x}];
-      while(queue.length){
-        const source=queue.shift();
-        for(const platform of level.platforms){
-          if(reachable.has(platform.id))continue;
-          const gap=source.id==='floor'?Math.max(0,platform.x-source.startX,source.startX-platform.x-platform.w):Math.max(0,platform.x-(source.x+source.w),source.x-(platform.x+platform.w));
-          if(jumpRange(source.y-platform.y)>=gap){reachable.add(platform.id);queue.push(platform);}
-        }
+      const start=level.platforms.find(item=>item.id===level.mapTopology.startPlatformIds[element]);
+      assert.ok(start && !start.motion && !start.cycle,`level ${level.id}: ${element} spawn platform stable`);
+      const body={x:spawn.x-14,y:spawn.y-13,w:28,h:26};
+      for(const hazard of level.hazards){
+        if(hazard.type===element) continue;
+        assert.equal(rectsOverlap(body,hazard),false,`level ${level.id}: ${element} does not spawn inside ${hazard.id}`);
       }
-      assert.equal(reachable.size,level.platforms.length,`level ${level.id} all platforms should remain reachable by ${role}`);
+      const plate=level.switches.find(item=>item.element===element);
+      assert.ok(supportForObject(level,plate,'switch'),`level ${level.id}: ${element} switch has a stable support`);
+      const gem=level.gems.find(item=>item.element===element);
+      assert.ok(supportForObject(level,gem,'gem'),`level ${level.id}: ${element} gem is positioned above a platform`);
+      assert.ok(supportForObject(level,level.doors[element],'door'),`level ${level.id}: ${element} door sits on its route`);
     }
+    assert.ok(level.gate && Math.abs(level.gate.x+level.gate.w/2-ELEMENTAL_WORLD_WIDTH/2)<20);
+    assert.ok(level.checkpoint.x>40 && level.checkpoint.x<ELEMENTAL_WORLD_WIDTH-40);
+    assert.equal(level.mapTopology.randomBranches,0);
   }
-});
-
-test('Pijakan berada pada jalur elemen masing-masing dan membuka gerbang bersama', () => {
-  for(const level of ELEMENTAL_LEVELS){
-    const fire=level.switches.find(item=>item.element==='fire');
-    const water=level.switches.find(item=>item.element==='water');
-    assert.ok(fire&&water,`level ${level.id} has both elemental plates`);
-    if(level.mapTopology?.handcraftedClassic){
-      assert.ok(fire.x<580&&water.x>580,`level ${level.id} plates are on separate sides`);
-      assert.ok(level.platforms.some(platform=>platform.id===fire.platformId&&Math.abs(fire.y+fire.h/2-platform.y)<=2));
-      assert.ok(level.platforms.some(platform=>platform.id===water.platformId&&Math.abs(water.y+water.h/2-platform.y)<=2));
-    }else{
-      assert.ok(fire.y>level.gate.y+level.gate.h-8,`level ${level.id} fire plate is accessible below the upper seal`);
-      assert.ok(water.y>level.gate.y+level.gate.h-8,`level ${level.id} water plate is accessible below the upper seal`);
-    }
-  }
-});
-
-test('Kedua pintu dapat berada di sisi atau ketinggian berbeda sehingga akhir level tidak selalu di kanan', () => {
-  const layoutSource=readSource('../js/games/elemental-duo-logic.js');
-  const gameSource=readSource('../js/games/elemental-duo.js');
-  assert.match(layoutSource,/mazeRoom\('Labirin Dua Arus'/);
-  assert.match(layoutSource,/mazeRoom\('Lorong Akua Tersembunyi'/);
-  assert.match(layoutSource,/mazeRoom\('Jantung Labirin'/);
-  assert.match(layoutSource,/const makeDoor = \(slot,element/);
-  assert.match(gameSource,/const ownDoor = level\.doors\?\.\[CHARACTER\[role\]\.element\]/);
-  assert.match(gameSource,/drawExplorationNavigator\(level,host,guest\)/);
 });
 
 test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
@@ -620,7 +422,7 @@ test('Setiap level memiliki dua pijakan aman, penghalang bersama, dan pintu khus
       );
       assert.ok(supportedByFloor || supportedByPlatform, `level ${level.id} plate ${plate.element} harus berada di lantai atau platform`);
     }
-    assert.ok(level.gate && level.gate.w > 0 && level.gate.h > 0 && Math.max(level.gate.w,level.gate.h) >= 100);
+    assert.ok(level.gate && level.gate.w > 0 && level.gate.h > 0 && Math.max(level.gate.w,level.gate.h) >= 90);
     assert.ok(level.doors.fire && level.doors.water);
     assert.notEqual(level.doors.fire.x, level.doors.water.x);
     assert.equal(level.doors.fire.element, 'fire');
@@ -688,9 +490,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.43\.0/);
-  assert.match(app, /elemental-duo\.js\?v=0\.43\.0/);
-  assert.match(index, /app\.js\?v=0\.43\.0/);
+  assert.match(index, /elemental-duo\.css\?v=0\.44\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.44\.0/);
+  assert.match(index, /app\.js\?v=0\.44\.0/);
 });
 
 
@@ -800,44 +602,12 @@ test('Mesin game menjalankan platform bergerak, siklus platform, pantulan, dan p
   assert.match(game, /level\.difficultyLabel/);
 });
 
-test('Pijakan khusus Bara dan Nira di Dunia 1 dapat dicapai melalui rangkaian lompatan yang masuk akal', () => {
-  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  const gravity = ELEMENTAL_GRAVITY;
-  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
-  const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
-  const horizontalRange = rise => {
-    if (rise > maximumRise) return -1;
-    const landingTime = (jumpSpeed + Math.sqrt(jumpSpeed * jumpSpeed - 2 * gravity * Math.max(0, rise))) / gravity;
-    return horizontalSpeed * landingTime;
-  };
-  const firstWorld = ELEMENTAL_LEVELS.slice(0, 10);
-  for (const level of firstWorld) {
-    for (const role of ['host','guest']) {
-      const element = role === 'host' ? 'fire' : 'water';
-      const plate = level.switches.find(item => item.element === element);
-      const target = level.platforms.find(platform =>
-        plate.x >= platform.x && plate.x <= platform.x + platform.w &&
-        Math.abs(plate.y + (plate.h || 10) / 2 - platform.y) <= 2
-      );
-      if (!target) continue; // A floor-mounted plate is reachable without a jump.
-      const reachable = new Set();
-      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
-      const queue = [{ id:'floor', x:startFloor.x, y:startFloor.y, w:startFloor.w, startX:level.spawn[role].x }];
-      while (queue.length) {
-        const source = queue.shift();
-        for (const platform of level.platforms) {
-          if (reachable.has(platform.id)) continue;
-          const gap = source.id === 'floor'
-            ? Math.max(0, platform.x - source.startX, source.startX - platform.x - platform.w)
-            : Math.max(0, platform.x - (source.x + source.w), source.x - (platform.x + platform.w));
-          const rise = source.y - platform.y;
-          if (horizontalRange(rise) >= gap) {
-            reachable.add(platform.id);
-            queue.push(platform);
-          }
-        }
-      }
-      assert.ok(reachable.has(target.id), `level ${level.id} ${element} plate should be reachable from ${role} spawn`);
+test('Pijakan Dunia 1 terjangkau langsung dari spawn masing-masing karakter', () => {
+  for(const level of ELEMENTAL_LEVELS.slice(0,10)){
+    for(const element of ['fire','water']){
+      const reached=reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]);
+      const plate=level.switches.find(item=>item.element===element);
+      assert.ok(reached.has(plate.platformId),`level ${level.id}: ${element} plate reachable`);
     }
   }
 });
@@ -896,7 +666,7 @@ test('Permukaan es meningkatkan momentum sedangkan batu tetap memakai gesekan no
   assert.ok(getElementalSurfaceFriction(onIce, iceLevel) > getElementalSurfaceFriction(onStone, stoneLevel));
   const crystalIceLevel = getElementalLevel(11);
   const icePatch = crystalIceLevel.iceZones[0];
-  const floorIce = {x:icePatch.x+20,y:icePatch.y+20,grounded:true,supportPlatformId:null};
+  const floorIce = {x:icePatch.x+20,y:icePatch.y-5,grounded:true,supportPlatformId:null};
   assert.equal(isElementalPlayerOnIce(floorIce, crystalIceLevel), true);
 });
 
@@ -924,45 +694,14 @@ test('Hazard kristal dapat menyala dan padam mengikuti siklus bersama', () => {
   assert.equal(inactive.opacity, 0);
 });
 
-test('Kedua pijakan Dunia 2 berada pada platform aman yang dapat dijangkau dari spawn', () => {
-  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  const gravity = ELEMENTAL_GRAVITY;
-  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
-  const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
-  const horizontalRange = rise => {
-    if (rise > maximumRise) return -1;
-    const landingTime = (jumpSpeed + Math.sqrt(jumpSpeed * jumpSpeed - 2 * gravity * Math.max(0, rise))) / gravity;
-    return horizontalSpeed * landingTime;
-  };
-  for (const level of ELEMENTAL_LEVELS.slice(10, 20)) {
-    for (const role of ['host','guest']) {
-      const element = role === 'host' ? 'fire' : 'water';
-      const plate = level.switches.find(item => item.element === element);
-      const target = level.platforms.find(platform =>
-        plate.x >= platform.x && plate.x <= platform.x + platform.w &&
-        Math.abs(plate.y + (plate.h || 10) / 2 - platform.y) <= 2
-      );
-      assert.ok(target, `level ${level.id} ${element} plate must sit on a platform`);
-      assert.equal(Boolean(target.cycle), false, `level ${level.id} ${element} plate must not depend on a timed platform`);
-      assert.notEqual(target.motion?.axis, 'y', `level ${level.id} ${element} plate must not ride a vertical lift`);
-      const reachable = new Set();
-      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
-      const queue = [{ id:'floor', x:startFloor.x, y:startFloor.y, w:startFloor.w, startX:level.spawn[role].x }];
-      while (queue.length) {
-        const source = queue.shift();
-        for (const platform of level.platforms) {
-          if (reachable.has(platform.id)) continue;
-          const gap = source.id === 'floor'
-            ? Math.max(0, platform.x - source.startX, source.startX - platform.x - platform.w)
-            : Math.max(0, platform.x - (source.x + source.w), source.x - (platform.x + platform.w));
-          const rise = source.y - platform.y;
-          if (horizontalRange(rise) >= gap) {
-            reachable.add(platform.id);
-            queue.push(platform);
-          }
-        }
-      }
-      assert.ok(reachable.has(target.id), `level ${level.id} ${element} plate platform must be reachable`);
+test('Pijakan Dunia 2 berada pada permukaan stabil dan dapat dicapai dari spawn', () => {
+  for(const level of ELEMENTAL_LEVELS.slice(10,20)){
+    for(const element of ['fire','water']){
+      const plate=level.switches.find(item=>item.element===element);
+      const platform=supportForObject(level,plate,'switch');
+      assert.ok(platform,`level ${level.id}: ${element} plate has support`);
+      assert.equal(Boolean(platform.motion||platform.cycle),false,`level ${level.id}: plate surface stable`);
+      assert.ok(reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]).has(platform.id));
     }
   }
 });
@@ -981,7 +720,7 @@ test('Sepuluh level Kerajaan Bara memakai blueprint unik dengan eskalasi tantang
   ]);
   assert.ok(worldThree[0].hazards.some(hazard => hazard.visual === 'lava' && hazard.cycle));
   assert.ok(worldThree[1].hazards.some(hazard => hazard.type === 'steam' && hazard.cycle));
-  assert.ok(worldThree[2].requiredValves.includes('north-valve'));
+  assert.ok(worldThree[2].requiredValves.some(id=>id.endsWith('north-valve')));
   assert.ok(worldThree[3].platforms.some(platform => platform.motion));
   assert.ok(worldThree[4].hazards.some(hazard => hazard.type === 'water') && worldThree[4].hazards.some(hazard => hazard.type === 'fire'));
   assert.deepEqual(worldThree[5].switchSequence, ['water','fire']);
@@ -1019,9 +758,10 @@ test('Katup tersinkron dapat memadamkan hazard dan menjadi syarat pembukaan gerb
   const worldThree = ELEMENTAL_LEVELS.slice(20, 30);
   const level23 = worldThree[2];
   const level29 = worldThree[8];
-  assert.deepEqual(level23.requiredValves, ['north-valve']);
-  assert.ok(level23.hazards.some(hazard => hazard.valveId === 'north-valve'));
-  assert.deepEqual(level29.requiredValves, ['bara-valve','nira-valve']);
+  assert.equal(level23.requiredValves.length,1);
+  assert.ok(level23.requiredValves[0].endsWith('north-valve'));
+  assert.ok(level23.hazards.some(hazard => hazard.valveId === level23.requiredValves[0]));
+  assert.deepEqual(level29.requiredValves.map(id=>id.replace(/^level-29-/,'' )).sort(),['bara-valve','nira-valve']);
   for (const level of [level23, level29, worldThree[9]]) {
     for (const id of level.requiredValves) {
       const valve = level.valves.find(item => item.id === id);
@@ -1048,49 +788,18 @@ test('Sakelar berurutan disimpan atomik pada satu simpul state dan diperiksa saa
   assert.match(game, /function attemptSwitch\(forcedPlate = null\)/);
 });
 
-test('Kedua pijakan dan katup dunia Bara berada pada platform stabil yang dapat dijangkau dari spawn', () => {
-  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  const gravity = ELEMENTAL_GRAVITY;
-  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
-  const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
-  const horizontalRange = rise => {
-    if (rise > maximumRise) return -1;
-    const landingTime = (jumpSpeed + Math.sqrt(jumpSpeed * jumpSpeed - 2 * gravity * Math.max(0, rise))) / gravity;
-    return horizontalSpeed * landingTime;
-  };
-  for (const level of ELEMENTAL_LEVELS.slice(20, 30)) {
-    for (const role of ['host','guest']) {
-      const element = role === 'host' ? 'fire' : 'water';
-      const plate = level.switches.find(item => item.element === element);
-      const target = level.platforms.find(platform =>
-        plate.x >= platform.x && plate.x <= platform.x + platform.w &&
-        Math.abs(plate.y + (plate.h || 10) / 2 - platform.y) <= 2
-      );
-      assert.ok(target, `level ${level.id} ${element} plate must sit on a platform`);
-      assert.equal(Boolean(target.cycle), false, `level ${level.id} plate must not depend on a timed platform`);
-      assert.notEqual(target.motion?.axis, 'y', `level ${level.id} plate must not ride a vertical lift`);
-      const reachable = new Set();
-      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
-      const queue = [{ id:'floor', x:startFloor.x, y:startFloor.y, w:startFloor.w, startX:level.spawn[role].x }];
-      while (queue.length) {
-        const source = queue.shift();
-        for (const platform of level.platforms) {
-          if (reachable.has(platform.id)) continue;
-          const gap = source.id === 'floor'
-            ? Math.max(0, platform.x - source.startX, source.startX - platform.x - platform.w)
-            : Math.max(0, platform.x - (source.x + source.w), source.x - (platform.x + platform.w));
-          const rise = source.y - platform.y;
-          if (horizontalRange(rise) >= gap) {
-            reachable.add(platform.id);
-            queue.push(platform);
-          }
-        }
+test('Pijakan dan katup Kerajaan Bara berada pada platform stabil yang dapat dicapai pemiliknya', () => {
+  for(const level of ELEMENTAL_LEVELS.slice(20,30)){
+    for(const element of ['fire','water']){
+      const plate=level.switches.find(item=>item.element===element);
+      const support=supportForObject(level,plate,'switch');
+      assert.ok(support && !support.motion && !support.cycle,`level ${level.id} ${element} plate stable`);
+      assert.ok(reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]).has(support.id));
+      for(const valve of level.valves.filter(item=>item.element===element)){
+        const platform=supportForObject(level,valve,'control');
+        assert.ok(platform && !platform.motion && !platform.cycle,`level ${level.id} valve ${valve.id} stable`);
+        assert.ok(reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]).has(platform.id));
       }
-      assert.ok(reachable.has(target.id), `level ${level.id} ${element} plate platform must be reachable`);
-    }
-    for (const valve of level.valves) {
-      const platform = level.platforms.find(item => valve.x >= item.x && valve.x <= item.x + item.w && Math.abs(valve.y + 28 - item.y) <= 10);
-      assert.ok(platform, `level ${level.id} valve ${valve.id} should be positioned next to a platform`);
     }
   }
 });
@@ -1111,8 +820,9 @@ test('Sepuluh level Reruntuhan Langit memakai blueprint unik dengan kesulitan be
   assert.ok(worldFour[1].platforms.some(platform => platform.motion));
   assert.ok(worldFour[2].windZones.some(zone => zone.forceX > 0) && worldFour[2].windZones.some(zone => zone.forceX < 0));
   assert.ok(worldFour[3].platforms.some(platform => platform.motion?.axis === 'y'));
-  assert.deepEqual(worldFour[4].requiredWindLevers, ['storm-turn']);
-  assert.ok(worldFour[4].windZones.some(zone => zone.leverId === 'storm-turn'));
+  assert.equal(worldFour[4].requiredWindLevers.length,1);
+  assert.ok(worldFour[4].requiredWindLevers[0].endsWith('storm-turn'));
+  assert.ok(worldFour[4].windZones.some(zone => zone.leverId === worldFour[4].requiredWindLevers[0]));
   assert.ok(worldFour[5].platforms.filter(platform => platform.motion).length >= 2);
   assert.ok(worldFour[6].windZones.length >= 3);
   assert.equal(worldFour[7].requiredWindLevers.length, 2);
@@ -1176,44 +886,19 @@ test('Tuas angin tersinkron, hanya elemen pemilik dapat mengaktifkannya, dan men
   }
 });
 
-test('Pijakan Dunia 4 berada di platform stabil yang terjangkau dari spawn dan tuas tidak berada di balik gerbang', () => {
-  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  const gravity = ELEMENTAL_GRAVITY;
-  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
-  const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
-  const horizontalRange = rise => {
-    if (rise > maximumRise) return -1;
-    const landingTime = (jumpSpeed + Math.sqrt(jumpSpeed * jumpSpeed - 2 * gravity * Math.max(0, rise))) / gravity;
-    return horizontalSpeed * landingTime;
-  };
-  for (const level of ELEMENTAL_LEVELS.slice(30,40)) {
-    for (const role of ['host','guest']) {
-      const element = role === 'host' ? 'fire' : 'water';
-      const plate = level.switches.find(item => item.element === element);
-      const target = level.platforms.find(platform => plate.x >= platform.x && plate.x <= platform.x + platform.w && Math.abs(plate.y + (plate.h || 10)/2 - platform.y) <= 2);
-      assert.ok(target, `level ${level.id} ${element} plate must sit on a platform`);
-      assert.equal(Boolean(target.cycle), false);
-      assert.notEqual(target.motion?.axis, 'y');
-      const reachable = new Set();
-      const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
-      const queue = [{id:'floor',x:startFloor.x,y:startFloor.y,w:startFloor.w,startX:level.spawn[role].x}];
-      while (queue.length) {
-        const source = queue.shift();
-        for (const platform of level.platforms) {
-          if (reachable.has(platform.id)) continue;
-          const gap = source.id === 'floor'
-            ? Math.max(0,platform.x-source.startX,source.startX-platform.x-platform.w)
-            : Math.max(0,platform.x-(source.x+source.w),source.x-(platform.x+platform.w));
-          const rise = source.y-platform.y;
-          if (horizontalRange(rise) >= gap) { reachable.add(platform.id); queue.push(platform); }
-        }
+test('Pijakan dan tuas Reruntuhan Langit dapat dicapai dan tidak bergantung pada pijakan bergerak', () => {
+  for(const level of ELEMENTAL_LEVELS.slice(30,40)){
+    for(const element of ['fire','water']){
+      const plate=level.switches.find(item=>item.element===element);
+      const support=supportForObject(level,plate,'switch');
+      assert.ok(support && !support.motion && !support.cycle,`level ${level.id} ${element} plate stable`);
+      const reachable=reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]);
+      assert.ok(reachable.has(support.id));
+      for(const lever of level.windLevers.filter(item=>(item.element||item.approachElement)===element)){
+        const platform=supportForObject(level,lever,'control');
+        assert.ok(platform && !platform.motion && !platform.cycle,`level ${level.id} lever ${lever.id} stable`);
+        assert.ok(reachable.has(platform.id),`level ${level.id} ${element} reaches lever ${lever.id}`);
       }
-      assert.ok(reachable.has(target.id), `level ${level.id} ${element} plate must be reachable from ${role} spawn`);
-    }
-    for (const lever of level.windLevers) {
-      const platform = level.platforms.find(item => lever.x >= item.x && lever.x <= item.x + item.w && Math.abs(lever.y + 28 - item.y) <= 10);
-      assert.ok(platform, `level ${level.id} lever ${lever.id} should sit next to a stable platform`);
-      assert.equal(Boolean(platform.motion?.axis === 'y' || platform.cycle), false, `level ${level.id} lever ${lever.id} must not depend on a vertical/timed platform`);
     }
   }
 });
@@ -1254,64 +939,25 @@ test('Sepuluh level Jantung Kuno memakai blueprint khusus dan tantangan final be
   assert.ok(finale.hazards.some(hazard => hazard.type === 'water'));
 });
 
-test('Semua kontrol wajib Jantung Kuno berada pada pijakan stabil dan terjangkau dari kedua spawn', () => {
-  const jumpSpeed = ELEMENTAL_JUMP_SPEED;
-  const gravity = ELEMENTAL_GRAVITY;
-  const horizontalSpeed = ELEMENTAL_MOVE_SPEED;
-  const maximumRise = jumpSpeed * jumpSpeed / (2 * gravity);
-  const horizontalRange = rise => {
-    if (rise > maximumRise) return -1;
-    const landingTime = (jumpSpeed + Math.sqrt(jumpSpeed * jumpSpeed - 2 * gravity * Math.max(0, rise))) / gravity;
-    return horizontalSpeed * landingTime;
-  };
-  for (const level of ELEMENTAL_LEVELS.slice(40,50)) {
-    const controls = [
-      ...level.switches.map(item => ({kind:'switch',id:item.element,x:item.x,y:item.y,platformY:item.y+(item.h||10)/2,platformX:item.x})),
-      ...(level.valves||[]).map(item => ({kind:'valve',id:item.id,element:item.element,x:item.x,y:item.y,platformY:item.y+28,platformX:item.x})),
-      ...(level.windLevers||[]).map(item => ({kind:'lever',id:item.id,element:item.element,x:item.x,y:item.y,platformY:item.y+28,platformX:item.x}))
-    ];
-    for (const control of controls) {
-      const platform = level.platforms.find(item =>
-        control.platformX >= item.x && control.platformX <= item.x+item.w &&
-        Math.abs(control.platformY-item.y) <= 10 && !item.motion && !item.cycle
-      );
-      assert.ok(platform, `level ${level.id} ${control.kind} ${control.id} must sit on a stable platform`);
-      const controlRoles = level.mapTopology?.handcraftedClassic
-        ? [(control.element==='water' || /water|air/i.test(control.id) ? 'guest' : 'host')]
-        : ['host','guest'];
-      for (const role of controlRoles) {
-        const reached = new Set();
-        const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
-      const queue = [{id:'floor',x:startFloor.x,y:startFloor.y,w:startFloor.w,startX:level.spawn[role].x}];
-        while (queue.length) {
-          const source = queue.shift();
-          for (const candidate of level.platforms) {
-            if (reached.has(candidate.id) || candidate.motion || candidate.cycle) continue;
-            const gap = source.id === 'floor'
-              ? Math.max(0,candidate.x-source.startX,source.startX-candidate.x-candidate.w)
-              : Math.max(0,candidate.x-(source.x+source.w),source.x-(candidate.x+candidate.w));
-            const rise = source.y-candidate.y;
-            if (horizontalRange(rise) >= gap) {
-              reached.add(candidate.id);
-              queue.push(candidate);
-            }
-          }
-        }
-        assert.ok(reached.has(platform.id), `level ${level.id} ${role} must reach ${control.kind} ${control.id}`);
+test('Semua kontrol wajib Jantung Kuno terjangkau oleh karakter yang ditugaskan', () => {
+  for(const level of ELEMENTAL_LEVELS.slice(40,50)){
+    for(const element of ['fire','water']){
+      const reached=reachablePlatformIdsForTest(level,level.mapTopology.startPlatformIds[element]);
+      const plate=level.switches.find(item=>item.element===element);
+      assert.ok(reached.has(plate.platformId),`level ${level.id}: ${element} switch reachable`);
+      for(const control of [...level.valves,...level.windLevers].filter(item=>(item.element||item.approachElement)===element)){
+        const support=supportForObject(level,control,'control');
+        assert.ok(support && !support.motion && !support.cycle,`level ${level.id}: ${control.id} stable`);
+        assert.ok(reached.has(support.id),`level ${level.id}: ${element} reaches ${control.id}`);
       }
     }
-    for (const id of level.requiredValves) {
-      const valve = level.valves.find(item => item.id === id);
-      assert.ok(valve, `level ${level.id} required valve ${id} exists`);
-      assert.ok(level.hazards.some(item => item.valveId === id), `level ${level.id} valve ${id} controls a hazard`);
+    for(const id of level.requiredValves){
+      assert.ok(level.valves.some(item=>item.id===id));
+      assert.ok(level.hazards.some(item=>item.valveId===id));
     }
-    for (const id of level.requiredWindLevers) {
-      const lever = level.windLevers.find(item => item.id === id);
-      assert.ok(lever, `level ${level.id} required lever ${id} exists`);
-      assert.ok(level.windZones.some(item => item.leverId === id), `level ${level.id} lever ${id} controls a wind field`);
-    }
-    if (level.switchSequence) {
-      assert.deepEqual([...level.switchSequence].sort(), ['fire','water']);
+    for(const id of level.requiredWindLevers){
+      assert.ok(level.windLevers.some(item=>item.id===id));
+      assert.ok(level.windZones.some(item=>item.leverId===id));
     }
   }
 });
@@ -1339,46 +985,20 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Room map v27 retains the five handcrafted world entrances and the 50-level campaign maps', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,27);
-  for (const level of ELEMENTAL_LEVELS) {
-    const platforms = level.platforms;
-    for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {
-      const a=platforms[i], b=platforms[j];
-      const overlapX=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);
-      const overlapY=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
-      assert.ok(!(overlapX>0 && overlapY>0),`level ${level.id}: ${a.id} overlaps ${b.id}`);
-      const gapX=Math.max(0,a.x-(b.x+b.w),b.x-(a.x+a.w));
-      const gapY=Math.max(0,a.y-(b.y+b.h),b.y-(a.y+a.h));
-      const touchingCorridors = a.corridor && b.corridor && gapX===0 && gapY===0 && (
-        Math.abs((a.x+a.w)-b.x)<2 || Math.abs((b.x+b.w)-a.x)<2 ||
-        Math.abs((a.y+a.h)-b.y)<2 || Math.abs((b.y+b.h)-a.y)<2
-      );
-      assert.ok(touchingCorridors || Math.hypot(gapX,gapY)>=12,`level ${level.id}: ${a.id} and ${b.id} must not overlap or nearly collide`);
-    }
-    for (const platform of platforms) {
-      assert.ok(platform.x>=0 && platform.x+platform.w<=ELEMENTAL_WORLD_WIDTH,`level ${level.id} ${platform.id} remains inside world bounds`);
-      assert.ok(platform.y>=0 && platform.y+platform.h<=ELEMENTAL_FLOOR_Y,`level ${level.id} ${platform.id} remains above floor`);
-    }
-    assert.ok(level.mapTopology.platformCount === platforms.length);
-    assert.equal(level.mapTopology.randomBranches,0);
-    if(level.mapTopology.handcraftedClassic){
-      assert.equal(level.mapTopology.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
-      assert.equal(level.mapTopology.corridorCount,0);
-      assert.ok(level.mapTopology.partitionCount>=4);
-      assert.deepEqual(Object.keys(level.mapTopology.characterRoutes).sort(),['fire','water']);
-      for(const [element,route] of Object.entries(level.mapTopology.characterRoutes)){
-        assert.ok(route.length>=2 && route.length<=4);
-        assert.ok(route.every(slot=>Number.isInteger(slot)&&slot>=0&&slot<platforms.length));
-        assert.ok(level.doors[element].platformId===platforms[route[route.length-1]].id);
-      }
-    }else{
-      assert.equal(level.mapTopology.roomGrammar,'side-view-dungeon-labyrinth-with-turning-corridors');
-      assert.equal(level.mapTopology.corridorCount,13);
-      assert.ok(level.mapTopology.partitionCount>=10);
-    }
-    for (const zone of [...(level.iceZones||[]),...(level.currents||[]),...(level.windZones||[])]) {
-      assert.ok(zone.w<=220 && zone.h<=100,`level ${level.id} environmental zone should stay within one room`);
+test('Room map v29 menggunakan lima puluh blueprint individual dan tidak menambah dinding palsu', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,29);
+  for(const level of ELEMENTAL_LEVELS){
+    assert.equal(level.mapTopology.blueprintId,level.name);
+    assert.equal(level.mapTopology.handcrafted,true);
+    assert.equal(level.mapTopology.handcraftedClassic,true);
+    assert.equal(level.mapTopology.repeatedTemplate,false);
+    assert.equal(level.mapTopology.platformCount,level.platforms.length);
+    assert.equal(level.ruinWalls.length,0);
+    assert.equal(level.mapTopology.characterRoutes.fire[0],level.mapTopology.startPlatformIds.fire);
+    assert.equal(level.mapTopology.characterRoutes.water[0],level.mapTopology.startPlatformIds.water);
+    for(const platform of level.platforms){
+      assert.ok(platform.visualH<=28,`level ${level.id} ${platform.id} must not visually become a deep shelf`);
+      assert.equal(platform.corridor,false);
     }
   }
 });

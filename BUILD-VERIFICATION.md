@@ -1,3 +1,23 @@
+# Build Verification — Diri. Playroom Date v0.44.0
+
+## v0.44.0 — Authored 50-Level Maps & Playability Repair
+- `npm test`: **199/199 tes lulus**.
+- Seluruh file JavaScript di luar `node_modules` lolos `node --check`.
+- `firebase-database.rules.json` dapat diparse sebagai JSON dan tidak berubah pada build ini.
+- Semua 50 level menggunakan blueprint per-level (`blueprintId` unik), tanpa generated corridors, wall fragments, partitions, atau ruin walls tambahan.
+- Jumlah platform per level: **3–8**. Ada 49 siluet geometri platform yang berbeda; Level 44 dan 47 memiliki geometri platform yang sama tetapi blueprint, tujuan, hazard, dan mekanik level tetap terpisah.
+- Tes reachability memeriksa jalur dari spawn tiap karakter ke platform switch, permata, kontrol yang ditugaskan, dan pintu; setiap transisi platform dalam rute diuji dengan model jarak lompatan saat ini.
+- Tes memeriksa overlap platform fisik/visual; spawn, switch, permata, dan pintu Bara/Nira harus berada pada sisi elemen yang sesuai serta objek puzzle memiliki platform dukungan stabil.
+- ID hazard/katup/tuas dan referensi wajib diperiksa agar tidak ada kontrol yang menunjuk ke objek yang hilang.
+- `ELEMENTAL_MAP_VERSION=29`, `ELEMENTAL_CAMPAIGN_VERSION=2`, `jumpSpeed=560`, `gravity=1500`. Firebase Rules tidak berubah.
+- Migrasi room lama: kembali ke Level 01, hasil kampanye dan state puzzle lama dibersihkan, Ready/completion direset; room membership dan statistik lifetime dipertahankan.
+- **Belum dilakukan playtest langsung** pada browser dan dua HP dengan Firebase aktif. Perhitungan geometri otomatis tidak dapat memastikan semua puzzle terasa alami atau menyenangkan.
+
+## Batas verifikasi v0.44.0
+Build ini memperbaiki tumpukan template yang menyebabkan arena v0.43.0 terlalu padat. Semua level lolos validasi struktur dan reachability geometri dari spawn. Sebelum menyatakan seluruh kampanye selesai diuji, lakukan playtest langsung tiap dunia—khususnya lift, es, arus, angin, hazard berkala, katup, tuas, gerbang, serta transisi bersama pada dua perangkat.
+
+---
+
 # Build Verification — Diri. Playroom Date v0.43.0
 
 ## v0.43.0 — Full 50-Level Campaign & Gem Scoring

@@ -1,3 +1,13 @@
+# Elemental Duo — Panduan Game (build v0.44.0)
+
+## Perbaikan v0.44.0 — 50 blueprint langsung, tanpa template arena tambahan
+- Seluruh 50 level menggunakan data blueprint masing-masing secara langsung. Generator maze lama yang menambahkan platform, partisi, dan koridor berulang tidak lagi dipakai untuk membuat peta kampanye.
+- Setiap level berisi 3–8 platform berdasarkan blueprint. Posisi spawn, switch, permata, katup/tuas, dan pintu disesuaikan ke pijakan yang stabil serta diperiksa jangkauannya dari spawn karakter terkait.
+- Bara/Fire memakai sisi kiri dan Nira/Water sisi kanan untuk spawn, switch, permata, dan pintu. Rute diuji dengan kecepatan gerak 260, jump speed 560, dan gravitasi 1500.
+- Permata tetap opsional: merah untuk Bara, biru untuk Nira. Permata bukan syarat membuka switch, gerbang atau pintu; permata hanya memengaruhi skor bintang dan rekap koleksi.
+- `ELEMENTAL_MAP_VERSION=29`, `ELEMENTAL_CAMPAIGN_VERSION=2`. Room lama dimigrasikan ke Level 01 dan state puzzle/hasil kampanye prototype dibersihkan; membership room dan statistik lifetime dipertahankan.
+- `npm test`: **199/199 lulus**. Playtest browser dan dua HP dengan Firebase aktif masih diperlukan.
+
 # Elemental Duo — Panduan Game (build v0.43.0)
 
 ## Pembaruan v0.43.0 — Full 50-Level Campaign

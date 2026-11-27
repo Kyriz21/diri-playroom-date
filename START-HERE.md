@@ -1,3 +1,28 @@
+# Mulai di sini — Diri. Playroom Date v0.44.0
+
+## Yang berubah pada build ini
+- Semua 50 level kini memakai blueprint per-level secara langsung; generator maze yang menumpuk platform dan dinding tambahan sudah dilepas dari jalur kampanye.
+- Peta berisi 3–8 platform sesuai blueprint, sehingga arena tidak lagi dipenuhi 11–13 platform/partisi sintetis.
+- Spawn, switch, permata, katup/tuas, dan pintu dipetakan ke pijakan yang stabil; jangkauan rute kedua karakter diverifikasi secara otomatis.
+- ID hazard, katup dan tuas diperiksa agar kontrol tetap mengarah ke objek yang benar.
+- Fungsi permata tidak berubah: merah untuk Bara dan biru untuk Nira; keduanya bonus opsional, bukan kunci pintu. Aturan bintang 3/2/1 tetap berlaku.
+- Kampanye tetap berisi 50 level dalam lima dunia; urutan dan scoring kampanye dipertahankan.
+- Fisika lompatan dipertahankan (`jumpSpeed=560`, `gravity=1500`); analog tetap hanya menggerakkan kiri/kanan.
+- Verifikasi: `npm test` **199/199 lulus**; semua JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
+
+## Memasang v0.44.0
+1. Unduh dan ekstrak ZIP `Diri_Playroom_Date_v0.44.0_Authored_50_Playable_Maps.zip`.
+2. Backup repository GitHub Pages terlebih dahulu.
+3. Unggah seluruh isi ZIP ke root repository dan timpa file proyek lama.
+4. Tunggu GitHub Pages selesai melakukan deployment, lalu refresh website.
+5. Buat room baru atau buka room lama. Karena `campaignVersion=2`, host akan memigrasikan kampanye ke Level 01 dan menghapus hasil/state puzzle lama. Keanggotaan room dan statistik lifetime tetap dipertahankan.
+6. `ELEMENTAL_MAP_VERSION=29`; posisi karakter lama kembali ke spawn yang sesuai. Firebase Rules tidak perlu dipublikasikan ulang karena Rules tidak berubah.
+
+## Batas pengujian
+Tes otomatis memeriksa blueprint, reachability geometri, dukungan objek puzzle, ID kontrol, dan transisi kampanye. **Belum ada klaim bahwa playtest manual seluruh 50 level sudah selesai.** Uji mekanik khusus pada dua HP dengan Firebase aktif tetap diperlukan.
+
+---
+
 # Mulai di sini — Diri. Playroom Date v0.43.0
 
 ## Yang berubah pada Elemental Duo

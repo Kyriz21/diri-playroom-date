@@ -1,6 +1,16 @@
-# Diri. Playroom Date v0.43.0 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.44.0 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.43.0 — Full 50-Level Campaign & Gem Scoring
+## Pembaruan terbaru v0.44.0 — Authored 50-Level Maps & Playability Repair
+- Memperbaiki sumber arena terlalu padat: 50 level kini menggunakan blueprint individual yang sudah ada di data kampanye, langsung tanpa generator yang menambahkan susunan 13 platform, koridor, partisi, atau dinding pecahan ekstra.
+- Setiap level memakai 3–8 platform yang ditentukan blueprint; 50 blueprint memiliki ID level masing-masing. Ada 49 susunan geometri platform yang berbeda; level 44 dan 47 berbagi siluet platform tetapi memiliki tujuan/mekanik level yang berbeda.
+- Spawn, switch, permata, katup/tuas, dan pintu dipetakan ke pijakan yang stabil serta diperiksa keterjangkauannya dari spawn Bara/Nira menggunakan fisika lompatan saat ini.
+- Penempatan karakter, switch, permata, dan pintu menjaga sisi elemen masing-masing. Hazard yang dikendalikan katup dan seluruh referensi objek puzzle diperiksa konsistensinya.
+- Menghapus lapisan koridor/partisi tambahan yang menyebabkan platform bertumpuk; elemen latar generik seperti relief dan dekorasi tambahan dinonaktifkan untuk peta blueprint agar jalur mudah dibaca.
+- Fisika lompatan tetap `560 / 1500` (puncak teoretis sekitar 104,5 unit); analog tetap hanya menggerakkan kiri/kanan.
+- Migrasi `ELEMENTAL_MAP_VERSION=29`, `campaignVersion=2`: room lama tetap ada, tetapi kampanye kembali ke Level 01, hasil dan state puzzle lama dibersihkan, serta status Ready/selesai direset. Keanggotaan room dan statistik jangka panjang dipertahankan.
+- Verifikasi: `npm test` **199/199 lulus**; seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah. Playtest browser dan dua HP tetap diperlukan.
+
+## Riwayat pembaruan v0.43.0 — Full 50-Level Campaign & Gem Scoring
 - Elemental Duo kini menjalankan kampanye penuh **50 level berurutan** dalam lima dunia, masing-masing 10 level. Progress tidak lagi berhenti setelah lima prototype.
 - Urutan dunia: Hutan Berbisik (01–10), Kedalaman Kristal (11–20), Kerajaan Bara (21–30), Reruntuhan Langit (31–40), dan Jantung Kuno (41–50).
 - Permata bersifat opsional dan bukan kunci pintu: Bara mengumpulkan permata merah, Nira permata biru. Dua permata + tanpa jatuh memberi 3 bintang; maksimal dua jatuh memberi 2 bintang; lebih dari dua jatuh memberi 1 bintang.

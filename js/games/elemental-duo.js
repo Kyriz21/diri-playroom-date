@@ -1,12 +1,12 @@
 import { db, ref, set, update, onValue, runTransaction } from '../firebase.js';
 import {
-  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_LEVEL_COUNT,
+  ELEMENTAL_WORLD_WIDTH, ELEMENTAL_WORLD_HEIGHT, ELEMENTAL_FLOOR_Y, ELEMENTAL_MAP_VERSION, ELEMENTAL_CAMPAIGN_VERSION, ELEMENTAL_LEVEL_COUNT,
   ELEMENTAL_GRAVITY, ELEMENTAL_MOVE_SPEED, ELEMENTAL_JUMP_SPEED,
   createElementalPlayer, getElementalLevel, getElementalStars, rectsOverlap,
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.43.0';
+} from './elemental-duo-logic.js?v=0.44.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -597,19 +597,19 @@ export function mountElementalDuo(root, context) {
       await runTransaction(metaRef, current => {
         needsCampaignMigration = false;
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, campaignVersion:1
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, campaignVersion:ELEMENTAL_CAMPAIGN_VERSION
         };
-        if (Number(current.campaignVersion) === 1) return current;
+        if (Number(current.campaignVersion) === ELEMENTAL_CAMPAIGN_VERSION) return current;
         needsCampaignMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, campaignVersion:1
+          results:{}, campaignVersion:ELEMENTAL_CAMPAIGN_VERSION
         };
       });
       if (needsCampaignMigration) {
-        // Prototype sessions used a five-level route and incompatible map coordinates.
-        // Start a clean 50-level campaign while retaining room membership and lifetime stats.
+        // Earlier sessions used repeated maze templates and incompatible map coordinates.
+        // Start a clean authored campaign while retaining room membership and lifetime stats.
         const migrationPatch = { levels:null };
         for (const playerRole of ['host','guest']) {
           const oldPlayer = data.players?.[playerRole];
@@ -851,9 +851,9 @@ export function mountElementalDuo(root, context) {
       // activated valve/lever could keep capturing the interact button when
       // another control is within the same radius (especially in Level 5).
       const ownElement = CHARACTER[role].element;
-      const nearbyValve = (level.valves || []).find(item => item.element === ownElement && !valveIsOpen(item.id) && Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
+      const nearbyValve = (level.valves || []).find(item => (!item.element || item.element === ownElement) && !valveIsOpen(item.id) && Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
       if (nearbyValve) { attemptValve(nearbyValve); return; }
-      const nearbyWindLever = (level.windLevers || []).find(item => item.element === ownElement && !windLeverIsOn(item.id) && Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
+      const nearbyWindLever = (level.windLevers || []).find(item => (!item.element || item.element === ownElement) && !windLeverIsOn(item.id) && Math.hypot(localPlayer.x-item.x, localPlayer.y-item.y) < (item.radius || 58));
       if (nearbyWindLever) { attemptWindLever(nearbyWindLever); return; }
     }
     const nearby = forcedPlate || level.switches.find(item => Math.hypot(localPlayer.x-item.x, (localPlayer.y-3)-item.y) < 62);
@@ -2067,7 +2067,7 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.campaignVersion) !== 1)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.campaignVersion) !== ELEMENTAL_CAMPAIGN_VERSION)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {

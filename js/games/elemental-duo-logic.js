@@ -4,7 +4,8 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 27;
+export const ELEMENTAL_MAP_VERSION = 29;
+export const ELEMENTAL_CAMPAIGN_VERSION = 2;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1500;
 export const ELEMENTAL_MOVE_SPEED = 260;
@@ -698,7 +699,7 @@ const WORLD_THREE_BLUEPRINTS = [
       {id:'ember-30-a',x:145,y:455,w:135,kind:'stone'},
       {id:'ember-30-b',x:320,y:420,w:110,kind:'crystal',motion:{axis:'x',amplitude:22,periodMs:5600,phaseMs:0}},
       {id:'ember-30-c',x:500,y:385,w:115,kind:'stone'},
-      {id:'ember-30-d',x:680,y:420,w:135,kind:'crystal',motion:{axis:'x',amplitude:12,periodMs:6100,phaseMs:2400}}
+      {id:'ember-30-d',x:680,y:420,w:135,kind:'crystal'}
     ],
     hazards:[
       {id:'ember-30-lava-a',x:260,y:486,w:90,h:34,type:'fire',visual:'lava',cycle:{periodMs:5900,activeMs:4100,phaseMs:0}},
@@ -1380,607 +1381,350 @@ function findSafeFloorPoint(preferred, hazards, element = null, min = 70, max = 
 }
 
 
-// Ten hand-authored side-view labyrinths. Long corridor floors replace the
-// scattered floating ledges: each room is built as connected galleries with
-// thick masonry floors, support pillars, partitions and alternating openings.
-const MAZE_CORRIDOR_BASE = [
-  [22,550,280], [858,550,280],        // two entrances merge into the dungeon floor
-  [72,450,280], [808,450,280],       // lower side passages
-  [252,370,260], [648,390,260],      // offset chambers
-  [92,290,260], [340,210,280], [808,230,260],
-  [200,130,260], [700,150,260],      // separated elemental sanctuaries
-  [480,310,260], [420,550,320]       // right-hand turn and central rejoin
-];
-
-const MAZE_CORRIDOR_OFFSETS = [
-  [0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,18,-18,-15,15,18,-15,15,-10,10,-18,0],
-  [0,0,-18,18,22,-20,-12,25,-24,20,-18,16,0],
-  [0,0,30,-28,-25,26,22,-30,30,-15,18,-20,0],
-  [0,0,-26,24,14,-18,-24,18,-18,26,-24,24,0],
-  [0,0,14,-16,-22,20,10,-22,22,16,-14,-12,0],
-  [0,0,-12,14,26,-24,-18,28,-26,-20,22,18,0],
-  [0,0,24,-22,18,-16,28,-12,16,12,-20,-26,0],
-  [0,0,-22,20,-18,22,-16,20,-22,-18,16,22,0],
-  [0,0,12,-12,30,-28,16,-28,24,22,-18,-14,0]
-];
-
-// Each side winds through offset chambers. There are no parallel rows of
-// floating ledges: players move between connected rooms and narrow passages.
-const MAZE_LANE_HEIGHTS = [
-  {left:[450,370,290,210,130],right:[450,390,310,230,150]},
-  {left:[450,350,270,190,110],right:[450,370,290,210,130]},
-  {left:[450,370,290,210,130],right:[450,350,270,190,110]},
-  {left:[450,360,280,200,120],right:[450,370,290,210,130]},
-  {left:[450,390,310,230,150],right:[450,350,270,190,110]},
-  {left:[450,350,270,190,110],right:[450,390,310,230,150]},
-  {left:[450,370,310,230,150],right:[450,350,270,190,110]},
-  {left:[450,360,280,200,120],right:[450,370,290,210,130]},
-  {left:[450,370,290,210,130],right:[450,390,330,250,170]},
-  {left:[450,370,290,210,130],right:[450,390,310,230,150]}
-];
-
-function mazeCorridors(variant) {
-  const shifts = MAZE_CORRIDOR_OFFSETS[variant % MAZE_CORRIDOR_OFFSETS.length];
-  const lane = MAZE_LANE_HEIGHTS[variant % MAZE_LANE_HEIGHTS.length];
-  const yBySlot = [550,550,lane.left[0],lane.right[0],lane.left[1],lane.right[1],lane.left[2],lane.left[3],lane.right[3],lane.left[4],lane.right[4],lane.right[2],550];
-  return MAZE_CORRIDOR_BASE.map(([x,_y,w],slot) => [
-    Math.max(12,Math.min(ELEMENTAL_WORLD_WIDTH-w-12,x+shifts[slot])), yBySlot[slot], w
-  ]);
+// Campaign maps are taken directly from the authored per-level blueprints.
+// The previous build replaced them with repeated corridor templates and extra
+// masonry fragments; that produced visually dense, hard-to-read rooms.
+// This mapper only normalises play-critical objects onto reachable surfaces.
+function platformCenter(platform) {
+  return platform.x + platform.w / 2;
 }
 
-const MAZE_PARTITION_DETAILS = [
-  [[150,330,56,200,false],[370,270,64,260,false],[610,330,58,200,false],[900,270,64,260,false],[20,382,180,34,false],[260,382,150,34,false],[720,382,160,34,false],[970,382,170,34,false],[80,302,190,34,false],[330,302,150,34,false],[650,302,170,34,false],[900,302,180,34,false],[150,222,200,34,false],[730,222,200,34,false],[320,142,180,34,false],[670,142,180,34,false]],
-  [[205,330,58,200,false],[455,270,62,260,false],[760,330,58,200,false],[1010,270,60,260,false],[35,382,170,34,false],[290,382,150,34,false],[760,382,150,34,false],[980,382,160,34,false],[120,302,180,34,false],[390,302,150,34,false],[700,302,170,34,false],[940,302,170,34,false],[200,222,190,34,false],[790,222,190,34,false],[360,142,180,34,false],[720,142,180,34,false]],
-  [[125,330,60,200,false],[380,270,66,260,false],[650,330,58,200,false],[940,270,64,260,false],[15,382,180,34,false],[265,382,155,34,false],[700,382,175,34,false],[955,382,180,34,false],[65,302,190,34,false],[350,302,160,34,false],[675,302,170,34,false],[930,302,180,34,false],[130,222,190,34,false],[760,222,190,34,false],[390,142,190,34,false],[700,142,180,34,false]],
-  [[175,330,58,200,false],[430,270,62,260,false],[735,330,60,200,false],[980,270,62,260,false],[30,382,175,34,false],[280,382,150,34,false],[745,382,160,34,false],[985,382,155,34,false],[100,302,180,34,false],[365,302,155,34,false],[680,302,165,34,false],[930,302,180,34,false],[185,222,190,34,false],[770,222,195,34,false],[350,142,190,34,false],[710,142,180,34,false]],
-  [[145,330,58,200,false],[385,270,64,260,false],[625,330,58,200,false],[880,270,62,260,false],[18,382,185,34,false],[270,382,150,34,false],[735,382,165,34,false],[965,382,175,34,false],[90,302,185,34,false],[350,302,160,34,false],[665,302,175,34,false],[920,302,180,34,false],[145,222,195,34,false],[755,222,190,34,false],[375,142,190,34,false],[690,142,180,34,false]],
-  [[205,330,58,200,false],[455,270,62,260,false],[700,330,60,200,false],[945,270,64,260,false],[30,382,170,34,false],[285,382,155,34,false],[710,382,165,34,false],[970,382,170,34,false],[110,302,180,34,false],[380,302,155,34,false],[695,302,165,34,false],[945,302,175,34,false],[190,222,190,34,false],[785,222,190,34,false],[355,142,190,34,false],[720,142,180,34,false]],
-  [[155,330,62,200,false],[405,270,66,260,false],[665,330,58,200,false],[915,270,64,260,false],[20,382,185,34,false],[275,382,155,34,false],[725,382,165,34,false],[970,382,170,34,false],[80,302,190,34,false],[350,302,160,34,false],[670,302,180,34,false],[925,302,180,34,false],[155,222,190,34,false],[770,222,190,34,false],[370,142,190,34,false],[700,142,180,34,false]],
-  [[185,330,60,200,false],[470,270,64,260,false],[750,330,60,200,false],[990,270,64,260,false],[25,382,180,34,false],[285,382,150,34,false],[735,382,170,34,false],[985,382,155,34,false],[105,302,180,34,false],[375,302,155,34,false],[700,302,170,34,false],[950,302,170,34,false],[180,222,190,34,false],[800,222,190,34,false],[365,142,185,34,false],[730,142,180,34,false]],
-  [[130,330,60,200,false],[390,270,66,260,false],[650,330,60,200,false],[910,270,62,260,false],[25,382,180,34,false],[280,382,155,34,false],[730,382,170,34,false],[970,382,170,34,false],[85,302,185,34,false],[355,302,160,34,false],[675,302,180,34,false],[930,302,180,34,false],[145,222,195,34,false],[760,222,195,34,false],[385,142,185,34,false],[705,142,180,34,false]],
-  [[175,330,58,200,false],[435,270,64,260,false],[710,330,58,200,false],[960,270,62,260,false],[30,382,180,34,false],[285,382,150,34,false],[740,382,165,34,false],[985,382,155,34,false],[105,302,180,34,false],[365,302,155,34,false],[690,302,170,34,false],[945,302,170,34,false],[190,222,190,34,false],[795,222,190,34,false],[360,142,190,34,false],[715,142,180,34,false]]
-];
-
-function mazeRoom(name, variant, architecture, rubble, pools, options = {}) {
-  return {
-    name, platforms:mazeCorridors(variant), walls:[...architecture,...MAZE_PARTITION_DETAILS[variant],...rubble], pools,
-    switches:[2,3], gems:[4,5], doors:[9,10], controls:[6,11], checkpoint:12,
-    gate:{x:566,y:280,w:28,h:125},
-    ...options
-  };
+function horizontalJumpReach(rise) {
+  const discriminant = ELEMENTAL_JUMP_SPEED ** 2 - 2 * ELEMENTAL_GRAVITY * rise;
+  if (discriminant < 0) return -1;
+  const landingTime = (ELEMENTAL_JUMP_SPEED + Math.sqrt(discriminant)) / ELEMENTAL_GRAVITY;
+  return ELEMENTAL_MOVE_SPEED * landingTime + ELEMENTAL_PLAYER_RADIUS * 2;
 }
 
-const ELEMENTAL_ROOM_LAYOUTS = [
-  mazeRoom('Labirin Dua Arus',0,
-    [[178,390,26,140,false],[548,330,28,200,false],[936,390,26,140,false],[65,397,190,18,false],[870,397,220,18,false],[250,317,190,18,false],[720,317,210,18,false],[92,237,190,18,false],[880,237,190,18,false],[410,157,24,70,false],[720,77,24,52,false]],
-    [[300,466,48,64,true],[486,466,48,64,true],[760,386,48,64,true],[360,306,48,64,true],[810,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Lorong Akua Tersembunyi',1,
-    [[242,385,24,145,false],[615,315,24,155,false],[884,385,24,145,false],[80,397,220,18,false],[790,397,220,18,false],[325,317,175,18,false],[690,317,180,18,false],[150,237,24,100,false],[970,237,24,100,false],[260,157,190,18,false],[720,157,190,18,false]],
-    [[245,466,48,64,true],[520,466,48,64,true],[860,386,48,64,true],[300,306,48,64,true],[875,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Gerbang Magma',2,
-    [[205,390,26,140,false],[520,340,28,190,false],[955,390,26,140,false],[95,397,205,18,false],[855,397,205,18,false],[210,317,185,18,false],[770,317,185,18,false],[110,237,24,100,false],[1020,237,24,100,false],[430,157,24,70,false],[705,77,24,52,false]],
-    [[280,466,48,64,true],[500,466,48,64,true],[800,386,48,64,true],[330,306,48,64,true],[770,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Akuaduk Kristal',3,
-    [[260,385,24,145,false],[570,330,26,200,false],[900,385,24,145,false],[65,397,225,18,false],[820,397,225,18,false],[300,317,190,18,false],[665,317,205,18,false],[170,237,24,100,false],[910,237,24,100,false],[300,157,190,18,false],[690,157,190,18,false]],
-    [[265,466,48,64,true],[555,466,48,64,true],[820,386,48,64,true],[390,306,48,64,true],[735,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Jantung Labirin',4,
-    [[185,390,26,140,false],[565,325,30,205,false],[925,390,26,140,false],[80,397,190,18,false],[895,397,190,18,false],[235,317,200,18,false],[735,317,200,18,false],[125,237,24,100,false],[990,237,24,100,false],[390,157,24,70,false],[735,77,24,52,false]],
-    [[285,466,48,64,true],[510,466,48,64,true],[785,386,48,64,true],[345,306,48,64,true],[835,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Lorong Pilar Patah',5,
-    [[155,385,28,145,false],[500,330,26,200,false],[930,385,28,145,false],[75,397,215,18,false],[850,397,215,18,false],[270,317,190,18,false],[700,317,190,18,false],[90,237,24,100,false],[1010,237,24,100,false],[325,157,190,18,false],[650,157,190,18,false]],
-    [[315,466,48,64,true],[545,466,48,64,true],[805,386,48,64,true],[285,306,48,64,true],[855,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Saluran Tenggelam',6,
-    [[225,390,26,140,false],[610,330,28,200,false],[900,390,26,140,false],[70,397,215,18,false],[845,397,215,18,false],[200,317,190,18,false],[770,317,190,18,false],[145,237,24,100,false],[970,237,24,100,false],[260,157,190,18,false],[710,157,190,18,false]],
-    [[270,466,48,64,true],[530,466,48,64,true],[830,386,48,64,true],[350,306,48,64,true],[790,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Kubah Terbelah',7,
-    [[190,385,24,145,false],[590,325,28,205,false],[955,385,24,145,false],[70,397,190,18,false],[900,397,190,18,false],[260,317,185,18,false],[720,317,190,18,false],[100,237,24,100,false],[1000,237,24,100,false],[350,157,190,18,false],[670,157,190,18,false]],
-    [[305,466,48,64,true],[555,466,48,64,true],[790,386,48,64,true],[315,306,48,64,true],[820,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Ruang Katup Kuno',8,
-    [[210,390,26,140,false],[545,330,28,200,false],[915,390,26,140,false],[82,397,205,18,false],[860,397,205,18,false],[280,317,185,18,false],[710,317,205,18,false],[130,237,24,100,false],[990,237,24,100,false],[350,157,24,70,false],[740,77,24,52,false]],
-    [[285,466,48,64,true],[525,466,48,64,true],[815,386,48,64,true],[340,306,48,64,true],[800,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}]),
-  mazeRoom('Gerbang Sumber Purba',9,
-    [[165,385,28,145,false],[620,330,26,200,false],[945,385,28,145,false],[75,397,210,18,false],[860,397,210,18,false],[250,317,190,18,false],[730,317,190,18,false],[125,237,24,100,false],[995,237,24,100,false],[285,157,190,18,false],[710,157,190,18,false]],
-    [[300,466,48,64,true],[555,466,48,64,true],[850,386,48,64,true],[360,306,48,64,true],[820,226,48,64,true]],
-    [{type:'fire',x:140,w:86,platformSlot:0,visual:'lava'},{type:'water',x:930,w:86,platformSlot:1}])
-];
-
-function roomPlatform(levelId, slot, spec, source = null) {
-  const [x,y,w] = spec;
-  const safeMotion = source?.motion ? {
-    ...source.motion,
-    // Moving ledges remain subtle so the larger room geometry stays readable.
-    amplitude: Math.min(12, Number(source.motion.amplitude) || 0)
-  } : null;
-  return {
-    id:`room-${levelId}-corridor-${slot+1}`,
-    x,y,w,h:y >= ELEMENTAL_FLOOR_Y ? 0 : 8,visualH:36,corridor:true,
-    kind:source?.kind || 'stone',
-    ...(safeMotion ? {motion:safeMotion} : {}),
-    ...(source?.cycle ? {cycle:{...source.cycle}} : {}),
-    ...(source?.kind === 'bounce' ? {kind:'bounce'} : {})
-  };
+function platformGap(a, b) {
+  return Math.max(0, b.x - (a.x + a.w), a.x - (b.x + b.w));
 }
 
-function mapZoneToPlatform(source, platform, index, kind) {
-  const width = kind === 'wind' || kind === 'current' ? 110 : 100;
-  const height = kind === 'wind' || kind === 'current' ? 62 : 46;
-  return {
-    ...source,
-    id:source.id || `${kind}-${index+1}`,
-    x:Math.max(0,Math.min(ELEMENTAL_WORLD_WIDTH-width,platform.x+(platform.w-width)/2)),
-    y:Math.max(70,platform.y-height-3),
-    w:width,h:height
-  };
-}
-
-/** Convert one level blueprint into a fixed-screen co-op puzzle room. */
-function createExplorationMap(level, sourceIndex) {
-  const worldIndex = Math.floor(sourceIndex / 10);
-  const localIndex = sourceIndex % 10;
-  const roomIndex = (worldIndex * 2 + localIndex) % ELEMENTAL_ROOM_LAYOUTS.length;
-  const room = ELEMENTAL_ROOM_LAYOUTS[roomIndex];
-  const specs = room.platforms;
-  const switchSlots = [...room.switches];
-  const gemSlots = [...room.gems];
-  const doorSlots = [...room.doors];
-  const controlSlots = [...room.controls];
-  const reserved = new Set([...switchSlots,...gemSlots,...doorSlots,...controlSlots,room.checkpoint]);
-
-  // Dynamic blueprint platforms are assigned only to optional route ledges.
-  // Switches, gems, doors and controls always stay on stable structural ground.
-  const blueprintPlatforms = level.platforms || [];
-  // Preserve moving/timed platforms first; decorative surface types use any
-  // remaining optional ledges so they never crowd out a real level mechanic.
-  const specialSources = [
-    ...blueprintPlatforms.filter(platform => platform.motion || platform.cycle),
-    ...blueprintPlatforms.filter(platform => !platform.motion && !platform.cycle && ['bounce','ice','cloud','magma','crystal'].includes(platform.kind))
-  ];
-  const hasSteamSource = (level.hazards || []).some(hazard => hazard.type === 'steam');
-  const dynamicSlots = (hasSteamSource ? [7,9,10] : [7,8,9,10]).filter(slot => !reserved.has(slot));
-  const sourceBySlot = new Map();
-  specialSources.forEach((source,i) => {
-    const slot = dynamicSlots[i];
-    if (slot !== undefined) sourceBySlot.set(slot,source);
-  });
-  const platforms = specs.map((spec,slot) => roomPlatform(level.id,slot,spec,sourceBySlot.get(slot)));
-  level.platforms = platforms;
-  level.floorY = ELEMENTAL_FLOOR_Y;
-  level.floorSegments = [{id:'room-floor',x:0,y:ELEMENTAL_FLOOR_Y,w:ELEMENTAL_WORLD_WIDTH,h:70}];
-  const platformAt = slot => platforms[Math.max(0,Math.min(platforms.length-1,slot))];
-  const fireStart = platformAt(0);
-  const waterStart = platformAt(1);
-  level.spawn = {
-    host:{x:fireStart.x+Math.min(45,fireStart.w/2),y:fireStart.y-13},
-    guest:{x:waterStart.x+waterStart.w-Math.min(45,waterStart.w/2),y:waterStart.y-13}
-  };
-
-  level.switches = ['fire','water'].map((element,elementIndex) => {
-    const platform = platformAt(switchSlots[elementIndex]);
-    return {id:element,element,x:platform.x+platform.w/2,y:platform.y-4,w:58,h:10,platformId:platform.id};
-  });
-  level.gems = ['fire','water'].map((element,elementIndex) => {
-    const platform = platformAt(gemSlots[elementIndex]);
-    return {id:element,element,x:platform.x+platform.w/2,y:platform.y-28,platformId:platform.id};
-  });
-  const makeDoor = (slot,element) => {
-    const platform = platformAt(slot);
-    const fraction = slot === doorSlots[0] && slot === doorSlots[1]
-      ? (element === 'fire' ? .30 : .70)
-      : .5;
-    const x = Math.max(platform.x+4,Math.min(platform.x+platform.w-46,platform.x+platform.w*fraction-21));
-    return {x,y:platform.y-72,w:42,h:72,element,platformId:platform.id};
-  };
-  level.doors = {
-    fire:makeDoor(doorSlots[0],'fire'),
-    water:makeDoor(doorSlots[1],'water')
-  };
-  level.exit = {
-    x:Math.min(level.doors.fire.x,level.doors.water.x),
-    y:Math.min(level.doors.fire.y,level.doors.water.y),
-    w:Math.max(level.doors.fire.x+42,level.doors.water.x+42)-Math.min(level.doors.fire.x,level.doors.water.x),
-    h:72
-  };
-
-  const controlItems = [
-    ...(level.valves || []).map(source=>({source,kind:'valve'})),
-    ...(level.windLevers || []).map(source=>({source,kind:'wind'}))
-  ];
-  const controlCountByPlatform = Math.ceil(controlItems.length / Math.max(1,controlSlots.length));
-  const placedControls = controlItems.map(({source,kind},i) => {
-    const slotIndex = i % controlSlots.length;
-    const platform = platformAt(controlSlots[slotIndex]);
-    const groupIndex = Math.floor(i / controlSlots.length);
-    const fraction = (groupIndex + 1) / (controlCountByPlatform + 1);
-    return {...source,x:platform.x+platform.w*fraction,y:platform.y-25,radius:24,platformId:platform.id,controlKind:kind};
-  });
-  let placedControlIndex = 0;
-  level.valves = (level.valves || []).map(()=>placedControls[placedControlIndex++]);
-  level.windLevers = (level.windLevers || []).map(()=>placedControls[placedControlIndex++]);
-
-  const zoneSlots = [6,7,8,9,10,11].filter(slot => !doorSlots.includes(slot) && !reserved.has(slot));
-  const safeZoneSlots = zoneSlots.length ? zoneSlots : [6,7,8];
-  level.iceZones = (level.iceZones || []).map((source,i)=>mapZoneToPlatform(source,platformAt(safeZoneSlots[i%safeZoneSlots.length]),i,'ice'));
-  level.currents = (level.currents || []).map((source,i)=>mapZoneToPlatform(source,platformAt(safeZoneSlots[(i+1)%safeZoneSlots.length]),i,'current'));
-  level.windZones = (level.windZones || []).map((source,i)=>mapZoneToPlatform(source,platformAt(safeZoneSlots[(i+2)%safeZoneSlots.length]),i,'wind'));
-
-  // Each ruin has its own aqueduct channels; their positions form the route
-  // rather than repeating two identical pools under every level.
-  const sourceHazards = level.hazards || [];
-  const waterSource = sourceHazards.find(item=>item.type==='water') || {id:`room-${level.id}-water-pool`,type:'water'};
-  const fireSource = sourceHazards.find(item=>item.type==='fire') || {id:`room-${level.id}-lava-pool`,type:'fire',visual:'lava'};
-  level.hazards = room.pools.map((pool,index) => {
-    const source = pool.type === 'water' ? waterSource : fireSource;
-    const support = Number.isInteger(pool.platformSlot) ? platformAt(pool.platformSlot) : null;
-    return {...source,id:`room-${level.id}-${pool.type}-channel-${index+1}`,x:pool.x,y:support ? support.y-26 : ELEMENTAL_FLOOR_Y-26,w:pool.w,h:26,...(pool.visual ? {visual:pool.visual} : {})};
-  });
-  // Steam vents remain as compact upper-room obstacles and never sit on a
-  // switch, collectible, exit, checkpoint or moving platform.
-  const steamSources = sourceHazards.filter(item=>item.type==='steam');
-  const steamPlatform = platformAt(8); // stable shared bridge between both elemental lanes
-  steamSources.forEach((source,i)=>{
-    const controllingValve = source.valveId ? level.valves.find(item=>item.id===source.valveId) : null;
-    const valveIndex = controllingValve ? Math.max(0,level.valves.findIndex(item=>item.id===controllingValve.id)) : i;
-    const count = controllingValve ? level.valves.length : Math.max(1,steamSources.length);
-    const fraction = (valveIndex+1)/(count+1);
-    const ventX = steamPlatform.x + steamPlatform.w*fraction;
-    // Compact plumes are evenly spaced on the shared bridge and remain clear
-    // of the lower checkpoint and the side-mounted levers/valves.
-    level.hazards.push({...source,x:ventX-15,y:steamPlatform.y-58,w:30,h:50});
-  });
-  // Keep additional moving/cycling liquid hazards from the world blueprints.
-  const retainedDynamicHazards = sourceHazards.filter(item =>
-    item !== waterSource && item !== fireSource && item.type !== 'steam' &&
-    (item.motion || item.cycle || item.valveId)
-  );
-  retainedDynamicHazards.forEach((source,i)=>{
-    const laneX = source.type === 'water' ? 390 : 700;
-    level.hazards.push({...source,x:laneX+(i%2)*28,y:ELEMENTAL_FLOOR_Y-26,w:82,h:26});
-  });
-  // Green swamp is an occasional shared hazard: neither element can cross it.
-  if (level.difficulty >= 2 && localIndex % 3 === 2) {
-    level.hazards.push({id:`room-${level.id}-green-swamp`,type:'toxic',visual:'toxic',x:680,y:ELEMENTAL_FLOOR_Y-26,w:82,h:26});
-  }
-
-  // Checkpoints sit on a stable, non-goal side shelf whenever possible.
-  // Avoid switches, collectibles, doors, controls, moving/cycling ledges and hazards.
-  const checkpointBlockedSlots = new Set([...switchSlots,...gemSlots,...doorSlots,...controlSlots]);
-  const checkpointCandidates = [7,8,9,10,0,1,12]
-    .filter(slot => !checkpointBlockedSlots.has(slot))
-    .map(slot => platformAt(slot))
-    .filter(platform => !platform.motion && !platform.cycle);
-  const checkpointSpot = checkpointCandidates.map(platform => ({
-    platform,
-    x:platform.x + platform.w/2,
-    y:platform.y - 13
-  })).find(candidate => {
-    const safetyBody = {x:candidate.x-42,y:candidate.y-41,w:84,h:82};
-    return level.hazards.every(hazard => !rectsOverlap(safetyBody,hazard));
-  }) || {platform:platformAt(0),x:platformAt(0).x+platformAt(0).w/2,y:platformAt(0).y-13};
-  level.checkpoint = {x:checkpointSpot.x,y:checkpointSpot.y,radius:30,platformId:checkpointSpot.platform.id};
-  level.gate = {...room.gate,id:`room-${level.id}-shared-gate`,orientation:'vertical'};
-  level.ruinWalls = room.walls.map(([x,y,w,h,solid=true],index)=>({id:`room-${level.id}-rubble-${index+1}`,x,y,w,h,solid,variant:(index+worldIndex)%4}));
-  level.mapVersion = ELEMENTAL_MAP_VERSION;
-  level.mapName = room.name;
-  const mazeRouteSlots = [[0,2,4,6,7,9],[1,3,5,11,8,10]];
-  const mazeTurns = mazeRouteSlots.reduce((total,slots) => {
-    const centers = slots.map(slot => platforms[slot].x + platforms[slot].w/2);
-    let previousDirection = 0, turns = 0;
-    for (let i=1;i<centers.length;i++) {
-      const direction = Math.sign(centers[i]-centers[i-1]);
-      if (direction && previousDirection && direction !== previousDirection) turns++;
-      if (direction) previousDirection = direction;
+function getReachablePlatformIds(startId, platforms) {
+  const reached = new Set([startId]);
+  const queue = [platforms.find(platform => platform.id === startId)].filter(Boolean);
+  while (queue.length) {
+    const source = queue.shift();
+    for (const target of platforms) {
+      if (reached.has(target.id)) continue;
+      const rise = source.y - target.y;
+      if (horizontalJumpReach(rise) >= platformGap(source, target)) {
+        reached.add(target.id);
+        queue.push(target);
+      }
     }
-    return total + turns;
-  },0);
-  level.mapTopology = {
-    route:'ruins-maze-coop',
-    tiers:[...new Set(platforms.map(platform=>platform.y))].sort((a,b)=>a-b),
-    platformCount:platforms.length,
-    wallFragmentCount:level.ruinWalls.length,
-    solidRubbleCount:level.ruinWalls.filter(wall=>wall.solid).length,
-    sideRoutes:2,
-    mazeTurns,
-    randomBranches:0,
-    corridorCount:platforms.filter(platform=>platform.corridor).length,
-    partitionCount:level.ruinWalls.filter(wall=>!wall.solid).length,
-    roomGrammar:'side-view-dungeon-labyrinth-with-turning-corridors',
-    centralRejoin:true,
-    exitLayout:'paired-elemental-door-alcoves',
-    roomBased:true
-  };
-  level.worldWidth = ELEMENTAL_WORLD_WIDTH;
-  level.worldHeight = ELEMENTAL_WORLD_HEIGHT;
-  return level;
+  }
+  return reached;
 }
 
-const CLASSIC_PROTOTYPE_LAYOUTS = [
-  {
-    name:'Twin Gate Temple', mechanic:'Dua galeri pintu, jalur permata atas, saluran elemen bawah, dan gerbang kerja sama',
-    platforms:[
-      ['west-high-ledge',72,195,300],['east-high-ledge',788,195,300],
-      ['west-upper-route',165,275,235],['east-upper-route',760,275,245],
-      ['shared-door-gallery',95,355,970],
-      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
-      ['west-inner-step',340,425,140],['east-inner-step',660,425,130],
-      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
-    ],
-    routes:{fire:[5,7,4],water:[6,8,4]},
-    hazards:[
-      {id:'west-lava-channel',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
-      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
-      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
-      {id:'east-lava-pit',x:800,y:449,w:55,h:26,type:'fire',visual:'lava'}
-    ],
-    switches:[{element:'fire',platform:4,x:465},{element:'water',platform:4,x:695}],
-    gems:[{element:'fire',platform:0,x:215},{element:'water',platform:1,x:920}],
-    doors:[{element:'fire',platform:4,x:300},{element:'water',platform:4,x:820}],
-    walls:[
-      [0,24,24,526,true],[1136,24,24,526,true],
-      [145,175,18,180,true],[1010,175,18,180,true],
-      [500,315,24,40,false],[620,315,24,40,false],
-      [250,215,20,40,'solid'],[850,215,20,40,'solid'],
-      [485,335,44,12,false],[635,335,44,12,false],
-      [76,82,155,14,false],[930,82,155,14,false]
-    ],
-    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    note:'Dua karakter bergerak di galeri masing-masing, mengaktifkan tombol di sisi sendiri, lalu membuka gerbang tengah. Jalur atas menyimpan permata tambahan.'
-  },
-  {
-    name:'Twin Lift Hall', mechanic:'Galeri bertingkat, lift tengah, lantai es, dan saluran elemen terpisah',
-    platforms:[
-      ['west-high-ledge',48,195,285],['east-high-ledge',830,195,280],
-      ['west-upper-route',145,275,210],['east-upper-ice-route',810,275,220],
-      ['shared-door-gallery',135,355,890],
-      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
-      ['west-lift',220,310,100],['west-inner-step',340,425,140],['east-inner-step',660,425,130],
-      ['east-lift',850,310,100],['east-wall-alcove',1050,255,70]
-    ],
-    routes:{fire:[5,8,4],water:[6,9,4]},
-    platformKinds:{3:'ice'},
-    hazards:[
-      {id:'west-lava-channel',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
-      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
-      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
-      {id:'east-lava-pit',x:800,y:449,w:55,h:26,type:'fire',visual:'lava'},
-      {id:'lift-steam',x:535,y:405,w:42,h:44,type:'steam',visual:'steam',cycle:{periodMs:6200,activeMs:1500,phaseMs:600}}
-    ],
-    switches:[{element:'fire',platform:4,x:445},{element:'water',platform:4,x:715}],
-    gems:[{element:'fire',platform:0,x:205},{element:'water',platform:1,x:955}],
-    doors:[{element:'fire',platform:4,x:285},{element:'water',platform:4,x:815}],
-    walls:[
-      [0,24,24,526,true],[1136,24,24,526,true],
-      [125,175,18,180,true],[1035,175,18,180,true],
-      [500,315,24,40,false],[620,315,24,40,false],
-      [250,215,20,40,'solid'],[850,215,20,40,'solid'],
-      [480,335,42,12,false],[655,335,42,12,false],
-      [92,82,145,14,false],[930,82,145,14,false]
-    ],
-    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    movingPlatforms:[{slot:7,axis:'y',amplitude:18,periodMs:7200,phaseMs:0},{slot:10,axis:'y',amplitude:18,periodMs:7200,phaseMs:3600}],
-    iceZones:[{id:'east-ice-gallery',x:810,y:240,w:145,h:34}],
-    currents:[{id:'lift-cross-current',x:475,y:395,w:150,h:58,forceX:20,forceY:-12,pulsePeriodMs:7200,phaseMs:900}],
-    note:'Dua lift bergerak menghubungkan galeri utama dengan jalur atas di masing-masing sisi. Es mengubah gesekan dan semburan uap mengatur waktu perpindahan.'
-  },
-  {
-    name:'Furnace Split Chambers', mechanic:'Ruang bara bersekat, jalur aman elemen, dan semburan uap',
-    platforms:[
-      ['west-high-ledge',95,195,275],['east-high-ledge',770,195,320],
-      ['west-upper-route',185,275,205],['east-upper-route',760,275,225],
-      ['shared-door-gallery',75,355,1010],
-      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
-      ['west-inner-step',340,425,140],['east-inner-step',660,425,130],
-      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
-    ],
-    routes:{fire:[5,7,4],water:[6,8,4]},
-    hazards:[
-      {id:'west-pulsing-lava',x:155,y:449,w:80,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:2600,phaseMs:450}},
-      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
-      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
-      {id:'east-pulsing-lava',x:800,y:449,w:55,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:2600,phaseMs:900}},
-      {id:'gallery-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',cycle:{periodMs:5600,activeMs:1500,phaseMs:900}}
-    ],
-    switches:[{element:'fire',platform:4,x:455},{element:'water',platform:4,x:705}],
-    gems:[{element:'fire',platform:0,x:240},{element:'water',platform:1,x:920}],
-    doors:[{element:'fire',platform:4,x:270},{element:'water',platform:4,x:830}],
-    walls:[
-      [0,24,24,526,true],[1136,24,24,526,true],
-      [160,175,18,180,true],[1000,175,18,180,true],
-      [500,315,24,40,false],[620,315,24,40,false],
-      [270,215,20,40,'solid'],[850,215,20,40,'solid'],
-      [485,335,45,12,false],[645,335,45,12,false],
-      [110,82,155,14,false],[920,82,155,14,false]
-    ],
-    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    note:'Lava memiliki jendela aman yang lebih panjang dan uap menyala singkat. Tunggu pulsa mereda, lalu aktifkan tombol pada sisi masing-masing.'
-  },
-  {
-    name:'Wind Cross Gallery', mechanic:'Galeri silang, lift sisi, arus angin, dan jalur permata atas',
-    platforms:[
-      ['west-high-ledge',55,195,300],['east-high-ledge',810,195,295],
-      ['west-upper-route',155,275,215],['east-upper-route',785,275,235],
-      ['shared-door-gallery',110,355,940],
-      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
-      ['wind-lift',450,300,95],['west-inner-step',340,425,140],['east-inner-step',660,425,130],
-      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
-    ],
-    routes:{fire:[5,8,4],water:[6,9,4]},
-    hazards:[
-      {id:'west-lava-channel',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
-      {id:'west-water-pit',x:285,y:449,w:55,h:26,type:'water'},
-      {id:'east-water-channel',x:925,y:449,w:80,h:26,type:'water'},
-      {id:'east-lava-pit',x:800,y:449,w:55,h:26,type:'fire',visual:'lava'}
-    ],
-    switches:[{element:'fire',platform:4,x:440},{element:'water',platform:4,x:720}],
-    gems:[{element:'fire',platform:0,x:205},{element:'water',platform:1,x:950}],
-    doors:[{element:'fire',platform:4,x:285},{element:'water',platform:4,x:815}],
-    walls:[
-      [0,24,24,526,true],[1136,24,24,526,true],
-      [135,175,18,180,true],[1025,175,18,180,true],
-      [500,315,24,40,false],[620,315,24,40,false],
-      [270,215,20,40,'solid'],[850,215,20,40,'solid'],
-      [480,335,42,12,false],[655,335,42,12,false],
-      [95,82,145,14,false],[930,82,145,14,false]
-    ],
-    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    movingPlatform:{slot:7,axis:'y',amplitude:38,periodMs:6100,phaseMs:1600},
-    windZones:[
-      {id:'west-updraft',x:170,y:245,w:118,h:80,forceX:0,forceY:-25,pulsePeriodMs:7200,phaseMs:0,leverId:'wind-west'},
-      {id:'east-crosswind',x:870,y:245,w:118,h:80,forceX:-18,forceY:-12,reversePeriodMs:7600,phaseMs:1200,leverId:'wind-east'}
-    ],
-    windLevers:[
-      {id:'wind-west',x:370,y:390,element:'fire',label:'Tuas Bara',radius:52},
-      {id:'wind-east',x:790,y:390,element:'water',label:'Tuas Air',radius:52}
-    ],
-    requiredWindLevers:['wind-west','wind-east'],
-    note:'Tuas di pijakan sisi mengubah arus udara. Lift bergerak memberi akses alternatif ke jalur atas dan permata.'
-  },
-  {
-    name:'Ancient Twin Valve Vault', mechanic:'Ruang katup ganda, urutan tombol, dan jalur silang',
-    platforms:[
-      ['west-high-ledge',80,195,285],['east-high-ledge',800,195,300],
-      ['west-upper-route',175,275,215],['east-upper-route',775,275,235],
-      ['shared-door-gallery',80,355,1000],
-      ['west-entry-gallery',145,475,325],['east-entry-gallery',690,475,325],
-      ['central-valve-step',445,295,100],['west-inner-step',340,425,140],['east-inner-step',660,425,130],
-      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
-    ],
-    routes:{fire:[5,8,4],water:[6,9,4]},
-    hazards:[
-      {id:'west-sealed-lava',x:155,y:449,w:80,h:26,type:'fire',visual:'lava'},
-      {id:'west-sealed-water',x:285,y:449,w:55,h:26,type:'water',valveId:'heart-fire-valve'},
-      {id:'east-sealed-water',x:925,y:449,w:80,h:26,type:'water'},
-      {id:'east-sealed-lava',x:800,y:449,w:55,h:26,type:'fire',visual:'lava',valveId:'heart-water-valve'},
-      {id:'sealed-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',valveId:'heart-water-valve',cycle:{periodMs:5900,activeMs:1600,phaseMs:700}}
-    ],
-    switches:[{element:'fire',platform:4,x:455},{element:'water',platform:4,x:705}],
-    gems:[{element:'fire',platform:0,x:225},{element:'water',platform:1,x:930}],
-    doors:[{element:'fire',platform:4,x:275},{element:'water',platform:4,x:825}],
-    walls:[
-      [0,24,24,526,true],[1136,24,24,526,true],
-      [150,175,18,180,true],[1015,175,18,180,true],
-      [500,315,24,40,false],[620,315,24,40,false],
-      [260,215,20,40,'solid'],[850,215,20,40,'solid'],
-      [485,335,44,12,false],[650,335,44,12,false],
-      [105,82,150,14,false],[930,82,150,14,false]
-    ],
-    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
-    valves:[
-      {id:'heart-fire-valve',x:250,y:447,element:'fire',label:'Katup Bara',radius:58},
-      {id:'heart-water-valve',x:910,y:447,element:'water',label:'Katup Air',radius:58}
-    ],
-    requiredValves:['heart-fire-valve','heart-water-valve'],
-    switchSequence:['fire','water'],
-    windLevers:[
-      {id:'heart-wind-west',x:380,y:327,element:'fire',label:'Tuas Bara',radius:50},
-      {id:'heart-wind-east',x:780,y:327,element:'water',label:'Tuas Air',radius:50}
-    ],
-    // Wind levers remain usable as optional aids; they no longer make the final gate mandatory.
-    requiredWindLevers:[],
-    iceZones:[{id:'heart-west-ice',x:160,y:342,w:92,h:34}],
-    windZones:[
-      {id:'heart-west-updraft',x:165,y:245,w:118,h:80,forceX:0,forceY:-24,pulsePeriodMs:7200,phaseMs:400,leverId:'heart-wind-west'},
-      {id:'heart-east-crosswind',x:860,y:245,w:118,h:80,forceX:-16,forceY:-12,reversePeriodMs:7600,phaseMs:1300,leverId:'heart-wind-east'}
-    ],
-    currents:[
-      {id:'heart-central-current',x:475,y:405,w:78,h:66,forceX:10,forceY:-10,pulsePeriodMs:6800,phaseMs:1100},
-      {id:'heart-west-current',x:340,y:342,w:90,h:34,forceX:8,forceY:0,pulsePeriodMs:6200,phaseMs:700}
-    ],
-    note:'Atur dua katup, aktifkan tombol sesuai urutan, lalu capai pintu elemen masing-masing. Tuas angin dapat digunakan sebagai bantuan opsional.'
+function findPlatformPath(startId, targetId, platforms) {
+  if (startId === targetId) return [startId];
+  const queue = [startId];
+  const previous = new Map([[startId, null]]);
+  while (queue.length) {
+    const id = queue.shift();
+    const source = platforms.find(platform => platform.id === id);
+    if (!source) continue;
+    for (const target of platforms) {
+      if (previous.has(target.id)) continue;
+      if (horizontalJumpReach(source.y - target.y) < platformGap(source, target)) continue;
+      previous.set(target.id, id);
+      if (target.id === targetId) {
+        const path = [targetId];
+        let current = id;
+        while (current) {
+          path.unshift(current);
+          current = previous.get(current);
+        }
+        return path;
+      }
+      queue.push(target.id);
+    }
   }
-];
-function createClassicPrototypeMap(level, worldIndex) {
-  const layout = CLASSIC_PROTOTYPE_LAYOUTS[worldIndex];
-  const movingPlatforms = layout.movingPlatforms || (layout.movingPlatform ? [layout.movingPlatform] : []);
-  const makePlatform = ([name,x,y,w], slot) => {
-    const moving = movingPlatforms.find(item => item.slot === slot);
-    return {
-      id:`classic-${level.id}-${name}`,x,y,w,h:10,visualH:36,kind:layout.platformKinds?.[slot] || 'stone',corridor:false,chamber:true,oneWay:true,
-      ...(moving ? {motion:{axis:moving.axis,amplitude:moving.amplitude,periodMs:moving.periodMs,phaseMs:moving.phaseMs}} : {})
-    };
-  };
-  const platforms = layout.platforms.map(makePlatform);
-  const bySlot = slot => platforms[slot];
-  const walls = layout.walls.map(([x,y,w,h,mode=false],index) => ({
-    id:`classic-${level.id}-masonry-${index+1}`,x,y,w,h,solid:mode===true||mode==='solid',blockSideOnly:mode===true,variant:(index+worldIndex)%4
-  }));
-  // Room divisions are placed manually in layout.walls. Avoid generating
-  // a pair of pillars around every ledge: that repetitive frame made the
-  // rooms look like stacked shelves and blocked otherwise valid routes.
-  // These hand-authored broken wall panels define the dungeon spaces while
-  // leaving the actual jump paths open.
-  // Short collapsed stones are jumpable obstructions, not additional shelves.
-  (layout.rubble || []).forEach(([x,y,w,h],index) => walls.push({
-    id:`classic-${level.id}-fallen-stone-${index+1}`,x,y,w,h,solid:true,blockSideOnly:false,variant:(index+worldIndex+1)%4
-  }));
+  return [startId];
+}
 
-  const makeDoor = (element,doorSpec) => {
-    const platform = bySlot(doorSpec.platform);
-    return {x:doorSpec.x,y:platform.y-72,w:42,h:72,element,platformId:platform.id};
-  };
-  const doors = {
-    fire:makeDoor('fire',layout.doors.find(item=>item.element==='fire')),
-    water:makeDoor('water',layout.doors.find(item=>item.element==='water'))
-  };
-  const switches = layout.switches.map(item => {
-    const platform = bySlot(item.platform);
-    return {id:item.element,element:item.element,x:item.x,y:platform.y-4,w:58,h:10,platformId:platform.id};
+function isPlatformStable(platform) {
+  return !platform.motion && !platform.cycle;
+}
+
+function playerBodyAtPlatformX(platform, x) {
+  return { x: x - 14, y: platform.y - 26, w: 28, h: 26 };
+}
+
+function isSafeStandingPoint(platform, x, element, hazards) {
+  const body = playerBodyAtPlatformX(platform, x);
+  return hazards.every(hazard => {
+    if (hazard.type === element) return true;
+    return !rectsOverlap(body, hazard);
   });
-  const gems = layout.gems.map(item => {
-    const platform = bySlot(item.platform);
-    return {id:item.element,element:item.element,x:item.x,y:platform.y-28,platformId:platform.id};
+}
+
+function safePlatformPoints(platform, element, hazards, preferredX = null, strictSide = true) {
+  const minX = platform.x + 19;
+  const maxX = platform.x + platform.w - 19;
+  if (maxX < minX) return [];
+  const fractions = [.16,.26,.36,.46,.54,.64,.74,.84];
+  const points = fractions
+    .map(fraction => Math.max(minX, Math.min(maxX, platform.x + platform.w * fraction)))
+    .concat(preferredX == null ? [] : [Math.max(minX, Math.min(maxX, preferredX))])
+    .map(x => Math.round(x));
+  const middle = ELEMENTAL_WORLD_WIDTH / 2;
+  return [...new Set(points)].filter(x => {
+    if (strictSide && element === 'fire' && x > middle - 32) return false;
+    if (strictSide && element === 'water' && x < middle + 32) return false;
+    return isSafeStandingPoint(platform, x, element, hazards);
   });
-  const hazards = layout.hazards.map((hazard,index) => ({...hazard,id:`classic-${level.id}-${hazard.id||`hazard-${index+1}`}`,...(hazard.valveId?{valveId:`classic-${level.id}-${hazard.valveId}`}:{ }),y:hazard.y ?? ELEMENTAL_FLOOR_Y-26,h:hazard.h ?? 26}));
+}
+
+function chooseStartSurface(platforms, element, hazards) {
+  const candidates = platforms
+    .filter(platform => isPlatformStable(platform) && platform.w >= 48)
+    .map(platform => ({ platform, points:safePlatformPoints(platform, element, hazards, null, true) }))
+    .filter(item => item.points.length);
+  candidates.sort((a,b) =>
+    b.platform.y - a.platform.y ||
+    b.platform.w - a.platform.w ||
+    (element === 'fire' ? a.platform.x - b.platform.x : b.platform.x - a.platform.x)
+  );
+  if (candidates.length) {
+    const selected = candidates[0];
+    const preferredFraction = element === 'fire' ? .70 : .30;
+    const preferredX = selected.platform.x + selected.platform.w * preferredFraction;
+    selected.x = selected.points.sort((a,b)=>Math.abs(a-preferredX)-Math.abs(b-preferredX))[0];
+    return selected;
+  }
+
+  // Fallback keeps the character on a stable authored platform, but still
+  // tries to preserve the correct elemental half of the room.
+  const fallback = platforms
+    .filter(platform => isPlatformStable(platform) && platform.w >= 48)
+    .map(platform => ({
+      platform,
+      points:safePlatformPoints(platform, element, hazards, null, false)
+    }))
+    .filter(item => item.points.length)
+    .sort((a,b) => b.platform.y - a.platform.y)[0];
+  if (fallback) {
+    const middle = ELEMENTAL_WORLD_WIDTH / 2;
+    const preferred = element === 'fire' ? middle - 60 : middle + 60;
+    fallback.x = fallback.points.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred))[0];
+    return fallback;
+  }
+  const platform = platforms.find(item => item.w >= 48) || platforms[0];
+  const x = Math.max(platform.x + 19, Math.min(platform.x + platform.w - 19, element === 'fire' ? 480 : 680));
+  return { platform, x, points:[x] };
+}
+
+function chooseSupportSurface(platforms, reachableIds, element, hazards, source, options = {}) {
+  const stableOnly = options.stableOnly !== false;
+  const minimumWidth = options.minWidth || 48;
+  let candidates = platforms.filter(platform =>
+    reachableIds.has(platform.id) && platform.w >= minimumWidth &&
+    (!stableOnly || isPlatformStable(platform))
+  );
+  const rankCandidates = strictSide => candidates.map(platform => {
+    const points = safePlatformPoints(platform, element, hazards, source?.x, strictSide);
+    if (!points.length) return null;
+    const sourceX = Number.isFinite(Number(source?.x)) ? Number(source.x) : (element === 'fire' ? 480 : 680);
+    const sourceY = Number.isFinite(Number(source?.y)) ? Number(source.y) : platform.y - 13;
+    const preferredSideX = element === 'fire' ? 500 : 660;
+    const x = points.sort((a,b) =>
+      (Math.abs(a-sourceX) + Math.abs(a-preferredSideX)*.16) -
+      (Math.abs(b-sourceX) + Math.abs(b-preferredSideX)*.16)
+    )[0];
+    const distance = Math.abs(x-sourceX) + Math.abs((platform.y-13)-sourceY)*.55;
+    const motionPenalty = isPlatformStable(platform) ? 0 : 260;
+    return { platform, x, score:distance + motionPenalty };
+  }).filter(Boolean).sort((a,b)=>a.score-b.score);
+  let ranked = rankCandidates(true);
+  if (!ranked.length) ranked = rankCandidates(false);
+  if (ranked.length) return ranked[0];
+  return chooseStartSurface(platforms, element, hazards);
+}
+
+function chooseDoorSurface(platforms, reachableIds, element, startSurface, hazards) {
+  const targetX = element === 'fire' ? ELEMENTAL_WORLD_WIDTH / 2 - 82 : ELEMENTAL_WORLD_WIDTH / 2 + 82;
+  const candidates = platforms
+    .filter(platform => reachableIds.has(platform.id) && isPlatformStable(platform) && platform.w >= 58)
+    .map(platform => ({
+      platform,
+      points:safePlatformPoints(platform, element, hazards, targetX, true)
+    }))
+    .filter(item => item.points.length)
+    .map(item => ({
+      ...item,
+      centerX:item.points.sort((a,b)=>Math.abs(a-targetX)-Math.abs(b-targetX))[0]
+    }))
+    .sort((a,b)=>Math.abs(a.centerX-targetX)-Math.abs(b.centerX-targetX) || b.platform.w-a.platform.w);
+  if (candidates.length) return candidates[0];
+  const platform = startSurface.platform;
+  const points = safePlatformPoints(platform, element, hazards, targetX, false);
+  const centerX = points.length ? points.sort((a,b)=>Math.abs(a-targetX)-Math.abs(b-targetX))[0] : startSurface.x;
+  return { platform, centerX };
+}
+
+function placeBlueprintObject(source, element, kind, support) {
+  const platform = support.platform;
+  const x = support.x ?? support.centerX ?? platformCenter(platform);
+  const common = { ...source, platformId:platform.id, x };
+  if (kind === 'switch') return { ...common, y:platform.y - 5, w:source.w || 54, h:source.h || 10 };
+  if (kind === 'gem') return { ...common, y:platform.y - 28 };
+  return { ...common, y:platform.y - 13, radius:source.radius || 50 };
+}
+
+function createBlueprintPuzzleMap(level, blueprint) {
+  const prefix = `level-${level.id}-`;
+  const idMap = id => {
+    if (!id) return id;
+    const value = String(id);
+    return value.startsWith(prefix) ? value : `${prefix}${value}`;
+  };
+  const hazards = (level.hazards || []).map((hazard,index) => ({
+    ...hazard,
+    id:idMap(hazard.id || `hazard-${index+1}`),
+    valveId:idMap(hazard.valveId)
+  }));
+  const platforms = (level.platforms || []).map((platform,index) => ({
+    ...platform,
+    id:idMap(platform.id || `platform-${index+1}`),
+    h:Math.max(8, Number(platform.h) || 16),
+    visualH:26,
+    oneWay:true,
+    corridor:false
+  }));
+  const rawControls = {
+    valves:(level.valves || []).map(item=>({...item})),
+    windLevers:(level.windLevers || []).map(item=>({...item}))
+  };
+  const requiredValves = (level.requiredValves || []).map(idMap);
+  const requiredWindLevers = (level.requiredWindLevers || []).map(idMap);
+  const mappedHazards = hazards;
+
+  const startSurfaces = {
+    fire:chooseStartSurface(platforms,'fire',mappedHazards),
+    water:chooseStartSurface(platforms,'water',mappedHazards)
+  };
+  const reachability = {
+    fire:getReachablePlatformIds(startSurfaces.fire.platform.id,platforms),
+    water:getReachablePlatformIds(startSurfaces.water.platform.id,platforms)
+  };
+  const switchSources = level.switches || [];
+  const switches = ['fire','water'].map(element => {
+    const source = switchSources.find(item => item.element === element) || { id:element,element,x:element==='fire'?250:900,y:510 };
+    const support = chooseSupportSurface(platforms,reachability[element],element,mappedHazards,source,{stableOnly:true,minWidth:48});
+    return placeBlueprintObject({ ...source,id:element,element },element,'switch',support);
+  });
+  const gems = ['fire','water'].map(element => {
+    const source = (level.gems || []).find(item => item.element === element) || { id:element,element,x:element==='fire'?390:760,y:380 };
+    const support = chooseSupportSurface(platforms,reachability[element],element,mappedHazards,source,{stableOnly:true,minWidth:48});
+    return placeBlueprintObject({ ...source,id:element,element },element,'gem',support);
+  });
+
+  const mapControlList = (items, type) => items.map(item => {
+    const approachElement = item.element === 'fire' || item.element === 'water'
+      ? item.element
+      : Math.abs((Number(item.x) || ELEMENTAL_WORLD_WIDTH / 2) - startSurfaces.fire.x) <= Math.abs((Number(item.x) || ELEMENTAL_WORLD_WIDTH / 2) - startSurfaces.water.x) ? 'fire' : 'water';
+    const support = chooseSupportSurface(platforms,reachability[approachElement],approachElement,mappedHazards,item,{stableOnly:true,minWidth:58});
+    const mapped = placeBlueprintObject({ ...item,id:idMap(item.id) },approachElement,type,support);
+    return { ...mapped, element:item.element ?? null, approachElement, controlKind:type };
+  });
+  const valves = mapControlList(rawControls.valves,'valve');
+  const windLevers = mapControlList(rawControls.windLevers,'wind');
+
+  const doors = {};
+  for (const element of ['fire','water']) {
+    const support = chooseDoorSurface(platforms,reachability[element],element,startSurfaces[element],mappedHazards);
+    const width = 42, height = 70;
+    doors[element] = {
+      x:Math.round(support.centerX - width/2),
+      y:Math.round(support.platform.y - height),
+      w:width,h:height,element,
+      platformId:support.platform.id
+    };
+  }
+
+  const routeFor = element => {
+    const objectives = [
+      switches.find(item=>item.element===element)?.platformId,
+      ...valves.filter(item=>(item.element || item.approachElement)===element).map(item=>item.platformId),
+      ...windLevers.filter(item=>(item.element || item.approachElement)===element).map(item=>item.platformId),
+      gems.find(item=>item.element===element)?.platformId,
+      doors[element]?.platformId
+    ].filter(Boolean);
+    const route = [startSurfaces[element].platform.id];
+    let current = route[0];
+    for (const target of objectives) {
+      const path = findPlatformPath(current,target,platforms);
+      for (const id of path.slice(1)) if (route.at(-1)!==id) route.push(id);
+      current = target;
+    }
+    return route;
+  };
+
+  // Put the checkpoint on safe central ground. It is optional; it must never
+  // sit inside a lethal pool or on a moving surface.
+  const checkpointX = findSafeFloorPoint(580,mappedHazards,null,470,690,32);
+  const checkpoint = { x:checkpointX, y:ELEMENTAL_FLOOR_Y-13, radius:28 };
+  const gate = { id:`${prefix}shared-gate`,x:566,y:455,w:28,h:95,orientation:'vertical' };
   const exitLeft = Math.min(doors.fire.x,doors.water.x);
+  const exitTop = Math.min(doors.fire.y,doors.water.y);
   const exitRight = Math.max(doors.fire.x+doors.fire.w,doors.water.x+doors.water.w);
+  const exitBottom = Math.max(doors.fire.y+doors.fire.h,doors.water.y+doors.water.h);
 
   level.platforms = platforms;
-  level.floorY = ELEMENTAL_FLOOR_Y;
-  level.floorSegments = [{id:`classic-${level.id}-main-floor`,x:20,y:ELEMENTAL_FLOOR_Y,w:ELEMENTAL_WORLD_WIDTH-40,h:70}];
-  level.ruinWalls = walls;
-  level.hazards = hazards;
+  level.hazards = mappedHazards;
   level.switches = switches;
   level.gems = gems;
+  level.valves = valves;
+  level.windLevers = windLevers;
+  level.requiredValves = requiredValves;
+  level.requiredWindLevers = requiredWindLevers;
+  level.windZones = (level.windZones || []).map(zone => ({ ...zone, leverId:idMap(zone.leverId) }));
   level.doors = doors;
-  level.exit = {x:exitLeft,y:Math.min(doors.fire.y,doors.water.y),w:exitRight-exitLeft,h:72};
-  level.spawn = {host:{x:65,y:ELEMENTAL_FLOOR_Y-13},guest:{x:ELEMENTAL_WORLD_WIDTH-65,y:ELEMENTAL_FLOOR_Y-13}};
-  level.gate = {...layout.gate,id:`classic-${level.id}-shared-portcullis`,orientation:'vertical'};
-  level.checkpoint = {...layout.checkpoint,radius:30};
-  level.valves = (layout.valves || []).map(valve=>({...valve,id:`classic-${level.id}-${valve.id}`}));
-  level.requiredValves = (layout.requiredValves || []).map(id=>`classic-${level.id}-${id}`);
-  level.windLevers = (layout.windLevers || []).map(lever=>({...lever,id:`classic-${level.id}-${lever.id}`}));
-  level.requiredWindLevers = (layout.requiredWindLevers || []).map(id=>`classic-${level.id}-${id}`);
-  level.iceZones = layout.iceZones ?? level.iceZones ?? [];
-  level.currents = layout.currents ?? level.currents ?? [];
-  level.windZones = (layout.windZones ?? level.windZones ?? []).map(zone=>({...zone,...(zone.leverId?{leverId:`classic-${level.id}-${zone.leverId}`}:{})}));
-  level.switchSequence = layout.switchSequence || null;
-  level.mechanic = layout.mechanic;
-  level.note = layout.note;
-  level.difficultyLabel = getElementalDifficultyLabel(level.difficulty);
-  level.features = [...new Set([...(level.features || []),'classic-dual-route','cooperative-gate','elemental-hazards','paired-exits','handcrafted-room-layout'])];
-  level.mapVersion = ELEMENTAL_MAP_VERSION;
-  level.mapName = layout.name;
-  level.mapTopology = {
-    route:'classic-handcrafted-coop',handcraftedClassic:true,
-    platformCount:platforms.length,wallFragmentCount:walls.length,
-    solidRubbleCount:walls.filter(wall=>wall.solid&&!wall.blockSideOnly).length,wallBlockCount:walls.filter(wall=>wall.blockSideOnly).length,
-    sideRoutes:2,randomBranches:0,
-    corridorCount:0,partitionCount:walls.filter(wall=>wall.blockSideOnly).length,
-    roomGrammar:'fireboy-watergirl-classic-room-puzzle',centralRejoin:true,
-    exitLayout:'same-side-elemental-doors',roomBased:true,
-    characterRoutes:layout.routes
+  level.exit = { x:exitLeft,y:exitTop,w:exitRight-exitLeft,h:exitBottom-exitTop };
+  level.spawn = {
+    host:{ x:startSurfaces.fire.x,y:startSurfaces.fire.platform.y-ELEMENTAL_PLAYER_RADIUS+2 },
+    guest:{ x:startSurfaces.water.x,y:startSurfaces.water.platform.y-ELEMENTAL_PLAYER_RADIUS+2 }
   };
+  level.gate = gate;
+  level.checkpoint = checkpoint;
+  level.floorY = ELEMENTAL_FLOOR_Y;
+  level.floorSegments = [{ id:`${prefix}main-floor`,x:0,y:ELEMENTAL_FLOOR_Y,w:ELEMENTAL_WORLD_WIDTH,h:70 }];
+  level.ruinWalls = [];
+  level.mapName = `${level.worldShortName} · ${level.name}`;
+  level.difficultyLabel = getElementalDifficultyLabel(level.difficulty);
+  level.features = [...new Set([...(level.features || []),'authored-blueprint','paired-elemental-routes'])];
+  level.mapVersion = ELEMENTAL_MAP_VERSION;
   level.worldWidth = ELEMENTAL_WORLD_WIDTH;
   level.worldHeight = ELEMENTAL_WORLD_HEIGHT;
+  level.mapTopology = {
+    route:'authored-blueprint-coop',
+    roomGrammar:'one-of-fifty-hand-authored-puzzle-rooms',
+    blueprintId:blueprint?.id || level.name,
+    handcrafted:true,
+    handcraftedClassic:true,
+    repeatedTemplate:false,
+    platformCount:platforms.length,
+    wallFragmentCount:0,
+    corridorCount:0,
+    partitionCount:0,
+    sideRoutes:2,
+    randomBranches:0,
+    startPlatformIds:{fire:startSurfaces.fire.platform.id,water:startSurfaces.water.platform.id},
+    reachablePlatformIds:{fire:[...reachability.fire],water:[...reachability.water]},
+    characterRoutes:{fire:routeFor('fire'),water:routeFor('water')},
+    objectivePlatforms:{
+      switches:Object.fromEntries(switches.map(item=>[item.element,item.platformId])),
+      gems:Object.fromEntries(gems.map(item=>[item.element,item.platformId])),
+      valves:Object.fromEntries(valves.map(item=>[item.id,item.platformId])),
+      windLevers:Object.fromEntries(windLevers.map(item=>[item.id,item.platformId]))
+    },
+    approachElements:{
+      valves:Object.fromEntries(valves.map(item=>[item.id,item.approachElement])),
+      windLevers:Object.fromEntries(windLevers.map(item=>[item.id,item.approachElement]))
+    }
+  };
   return level;
 }
 
@@ -2064,8 +1808,7 @@ function makeLevel(index, sourceIndex = index) {
     },
     exit: { x: 870, y: 418, w: 82, h: 102 }
   };
-  const mappedLevel = createExplorationMap(level, sourceIndex);
-  return localIndex === 0 ? createClassicPrototypeMap(mappedLevel, worldIndex) : mappedLevel;
+  return createBlueprintPuzzleMap(level, blueprint);
 }
 
 export const ELEMENTAL_LEVELS = Object.freeze(Array.from({ length:50 }, (_, index) => Object.freeze(makeLevel(index))));
@@ -2093,8 +1836,8 @@ export function getElementalPrototypeLevel(levelNumber) {
 export function createElementalPlayer(role, saved = null, levelNumber = 1, prototype = false) {
   const level = prototype ? getElementalPrototypeLevel(levelNumber) : getElementalLevel(levelNumber);
   const spawn = level.spawn[role === 'guest' ? 'guest' : 'host'];
-  // Older builds used generated corridor maps. Respawn stale positions into the
-  // manually-authored classic puzzle rooms while retaining long-term progress.
+  // Older builds used repeated maze templates. Respawn stale positions into the
+  // authored per-level blueprint while retaining long-term player statistics.
   const compatibleMap = Number(saved?.mapVersion) === ELEMENTAL_MAP_VERSION;
   return {
     x: compatibleMap && Number.isFinite(saved?.x) ? saved.x : spawn.x,

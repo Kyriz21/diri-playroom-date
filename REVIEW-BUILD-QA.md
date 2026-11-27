@@ -1,3 +1,29 @@
+# QA — Diri. Playroom Date v0.44.0
+
+## Hasil verifikasi otomatis
+- [x] Kampanye memiliki 50 blueprint level individual dan semua level memakai data blueprint langsung.
+- [x] Peta tidak menambahkan platform maze sintetis, koridor, partisi, wall fragments, atau ruin walls.
+- [x] Setiap level memiliki 3–8 platform; siluet platform Level 44/47 sama tetapi tujuan/mekanik blueprint berbeda.
+- [x] Spawn, switch, permata, kontrol khusus, dan pintu kedua karakter diperiksa sisi elemen dan platform dukungannya.
+- [x] Jalur dari kedua spawn ke semua objektif dan pintu diperiksa dengan model jangkauan lompatan.
+- [x] Platform fisik dan visual tidak saling menumpuk.
+- [x] ID katup, hazard, tuas angin, dan referensi kontrol wajib konsisten.
+- [x] `npm test`: **199/199 lulus**; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- [x] Map version 29 dan campaign version 2.
+
+## Playtest manual masih wajib
+- [ ] Mainkan Level 01–10 dan pastikan level tutorial terbaca dan mudah dipahami.
+- [ ] Mainkan minimal satu level awal, tengah, dan akhir dari tiap dunia pada dua HP dengan Firebase aktif.
+- [ ] Pastikan karakter dapat melakukan lompatan berdasarkan rute nyata, bukan hanya perkiraan jarak otomatis.
+- [ ] Uji seluruh lift bergerak, es, arus, angin, katup, tuas, hazard berkala, switch, dan gerbang.
+- [ ] Pastikan kedua pemain menerima perpindahan level, skor permata, jumlah jatuh, dan bintang secara konsisten.
+- [ ] Uji refresh/reconnect saat bermain; pastikan posisi dan state puzzle tetap benar setelah migrasi.
+- [ ] Periksa landscape dan portrait pada perangkat nyata; pastikan HUD dan kontrol tidak menutup jalur atau objek.
+
+Tes otomatis menguji struktur source dan geometri; tes tersebut **bukan** bukti playtest manual 50 level telah dilakukan.
+
+---
+
 # QA — Diri. Playroom Date v0.43.0
 
 ## Hasil verifikasi otomatis v0.43.0
