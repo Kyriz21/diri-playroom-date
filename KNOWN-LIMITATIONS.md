@@ -1,4 +1,14 @@
-## v0.39.3 — batasan prototype labirin yang masih perlu diuji
+## v0.42.0 — batasan prototype yang masih perlu diuji
+- Lima map aktif memakai struktur galeri pusat dengan rute bawah dan cabang permata atas. Ini masih perspektif side-view, bukan maze top-down bebas atas/bawah.
+- Layout sudah memiliki dinding collision penuh dan pijakan batu, tetapi lintasan, tinggi penghalang, dan kemudahan berpindah antar-ruang tetap perlu diuji langsung dengan dua pemain.
+- Beberapa mekanik klasik seperti kotak dorong, platform yang ditahan dengan tombol, dan beberapa jenis sakelar belum dibuat pada prototype ini.
+- Perlu playtest di browser desktop dan dua HP untuk memastikan pemain tidak tersangkut di penghalang, hazard, pintu, atau lift.
+- Fisika lompatan dipertahankan pada `560 / 1500` (puncak teoretis sekitar 104,5 unit). Kenyamanan aktual tetap bergantung frame rate dan kontrol perangkat.
+- `ELEMENTAL_MAP_VERSION=22` dan `prototypeVersion=8` mengatur migrasi posisi/state puzzle. Statistik pemain serta keanggotaan room dipertahankan; Firebase Rules tidak berubah.
+
+---
+
+## v0.40.0 — batasan prototype labirin yang masih perlu diuji
 - Labirin masih memakai perspektif side-view agar kompatibel dengan kontrol kiri/kanan dan tombol lompat yang sudah ada; ini bukan maze top-down dengan gerakan bebas atas/bawah.
 - Partisi dinding dekoratif membentuk ruang dan koridor secara visual; hanya fragmen runtuhan yang ditandai solid yang menjadi penghalang collision. Perlu playtest untuk menilai apakah belokan dan pintu terbaca jelas saat dimainkan.
 - Lima level prototype sudah berbeda secara geometri, tetapi belum menjalani uji navigasi dua pemain secara langsung di browser/HP.

@@ -1,4 +1,14 @@
-## v0.39.3 — Side-View Labyrinth Maze
+## v0.42.0 — Fireboy & Watergirl Classic-style Co-op
+
+- Menyusun ulang lima level sebagai puzzle side-view klasik: spawn kiri/kanan di bawah, kolam air/lava, galeri utama, dua pintu pada tingkat yang sama, cabang permata di atas, dan gerbang bersama di tengah.
+- Setiap sisi memiliki hazard yang aman bagi karakternya serta hazard elemen lawan. Rute tiga tahap dibuat dari entry ledge, inner step, lalu galeri switch/pintu.
+- Lima komposisi manual berisi 11–12 pijakan/ledge, dinding penghalang di titik lintasan, dan dua pintu yang ditempatkan lebih ke bagian tengah galeri.
+- Level 2–5 memperkenalkan lift bergerak, es, uap, lava berdenyut, tuas angin, katup, dan urutan switch.
+- Fisika lompatan dipertahankan (`ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`, puncak teoretis ±104,5 unit). Analog tetap hanya menggerakkan kiri/kanan.
+- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`; Firebase Rules tidak berubah. Verifikasi: 194/194 tes otomatis lulus.
+- Playtest browser dan dua perangkat fisik dengan Firebase aktif masih diperlukan.
+
+## v0.40.0 — Classic Co-op Level Rebuild
 
 - Mengubah komposisi lima level prototype agar terbaca sebagai **labirin dungeon tampak samping**, bukan deretan rak/platform panjang: koridor lebih pendek, kamar ber-offset, jalur kiri/kanan yang berbelok, ruang penghubung dan gerbang elemen.
 - Lantai bawah menyatu dengan lantai utama. Tiga jangkar koridor bawah tetap dipakai untuk spawn/checkpoint/hazard, tetapi tidak lagi digambar sebagai platform terpisah.
@@ -7,7 +17,7 @@
 - Lima layout prototype memiliki geometri jalur yang berbeda. 45 blueprint level lanjutan tetap tersedia di engine.
 - Fisika lompatan dipertahankan (`ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`, puncak teoretis ±104,5 unit); kontrol analog tetap hanya menggerakkan kiri/kanan.
 - Menaikkan `ELEMENTAL_MAP_VERSION` ke 19 dan `prototypeVersion` ke 5 agar sesi dengan geometri v0.39.2 dimigrasikan ke spawn/layout baru. Statistik pemain dan membership room dipertahankan; Firebase Rules tidak berubah.
-- Cache key/package version menjadi v0.39.3. Verifikasi: 194/194 tes otomatis lulus; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- Cache key/package version menjadi v0.40.0. Verifikasi: 194/194 tes otomatis lulus; seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid.
 
 ## v0.39.2 — Ruins Water & Fire Maze
 

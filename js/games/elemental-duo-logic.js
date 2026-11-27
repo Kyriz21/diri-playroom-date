@@ -4,7 +4,7 @@
 export const ELEMENTAL_WORLD_WIDTH = 1160;
 export const ELEMENTAL_WORLD_HEIGHT = 620;
 export const ELEMENTAL_FLOOR_Y = 550;
-export const ELEMENTAL_MAP_VERSION = 19;
+export const ELEMENTAL_MAP_VERSION = 22;
 export const ELEMENTAL_PLAYER_RADIUS = 15;
 export const ELEMENTAL_GRAVITY = 1500;
 export const ELEMENTAL_MOVE_SPEED = 260;
@@ -267,7 +267,7 @@ const WORLD_ONE_BLUEPRINTS = [
       {id:'grove-8-e',x:830,y:440,w:95,kind:'stone'}
     ],
     hazards:[{id:'grove-8-water',x:285,y:493,w:48,h:35,type:'water'},{id:'grove-8-fire',x:610,y:493,w:48,h:35,type:'fire'}],
-    switches:[{id:'fire',element:'fire',x:220,y:435,w:52,h:10},{id:'water',element:'water',x:740,y:398,w:52,h:10}],
+    switches:[{id:'fire',element:'fire',x:150,y:435,w:52,h:10},{id:'water',element:'water',x:740,y:398,w:52,h:10}],
     gems:[{id:'fire',element:'fire',x:390,y:380},{id:'water',element:'water',x:740,y:380}],
     checkpoint:{x:490,y:482}
   },
@@ -381,7 +381,7 @@ const WORLD_TWO_BLUEPRINTS = [
     ],
     currents:[{id:'crystal-14-cross-flow',x:390,y:445,w:185,h:70,forceX:0,forceY:-95,phaseMs:800,pulsePeriodMs:7400}],
     hazards:[{id:'crystal-14-water',x:350,y:493,w:45,h:35,type:'water'},{id:'crystal-14-fire',x:690,y:493,w:45,h:35,type:'fire'}],
-    switches:[{id:'fire',element:'fire',x:220,y:445,w:56,h:10},{id:'water',element:'water',x:805,y:445,w:56,h:10}],
+    switches:[{id:'fire',element:'fire',x:150,y:445,w:56,h:10},{id:'water',element:'water',x:805,y:445,w:56,h:10}],
     gems:[{id:'fire',element:'fire',x:445,y:385},{id:'water',element:'water',x:650,y:385}],
     checkpoint:{x:485,y:482}
   },
@@ -524,7 +524,7 @@ const WORLD_THREE_BLUEPRINTS = [
       {id:'ember-21-lava-a',x:310,y:486,w:70,h:34,type:'fire',visual:'lava',cycle:{periodMs:5600,activeMs:3600,phaseMs:0}},
       {id:'ember-21-lava-b',x:540,y:486,w:72,h:34,type:'fire',visual:'lava',cycle:{periodMs:6200,activeMs:3900,phaseMs:2300}}
     ],
-    switches:[{id:'fire',element:'fire',x:220,y:450,w:56,h:10},{id:'water',element:'water',x:725,y:450,w:56,h:10}],
+    switches:[{id:'fire',element:'fire',x:150,y:450,w:56,h:10},{id:'water',element:'water',x:725,y:450,w:56,h:10}],
     gems:[{id:'fire',element:'fire',x:450,y:390},{id:'water',element:'water',x:725,y:425}],
     checkpoint:{x:485,y:482}
   },
@@ -563,7 +563,7 @@ const WORLD_THREE_BLUEPRINTS = [
     ],
     valves:[{id:'north-valve',x:430,y:392,element:'fire',label:'Katup Bara'}],
     requiredValves:['north-valve'],
-    switches:[{id:'fire',element:'fire',x:220,y:450,w:54,h:10},{id:'water',element:'water',x:785,y:450,w:54,h:10}],
+    switches:[{id:'fire',element:'fire',x:150,y:450,w:54,h:10},{id:'water',element:'water',x:785,y:450,w:54,h:10}],
     gems:[{id:'fire',element:'fire',x:430,y:390},{id:'water',element:'water',x:680,y:425}],
     checkpoint:{x:560,y:482}
   },
@@ -685,7 +685,7 @@ const WORLD_THREE_BLUEPRINTS = [
       {id:'nira-valve',x:815,y:427,element:'water',label:'Katup Air'}
     ],
     requiredValves:['bara-valve','nira-valve'],
-    switches:[{id:'fire',element:'fire',x:220,y:450,w:54,h:10},{id:'water',element:'water',x:785,y:450,w:54,h:10}],
+    switches:[{id:'fire',element:'fire',x:150,y:450,w:54,h:10},{id:'water',element:'water',x:785,y:450,w:54,h:10}],
     gems:[{id:'fire',element:'fire',x:415,y:390},{id:'water',element:'water',x:610,y:390}],
     checkpoint:{x:600,y:482}
   },
@@ -1703,6 +1703,282 @@ function createExplorationMap(level, sourceIndex) {
   return level;
 }
 
+const CLASSIC_PROTOTYPE_LAYOUTS = [
+  {
+    name:'Twin Gate Temple', mechanic:'Dua galeri pintu, jalur permata atas, saluran elemen bawah, dan gerbang kerja sama',
+    platforms:[
+      ['west-high-ledge',72,155,300],['east-high-ledge',788,155,300],
+      ['west-upper-route',165,255,235],['east-upper-route',760,255,245],
+      ['shared-door-gallery',95,355,970],
+      ['west-entry-gallery',35,455,350],['east-entry-gallery',775,455,350],
+      ['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
+    ],
+    routes:{fire:[5,7,4],water:[6,8,4]},
+    hazards:[
+      {id:'west-lava-channel',x:60,y:429,w:82,h:26,type:'fire',visual:'lava'},
+      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
+      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
+      {id:'east-lava-pit',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'}
+    ],
+    switches:[{element:'fire',platform:4,x:465},{element:'water',platform:4,x:695}],
+    gems:[{element:'fire',platform:0,x:215},{element:'water',platform:1,x:920}],
+    doors:[{element:'fire',platform:4,x:300},{element:'water',platform:4,x:820}],
+    walls:[
+      [0,24,24,526,true],[1136,24,24,526,true],
+      [145,175,18,180,true],[1010,175,18,180,true],
+      [350,315,24,40,'solid'],[785,315,24,40,'solid'],
+      [250,215,20,40,'solid'],[895,215,20,40,'solid'],
+      [485,335,44,12,false],[635,335,44,12,false],
+      [76,82,155,14,false],[930,82,155,14,false]
+    ],
+    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
+    note:'Dua karakter bergerak di galeri masing-masing, mengaktifkan tombol di sisi sendiri, lalu membuka gerbang tengah. Jalur atas menyimpan permata tambahan.'
+  },
+  {
+    name:'Twin Lift Hall', mechanic:'Galeri bertingkat, lift tengah, lantai es, dan saluran elemen terpisah',
+    platforms:[
+      ['west-high-ledge',48,155,285],['east-high-ledge',830,155,280],
+      ['west-upper-route',145,255,210],['east-upper-ice-route',810,255,220],
+      ['shared-door-gallery',135,355,890],
+      ['west-entry-gallery',35,455,320],['east-entry-gallery',805,455,320],
+      ['central-lift',450,300,95],['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
+    ],
+    routes:{fire:[5,8,4],water:[6,9,4]},
+    platformKinds:{3:'ice'},
+    hazards:[
+      {id:'west-lava-channel',x:60,y:429,w:82,h:26,type:'fire',visual:'lava'},
+      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
+      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
+      {id:'east-lava-pit',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'},
+      {id:'lift-steam',x:535,y:405,w:42,h:44,type:'steam',visual:'steam',cycle:{periodMs:6200,activeMs:2100,phaseMs:600}}
+    ],
+    switches:[{element:'fire',platform:4,x:445},{element:'water',platform:4,x:715}],
+    gems:[{element:'fire',platform:0,x:205},{element:'water',platform:1,x:955}],
+    doors:[{element:'fire',platform:4,x:285},{element:'water',platform:4,x:815}],
+    walls:[
+      [0,24,24,526,true],[1136,24,24,526,true],
+      [125,175,18,180,true],[1035,175,18,180,true],
+      [330,315,24,40,'solid'],[825,315,24,40,'solid'],
+      [250,215,20,40,'solid'],[920,215,20,40,'solid'],
+      [480,335,42,12,false],[655,335,42,12,false],
+      [92,82,145,14,false],[930,82,145,14,false]
+    ],
+    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
+    movingPlatform:{slot:7,axis:'y',amplitude:34,periodMs:6500,phaseMs:0},
+    iceZones:[{id:'east-ice-gallery',x:810,y:240,w:145,h:34}],
+    currents:[{id:'lift-cross-current',x:475,y:395,w:150,h:58,forceX:20,forceY:-12,pulsePeriodMs:7200,phaseMs:900}],
+    note:'Lift tengah menghubungkan galeri utama dengan jalur atas. Es mengubah gesekan dan semburan uap mengatur waktu perpindahan.'
+  },
+  {
+    name:'Furnace Split Chambers', mechanic:'Ruang bara bersekat, jalur aman elemen, dan semburan uap',
+    platforms:[
+      ['west-high-ledge',95,155,275],['east-high-ledge',770,155,320],
+      ['west-upper-route',185,255,205],['east-upper-route',760,255,225],
+      ['shared-door-gallery',75,355,1010],
+      ['west-entry-gallery',35,455,345],['east-entry-gallery',780,455,345],
+      ['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
+    ],
+    routes:{fire:[5,7,4],water:[6,8,4]},
+    hazards:[
+      {id:'west-pulsing-lava',x:60,y:429,w:82,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:4200,phaseMs:450}},
+      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
+      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
+      {id:'east-pulsing-lava',x:790,y:429,w:78,h:26,type:'fire',visual:'lava',cycle:{periodMs:6400,activeMs:4200,phaseMs:900}},
+      {id:'gallery-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',cycle:{periodMs:5600,activeMs:2300,phaseMs:900}}
+    ],
+    switches:[{element:'fire',platform:4,x:455},{element:'water',platform:4,x:705}],
+    gems:[{element:'fire',platform:0,x:240},{element:'water',platform:1,x:920}],
+    doors:[{element:'fire',platform:4,x:270},{element:'water',platform:4,x:830}],
+    walls:[
+      [0,24,24,526,true],[1136,24,24,526,true],
+      [160,175,18,180,true],[1000,175,18,180,true],
+      [355,315,24,40,'solid'],[780,315,24,40,'solid'],
+      [270,215,20,40,'solid'],[885,215,20,40,'solid'],
+      [485,335,45,12,false],[645,335,45,12,false],
+      [110,82,155,14,false],[920,82,155,14,false]
+    ],
+    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
+    note:'Lava berdenyut dan uap menghalangi galeri tengah. Pemain perlu memilih waktu aman sebelum mengaktifkan kedua tombol.'
+  },
+  {
+    name:'Wind Cross Gallery', mechanic:'Galeri silang, lift sisi, arus angin, dan jalur permata atas',
+    platforms:[
+      ['west-high-ledge',55,155,300],['east-high-ledge',810,155,295],
+      ['west-upper-route',155,255,215],['east-upper-route',785,255,235],
+      ['shared-door-gallery',110,355,940],
+      ['west-entry-gallery',35,455,330],['east-entry-gallery',795,455,330],
+      ['wind-lift',450,300,95],['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
+    ],
+    routes:{fire:[5,8,4],water:[6,9,4]},
+    hazards:[
+      {id:'west-lava-channel',x:60,y:429,w:82,h:26,type:'fire',visual:'lava'},
+      {id:'west-water-pit',x:295,y:429,w:78,h:26,type:'water'},
+      {id:'east-water-channel',x:1018,y:429,w:82,h:26,type:'water'},
+      {id:'east-lava-pit',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'}
+    ],
+    switches:[{element:'fire',platform:4,x:440},{element:'water',platform:4,x:720}],
+    gems:[{element:'fire',platform:0,x:205},{element:'water',platform:1,x:950}],
+    doors:[{element:'fire',platform:4,x:285},{element:'water',platform:4,x:815}],
+    walls:[
+      [0,24,24,526,true],[1136,24,24,526,true],
+      [135,175,18,180,true],[1025,175,18,180,true],
+      [340,315,24,40,'solid'],[805,315,24,40,'solid'],
+      [270,215,20,40,'solid'],[920,215,20,40,'solid'],
+      [480,335,42,12,false],[655,335,42,12,false],
+      [95,82,145,14,false],[930,82,145,14,false]
+    ],
+    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
+    movingPlatform:{slot:7,axis:'y',amplitude:38,periodMs:6100,phaseMs:1600},
+    windZones:[
+      {id:'west-updraft',x:170,y:245,w:118,h:80,forceX:0,forceY:-54,pulsePeriodMs:7200,phaseMs:0,leverId:'wind-west'},
+      {id:'east-crosswind',x:870,y:245,w:118,h:80,forceX:-42,forceY:-22,reversePeriodMs:7600,phaseMs:1200,leverId:'wind-east'}
+    ],
+    windLevers:[
+      {id:'wind-west',x:285,y:327,element:'fire',label:'Tuas Bara',radius:52},
+      {id:'wind-east',x:900,y:327,element:'water',label:'Tuas Air',radius:52}
+    ],
+    requiredWindLevers:['wind-west','wind-east'],
+    note:'Tuas di galeri utama mengubah arus udara. Lift bergerak membuka akses ke jalur atas dan permata.'
+  },
+  {
+    name:'Ancient Twin Valve Vault', mechanic:'Ruang katup ganda, urutan tombol, dan jalur silang',
+    platforms:[
+      ['west-high-ledge',80,155,285],['east-high-ledge',800,155,300],
+      ['west-upper-route',175,255,215],['east-upper-route',775,255,235],
+      ['shared-door-gallery',80,355,1000],
+      ['west-entry-gallery',30,455,350],['east-entry-gallery',780,455,350],
+      ['central-valve-step',445,295,100],['west-inner-step',190,425,105],['east-inner-step',880,425,105],
+      ['west-wall-alcove',30,255,90],['east-wall-alcove',1050,255,70]
+    ],
+    routes:{fire:[5,8,4],water:[6,9,4]},
+    hazards:[
+      {id:'west-sealed-lava',x:60,y:429,w:82,h:26,type:'fire',visual:'lava',valveId:'heart-fire-valve'},
+      {id:'west-sealed-water',x:295,y:429,w:78,h:26,type:'water'},
+      {id:'east-sealed-water',x:1018,y:429,w:82,h:26,type:'water',valveId:'heart-water-valve'},
+      {id:'east-sealed-lava',x:790,y:429,w:78,h:26,type:'fire',visual:'lava'},
+      {id:'sealed-steam-vent',x:500,y:307,w:54,h:48,type:'steam',visual:'steam',valveId:'heart-water-valve',cycle:{periodMs:5900,activeMs:2300,phaseMs:700}}
+    ],
+    switches:[{element:'fire',platform:4,x:455},{element:'water',platform:4,x:705}],
+    gems:[{element:'fire',platform:0,x:225},{element:'water',platform:1,x:930}],
+    doors:[{element:'fire',platform:4,x:275},{element:'water',platform:4,x:825}],
+    walls:[
+      [0,24,24,526,true],[1136,24,24,526,true],
+      [150,175,18,180,true],[1015,175,18,180,true],
+      [345,315,24,40,'solid'],[795,315,24,40,'solid'],
+      [260,215,20,40,'solid'],[915,215,20,40,'solid'],
+      [485,335,44,12,false],[650,335,44,12,false],
+      [105,82,150,14,false],[930,82,150,14,false]
+    ],
+    rubble:[],gate:{x:566,y:250,w:28,h:105},checkpoint:{x:580,y:535},
+    valves:[
+      {id:'heart-fire-valve',x:320,y:327,element:'fire',label:'Katup Bara',radius:52},
+      {id:'heart-water-valve',x:830,y:327,element:'water',label:'Katup Air',radius:52}
+    ],
+    requiredValves:['heart-fire-valve','heart-water-valve'],
+    switchSequence:['fire','water'],
+    windLevers:[
+      {id:'heart-wind-west',x:255,y:327,element:'fire',label:'Tuas Bara',radius:50},
+      {id:'heart-wind-east',x:900,y:327,element:'water',label:'Tuas Air',radius:50}
+    ],
+    requiredWindLevers:['heart-wind-west','heart-wind-east'],
+    iceZones:[{id:'heart-west-ice',x:160,y:342,w:92,h:34}],
+    windZones:[
+      {id:'heart-west-updraft',x:165,y:245,w:118,h:80,forceX:0,forceY:-52,pulsePeriodMs:7200,phaseMs:400,leverId:'heart-wind-west'},
+      {id:'heart-east-crosswind',x:860,y:245,w:118,h:80,forceX:-40,forceY:-22,reversePeriodMs:7600,phaseMs:1300,leverId:'heart-wind-east'}
+    ],
+    currents:[
+      {id:'heart-central-current',x:475,y:405,w:78,h:66,forceX:22,forceY:-28,pulsePeriodMs:6800,phaseMs:1100},
+      {id:'heart-west-current',x:340,y:342,w:90,h:34,forceX:24,forceY:0,pulsePeriodMs:6200,phaseMs:700}
+    ],
+    note:'Atur dua katup dan aktifkan tuas elemen. Ikuti urutan tombol, lewati ruang berbahaya, lalu masuk ke pintu masing-masing.'
+  }
+];
+function createClassicPrototypeMap(level, worldIndex) {
+  const layout = CLASSIC_PROTOTYPE_LAYOUTS[worldIndex];
+  const makePlatform = ([name,x,y,w], slot) => ({
+    id:`classic-${level.id}-${name}`,x,y,w,h:10,visualH:36,kind:layout.platformKinds?.[slot] || 'stone',corridor:false,chamber:true,
+    ...(layout.movingPlatform?.slot === slot ? {motion:{axis:layout.movingPlatform.axis,amplitude:layout.movingPlatform.amplitude,periodMs:layout.movingPlatform.periodMs,phaseMs:layout.movingPlatform.phaseMs}} : {})
+  });
+  const platforms = layout.platforms.map(makePlatform);
+  const bySlot = slot => platforms[slot];
+  const walls = layout.walls.map(([x,y,w,h,mode=false],index) => ({
+    id:`classic-${level.id}-masonry-${index+1}`,x,y,w,h,solid:mode===true||mode==='solid',blockSideOnly:mode===true,variant:(index+worldIndex)%4
+  }));
+  // Room divisions are placed manually in layout.walls. Avoid generating
+  // a pair of pillars around every ledge: that repetitive frame made the
+  // rooms look like stacked shelves and blocked otherwise valid routes.
+  // These hand-authored broken wall panels define the dungeon spaces while
+  // leaving the actual jump paths open.
+  // Short collapsed stones are jumpable obstructions, not additional shelves.
+  (layout.rubble || []).forEach(([x,y,w,h],index) => walls.push({
+    id:`classic-${level.id}-fallen-stone-${index+1}`,x,y,w,h,solid:true,blockSideOnly:false,variant:(index+worldIndex+1)%4
+  }));
+
+  const makeDoor = (element,doorSpec) => {
+    const platform = bySlot(doorSpec.platform);
+    return {x:doorSpec.x,y:platform.y-72,w:42,h:72,element,platformId:platform.id};
+  };
+  const doors = {
+    fire:makeDoor('fire',layout.doors.find(item=>item.element==='fire')),
+    water:makeDoor('water',layout.doors.find(item=>item.element==='water'))
+  };
+  const switches = layout.switches.map(item => {
+    const platform = bySlot(item.platform);
+    return {id:item.element,element:item.element,x:item.x,y:platform.y-4,w:58,h:10,platformId:platform.id};
+  });
+  const gems = layout.gems.map(item => {
+    const platform = bySlot(item.platform);
+    return {id:item.element,element:item.element,x:item.x,y:platform.y-28,platformId:platform.id};
+  });
+  const hazards = layout.hazards.map((hazard,index) => ({...hazard,id:`classic-${level.id}-${hazard.id||`hazard-${index+1}`}`,...(hazard.valveId?{valveId:`classic-${level.id}-${hazard.valveId}`}:{ }),y:hazard.y ?? ELEMENTAL_FLOOR_Y-26,h:hazard.h ?? 26}));
+  const exitLeft = Math.min(doors.fire.x,doors.water.x);
+  const exitRight = Math.max(doors.fire.x+doors.fire.w,doors.water.x+doors.water.w);
+
+  level.platforms = platforms;
+  level.floorY = ELEMENTAL_FLOOR_Y;
+  level.floorSegments = [{id:`classic-${level.id}-main-floor`,x:20,y:ELEMENTAL_FLOOR_Y,w:ELEMENTAL_WORLD_WIDTH-40,h:70}];
+  level.ruinWalls = walls;
+  level.hazards = hazards;
+  level.switches = switches;
+  level.gems = gems;
+  level.doors = doors;
+  level.exit = {x:exitLeft,y:Math.min(doors.fire.y,doors.water.y),w:exitRight-exitLeft,h:72};
+  level.spawn = {host:{x:65,y:ELEMENTAL_FLOOR_Y-13},guest:{x:ELEMENTAL_WORLD_WIDTH-65,y:ELEMENTAL_FLOOR_Y-13}};
+  level.gate = {...layout.gate,id:`classic-${level.id}-shared-portcullis`,orientation:'vertical'};
+  level.checkpoint = {...layout.checkpoint,radius:30};
+  level.valves = (layout.valves || []).map(valve=>({...valve,id:`classic-${level.id}-${valve.id}`}));
+  level.requiredValves = (layout.requiredValves || []).map(id=>`classic-${level.id}-${id}`);
+  level.windLevers = (layout.windLevers || []).map(lever=>({...lever,id:`classic-${level.id}-${lever.id}`}));
+  level.requiredWindLevers = (layout.requiredWindLevers || []).map(id=>`classic-${level.id}-${id}`);
+  level.iceZones = layout.iceZones ?? level.iceZones ?? [];
+  level.currents = layout.currents ?? level.currents ?? [];
+  level.windZones = (layout.windZones ?? level.windZones ?? []).map(zone=>({...zone,...(zone.leverId?{leverId:`classic-${level.id}-${zone.leverId}`}:{})}));
+  level.switchSequence = layout.switchSequence || null;
+  level.mechanic = layout.mechanic;
+  level.note = layout.note;
+  level.difficultyLabel = getElementalDifficultyLabel(level.difficulty);
+  level.features = [...new Set([...(level.features || []),'classic-dual-route','cooperative-gate','elemental-hazards','paired-exits','handcrafted-room-layout'])];
+  level.mapVersion = ELEMENTAL_MAP_VERSION;
+  level.mapName = layout.name;
+  level.mapTopology = {
+    route:'classic-handcrafted-coop',handcraftedClassic:true,
+    platformCount:platforms.length,wallFragmentCount:walls.length,
+    solidRubbleCount:walls.filter(wall=>wall.solid&&!wall.blockSideOnly).length,wallBlockCount:walls.filter(wall=>wall.blockSideOnly).length,
+    sideRoutes:2,randomBranches:0,
+    corridorCount:0,partitionCount:walls.filter(wall=>wall.blockSideOnly).length,
+    roomGrammar:'fireboy-watergirl-classic-room-puzzle',centralRejoin:true,
+    exitLayout:'same-side-elemental-doors',roomBased:true,
+    characterRoutes:layout.routes
+  };
+  level.worldWidth = ELEMENTAL_WORLD_WIDTH;
+  level.worldHeight = ELEMENTAL_WORLD_HEIGHT;
+  return level;
+}
+
 function makeLevel(index, sourceIndex = index) {
   const worldIndex = Math.floor(sourceIndex / 10);
   const localIndex = sourceIndex % 10;
@@ -1783,7 +2059,8 @@ function makeLevel(index, sourceIndex = index) {
     },
     exit: { x: 870, y: 418, w: 82, h: 102 }
   };
-  return createExplorationMap(level, sourceIndex);
+  const mappedLevel = createExplorationMap(level, sourceIndex);
+  return localIndex === 0 ? createClassicPrototypeMap(mappedLevel, worldIndex) : mappedLevel;
 }
 
 export const ELEMENTAL_LEVELS = Object.freeze(Array.from({ length:50 }, (_, index) => Object.freeze(makeLevel(index))));
@@ -1810,8 +2087,8 @@ export function getElementalPrototypeLevel(levelNumber) {
 export function createElementalPlayer(role, saved = null, levelNumber = 1, prototype = false) {
   const level = prototype ? getElementalPrototypeLevel(levelNumber) : getElementalLevel(levelNumber);
   const spawn = level.spawn[role === 'guest' ? 'guest' : 'host'];
-  // Older builds used a short corridor or the previous single-route map. Respawn
-  // those stale positions into the current branched map, while retaining progress.
+  // Older builds used generated corridor maps. Respawn stale positions into the
+  // manually-authored classic puzzle rooms while retaining long-term progress.
   const compatibleMap = Number(saved?.mapVersion) === ELEMENTAL_MAP_VERSION;
   return {
     x: compatibleMap && Number.isFinite(saved?.x) ? saved.x : spawn.x,

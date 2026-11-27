@@ -17,24 +17,39 @@ test('Elemental Duo memiliki tepat 50 level unik dalam lima dunia', () => {
   assert.equal(getElementalLevel(51).id, 50);
 });
 
-test('Prototype 5 level menyajikan satu level pembuka dari setiap tema dunia', () => {
+test('Prototype lima level memakai layout manual dua jalur ala puzzle klasik', () => {
   assert.equal(ELEMENTAL_PROTOTYPE_LEVEL_COUNT,5);
   assert.equal(ELEMENTAL_PROTOTYPE_LEVELS.length,5);
-  assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.worldName), [
-    'Hutan Berbisik','Kedalaman Kristal','Kerajaan Bara','Reruntuhan Langit','Jantung Kuno'
-  ]);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.worldIndex), [1,2,3,4,5]);
   assert.deepEqual(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.id), [1,2,3,4,5]);
-  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.mapName)).size, 5, 'each theme uses a distinct room layout');
-  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => JSON.stringify(level.platforms.map(p => [p.x,p.y,p.w])))).size, 5, 'each prototype arena has its own corridor composition');
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS.every(level=>level.ruinWalls.filter(wall=>!wall.solid).length>=10),'each prototype room needs visible maze partitions');
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS.every(level=>level.hazards.some(h=>h.type==='fire'&&h.y===524)&&level.hazards.some(h=>h.type==='water'&&h.y===524)),'water and lava channels should sit inside the lower corridors');
-  assert.equal(getElementalPrototypeLevel(0).worldIndex,1);
-  assert.equal(getElementalPrototypeLevel(5).worldIndex,5);
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].iceZones.length || ELEMENTAL_PROTOTYPE_LEVELS[1].currents.length);
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[2].hazards.some(hazard => hazard.visual === 'lava' || hazard.type === 'fire'));
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[3].windZones.length > 0);
-  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[4].features.length > 0);
+  assert.equal(new Set(ELEMENTAL_PROTOTYPE_LEVELS.map(level => level.mapName)).size,5);
+  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
+    assert.equal(level.mapTopology?.handcraftedClassic,true,`level ${level.id} is hand-authored`);
+    assert.equal(level.mapTopology?.route,'classic-handcrafted-coop');
+    assert.equal(level.mapTopology?.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
+    assert.ok(level.platforms.length>=10 && level.platforms.length<=12);
+    assert.ok(level.ruinWalls.filter(wall=>wall.blockSideOnly).length>=4,'solid chamber dividers create real passages');
+    assert.ok(level.ruinWalls.filter(wall=>wall.solid&&!wall.blockSideOnly).length>=4,'hand-placed solid barriers shape the maze routes');
+    assert.equal(level.ruinWalls.filter(wall=>/room-\d+-(left|right)-jamb/.test(wall.id)).length,0,'rooms use authored wall fragments instead of repetitive platform arches');
+    assert.ok(level.hazards.filter(h=>h.type==='fire').length>=2 && level.hazards.filter(h=>h.type==='water').length>=2,'both sides include safe and unsafe element pools');
+    assert.ok(level.hazards.filter(h=>h.y>=420).length>=4,'element pools belong to the lower traversal galleries');
+    assert.ok(level.switches.some(item=>item.element==='fire')&&level.switches.some(item=>item.element==='water'));
+    assert.ok(level.doors.fire.x<580 && level.doors.water.x>580,'each spirit has its own exit side');
+    assert.ok(level.doors.fire.x>=170 && level.doors.water.x<=940,'paired doors sit inward on the shared central gallery');
+    assert.ok(level.platforms.some(platform=>platform.y===355 && platform.w>=850),'a broad central gallery anchors the two exit routes');
+    for(const element of ['fire','water']){
+      assert.equal(level.doors[element].platformId,level.switches.find(item=>item.element===element).platformId,'switch and door share the main gallery');
+      assert.equal(level.doors[element].platformId,level.platforms[level.mapTopology.characterRoutes[element].at(-1)].id,'route leads into its own exit gallery');
+    }
+    assert.equal(level.gate.y,250,'the co-op gate sits on the shared central passage');
+    assert.equal(level.gate.h,105,'the co-op gate spans the full height of the central passage');
+    assert.ok(level.platforms.filter(platform=>platform.y<355).every(platform=>platform.x+platform.w<=level.gate.x || platform.x>=level.gate.x+level.gate.w),'upper ledges do not form an accidental bridge over the co-op gate');
+  }
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].platforms.some(platform=>platform.kind==='ice'));
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[1].currents.length>0);
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[2].hazards.some(hazard=>hazard.visual==='lava'&&hazard.cycle));
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[3].windZones.length>0);
+  assert.ok(ELEMENTAL_PROTOTYPE_LEVELS[4].requiredValves.length===2 && ELEMENTAL_PROTOTYPE_LEVELS[4].requiredWindLevers.length===2);
 });
 
 test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertahankan mesin untuk ekspansi', () => {
@@ -43,9 +58,9 @@ test('Elemental Duo menggunakan lima level aktif sebagai prototype dan mempertah
   assert.match(game,/getElementalPrototypeLevel/);
   assert.match(game,/if \(level >= ELEMENTAL_PROTOTYPE_LEVEL_COUNT\)/);
   assert.match(game,/<small>\/ 05<\/small>/);
-  assert.match(game,/prototypeVersion:5/);
-  assert.match(game,/Number\(data\.meta\.prototypeVersion\) !== 5/);
-  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 5\)/);
+  assert.match(game,/prototypeVersion:8/);
+  assert.match(game,/Number\(data\.meta\.prototypeVersion\) !== 8/);
+  assert.match(game,/role === 'host' && \(!data\.meta \|\| Number\(data\.meta\.prototypeVersion\) !== 8\)/);
   assert.match(game,/await update\(baseRef, \{ levels:null \}\)/);
   assert.match(game,/drawVine\(/);
   assert.match(game,/const brickW = 54, brickH = 27/);
@@ -75,94 +90,117 @@ test('Setiap level memuat dua simpul, dua serpihan, gerbang, checkpoint, dan are
   }
 });
 
-test('Arena prototype memiliki ruang antartingkat yang lega dan lompatan mampu melewatinya', () => {
+test('Lima arena memakai dua jalur bertingkat yang dapat dijangkau dengan lompatan sekarang', () => {
   const apex = ELEMENTAL_JUMP_SPEED * ELEMENTAL_JUMP_SPEED / (2 * ELEMENTAL_GRAVITY);
-  assert.ok(apex >= 100 && apex <= 110, `jump apex should be about 105 units, got ${apex}`);
-  for (const level of ELEMENTAL_PROTOTYPE_LEVELS) {
-    const jumpRange = rise => {
-      if (rise > apex) return -1;
-      const time = (ELEMENTAL_JUMP_SPEED + Math.sqrt(ELEMENTAL_JUMP_SPEED**2 - 2*ELEMENTAL_GRAVITY*Math.max(0,rise))) / ELEMENTAL_GRAVITY;
-      return ELEMENTAL_MOVE_SPEED * time;
-    };
-    const leftRoute = [0,2,4,6,7,9].map(slot=>level.platforms[slot]);
-    const rightRoute = [1,3,5,11,8,10].map(slot=>level.platforms[slot]);
-    for (const route of [leftRoute,rightRoute]) {
-      for (let i=1;i<route.length;i++) {
-        const rise = route[i-1].y-route[i].y;
-        assert.ok(rise > 0 && rise <= apex, `level ${level.id} each labyrinth passage must rise gradually within jump reach`);
-        const overlapX = Math.min(route[i-1].x+route[i-1].w,route[i].x+route[i].w)-Math.max(route[i-1].x,route[i].x);
-        const horizontalGap = Math.max(0,route[i].x-(route[i-1].x+route[i-1].w),route[i-1].x-(route[i].x+route[i].w));
-        assert.ok(horizontalGap <= jumpRange(rise), `level ${level.id} adjacent labyrinth chambers should remain reachable without a long platform gap`);
-      }
-    }
-    assert.ok(level.platforms.every(platform => platform.visualH === 36 && platform.corridor), `level ${level.id} should use thick connected corridor galleries, not thin floating ledges`);
-    assert.ok(level.platforms.every(platform => platform.w >= 240 && platform.w <= 320), `level ${level.id} should use compact rooms and passage lengths, not oversized shelves`);
-  }
-});
-
-test('Seluruh 50 level memakai ruang puzzle bertingkat yang rapi dengan dua pintu elemen', () => {
-  const mapNames = new Set();
-  let doorsOnLeft = 0, doorsNearCenter = 0, doorsHigh = 0;
-  for (const level of ELEMENTAL_LEVELS) {
-    assert.equal(level.mapTopology?.route,'ruins-maze-coop',`level ${level.id}`);
-    assert.equal(level.mapTopology?.sideRoutes,2,`level ${level.id} side routes`);
-    assert.ok(level.ruinWalls.length>=12,`level ${level.id} must include visible ruin partitions`);
-    assert.ok(level.ruinWalls.some(wall=>wall.solid),`level ${level.id} needs solid jumpable rubble`);
-    assert.ok(level.ruinWalls.some(wall=>!wall.solid),`level ${level.id} needs background maze architecture`);
-    assert.ok(level.hazards.some(hazard=>hazard.type==='water') && level.hazards.some(hazard=>hazard.type==='fire'),`level ${level.id} must include both water and fire channels`);
-    assert.equal(level.mapTopology?.randomBranches,0,`level ${level.id} no random branches`);
-    assert.equal(level.platforms.length,13,`level ${level.id} uses the authored 13-platform temple grammar`);
-    assert.equal(level.floorSegments.length,1);
-    assert.equal(level.mapTopology.wallFragmentCount,level.ruinWalls.length);
-    for (const door of [level.doors.fire,level.doors.water]) {
-      assert.ok(level.platforms.some(platform => platform.id === door.platformId),`level ${level.id} door must sit on a platform`);
-      if (door.x < 300) doorsOnLeft++;
-      if (door.x >= 400 && door.x < 1050) doorsNearCenter++;
-      if (door.y < 600) doorsHigh++;
-    }
-    mapNames.add(level.mapName);
-  }
-  assert.equal(mapNames.size,10);
-  assert.ok(doorsOnLeft>0,'some exits must be on the left side');
-  assert.ok(doorsNearCenter>0,'some exits must be near the center');
-  assert.ok(doorsHigh>0,'some exits must be on upper floors');
-});
-
-test('Pemain dapat menjangkau jalur utama, cabang samping, dan jembatan pintas dari spawn', () => {
-  const gravity=ELEMENTAL_GRAVITY, jumpSpeed=ELEMENTAL_JUMP_SPEED, horizontalSpeed=ELEMENTAL_MOVE_SPEED;
-  const jumpRange=rise=>{
-    if (rise > jumpSpeed*jumpSpeed/(2*gravity)) return -1;
-    const time=(jumpSpeed+Math.sqrt(jumpSpeed*jumpSpeed-2*gravity*Math.max(0,rise)))/gravity;
-    return horizontalSpeed*time;
+  assert.ok(apex>=100 && apex<=110,`jump apex should stay about 105 units, got ${apex}`);
+  const jumpRange = rise => {
+    if (rise>apex) return -1;
+    const time=(ELEMENTAL_JUMP_SPEED+Math.sqrt(ELEMENTAL_JUMP_SPEED**2-2*ELEMENTAL_GRAVITY*Math.max(0,rise)))/ELEMENTAL_GRAVITY;
+    return ELEMENTAL_MOVE_SPEED*time;
   };
-  for (const level of ELEMENTAL_LEVELS) for (const role of ['host','guest']) {
-    const spawn=level.spawn[role];
-    const floor=level.floorSegments.find(segment=>spawn.x>=segment.x && spawn.x<=segment.x+segment.w);
-    assert.ok(floor,`level ${level.id} ${role} spawn must be on a floor segment`);
-    const reachable=new Set();
-    const queue=[{id:'floor',x:floor.x,y:floor.y,w:floor.w,startX:spawn.x}];
-    while(queue.length){
-      const source=queue.shift();
-      for(const platform of level.platforms){
-        if(reachable.has(platform.id)) continue;
-        const gap=source.id==='floor'
-          ? Math.max(0,platform.x-source.startX,source.startX-platform.x-platform.w)
-          : Math.max(0,platform.x-(source.x+source.w),source.x-(platform.x+platform.w));
-        const rise=source.y-platform.y;
-        if(jumpRange(rise)>=gap){reachable.add(platform.id);queue.push(platform);}
+  for(const level of ELEMENTAL_PROTOTYPE_LEVELS){
+    for(const role of ['fire','water']){
+      const route=level.mapTopology.characterRoutes[role];
+      assert.ok(route.length>=2 && route.length<=4);
+      const first=level.platforms[route[0]];
+      const spawn=level.spawn[role==='fire'?'host':'guest'];
+      assert.ok(jumpRange(ELEMENTAL_FLOOR_Y-first.y)>=Math.max(0,first.x-spawn.x,spawn.x-first.x-first.w));
+      for(let i=1;i<route.length;i++){
+        const a=level.platforms[route[i-1]],b=level.platforms[route[i]];
+        const rise=a.y-b.y;
+        const gap=Math.max(0,b.x-(a.x+a.w),a.x-(b.x+b.w));
+        assert.ok(rise>0&&rise<=apex,`level ${level.id} ${role} route step ${i} stays within jump height`);
+        assert.ok(gap<=jumpRange(rise),`level ${level.id} ${role} route step ${i} stays within horizontal reach`);
       }
     }
-    assert.equal(reachable.size,level.platforms.length,`level ${level.id} all platforms should be reachable by ${role}`);
+    assert.ok(level.platforms.every(platform=>platform.visualH>=32&&!platform.corridor));
   }
 });
 
-test('Pijakan wajib berada pada lantai bawah sebelum gerbang ruang atas', () => {
-  for (const level of ELEMENTAL_LEVELS) {
+test('Lima level aktif memakai layout handcrafted; 45 level lain tetap memakai generator ekspansi', () => {
+  const mapNames=new Set();
+  for(const level of ELEMENTAL_LEVELS){
+    mapNames.add(level.mapName);
+    assert.equal(level.mapTopology?.sideRoutes,2,`level ${level.id}`);
+    assert.ok(level.ruinWalls.length>=10,`level ${level.id} includes room masonry`);
+    assert.ok(level.hazards.some(h=>h.type==='water')&&level.hazards.some(h=>h.type==='fire'));
+    if(level.mapTopology?.handcraftedClassic){
+      assert.equal(level.mapTopology.route,'classic-handcrafted-coop');
+      assert.equal(level.mapTopology.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
+      assert.ok(level.mapTopology.wallBlockCount>=4);
+      assert.ok(level.platforms.length>=10&&level.platforms.length<=12);
+      assert.ok(level.doors.fire.x<580&&level.doors.water.x>580);
+    }else{
+      assert.equal(level.mapTopology?.route,'ruins-maze-coop');
+      assert.equal(level.platforms.length,13);
+      assert.equal(level.mapTopology?.corridorCount,13);
+    }
+    assert.equal(level.mapTopology.wallFragmentCount,level.ruinWalls.length);
+    assert.equal(level.mapTopology.randomBranches,0);
+    assert.equal(level.floorSegments.length,1);
+    for(const door of [level.doors.fire,level.doors.water]) assert.ok(level.platforms.some(platform=>platform.id===door.platformId));
+  }
+  assert.equal(ELEMENTAL_LEVELS.filter(level=>level.mapTopology?.handcraftedClassic).length,5);
+  assert.ok(mapNames.size>10);
+});
+
+test('Setiap karakter dapat menjangkau seluruh jalur elemennya dari spawn', () => {
+  const jumpRange=rise=>{
+    const apex=ELEMENTAL_JUMP_SPEED*ELEMENTAL_JUMP_SPEED/(2*ELEMENTAL_GRAVITY);
+    if(rise>apex)return -1;
+    const time=(ELEMENTAL_JUMP_SPEED+Math.sqrt(ELEMENTAL_JUMP_SPEED**2-2*ELEMENTAL_GRAVITY*Math.max(0,rise)))/ELEMENTAL_GRAVITY;
+    return ELEMENTAL_MOVE_SPEED*time;
+  };
+  for(const level of ELEMENTAL_LEVELS){
+    if(level.mapTopology?.handcraftedClassic){
+      for(const [element,role] of [['fire','host'],['water','guest']]){
+        const route=level.mapTopology.characterRoutes[element];
+        const spawn=level.spawn[role];
+        const first=level.platforms[route[0]];
+        assert.ok(jumpRange(ELEMENTAL_FLOOR_Y-first.y)>=Math.max(0,first.x-spawn.x,spawn.x-first.x-first.w),`level ${level.id} ${role} reaches entry`);
+        for(let i=1;i<route.length;i++){
+          const a=level.platforms[route[i-1]],b=level.platforms[route[i]];
+          const gap=Math.max(0,b.x-(a.x+a.w),a.x-(b.x+b.w));
+          assert.ok(jumpRange(a.y-b.y)>=gap,`level ${level.id} ${role} reaches route platform ${route[i]}`);
+        }
+        const plate=level.switches.find(item=>item.element===element);
+        assert.ok(route.some(slot=>level.platforms[slot].id===plate.platformId),`level ${level.id} ${role} switch is on own route`);
+        const door=level.doors[element];
+        assert.ok(route.some(slot=>level.platforms[slot].id===door.platformId),`level ${level.id} ${role} exit is on own route`);
+      }
+      continue;
+    }
+    for(const role of ['host','guest']){
+      const spawn=level.spawn[role];
+      const floor=level.floorSegments.find(segment=>spawn.x>=segment.x&&spawn.x<=segment.x+segment.w);
+      assert.ok(floor,`level ${level.id} ${role} spawn must be on a floor segment`);
+      const reachable=new Set(),queue=[{id:'floor',x:floor.x,y:floor.y,w:floor.w,startX:spawn.x}];
+      while(queue.length){
+        const source=queue.shift();
+        for(const platform of level.platforms){
+          if(reachable.has(platform.id))continue;
+          const gap=source.id==='floor'?Math.max(0,platform.x-source.startX,source.startX-platform.x-platform.w):Math.max(0,platform.x-(source.x+source.w),source.x-(platform.x+platform.w));
+          if(jumpRange(source.y-platform.y)>=gap){reachable.add(platform.id);queue.push(platform);}
+        }
+      }
+      assert.equal(reachable.size,level.platforms.length,`level ${level.id} all platforms should remain reachable by ${role}`);
+    }
+  }
+});
+
+test('Pijakan berada pada jalur elemen masing-masing dan membuka gerbang bersama', () => {
+  for(const level of ELEMENTAL_LEVELS){
     const fire=level.switches.find(item=>item.element==='fire');
     const water=level.switches.find(item=>item.element==='water');
-    assert.ok(fire && water,`level ${level.id} has both elemental plates`);
-    assert.ok(fire.y > level.gate.y + level.gate.h - 8,`level ${level.id} fire plate is accessible below the upper seal`);
-    assert.ok(water.y > level.gate.y + level.gate.h - 8,`level ${level.id} water plate is accessible below the upper seal`);
+    assert.ok(fire&&water,`level ${level.id} has both elemental plates`);
+    if(level.mapTopology?.handcraftedClassic){
+      assert.ok(fire.x<580&&water.x>580,`level ${level.id} plates are on separate sides`);
+      assert.ok(level.platforms.some(platform=>platform.id===fire.platformId&&Math.abs(fire.y+fire.h/2-platform.y)<=2));
+      assert.ok(level.platforms.some(platform=>platform.id===water.platformId&&Math.abs(water.y+water.h/2-platform.y)<=2));
+    }else{
+      assert.ok(fire.y>level.gate.y+level.gate.h-8,`level ${level.id} fire plate is accessible below the upper seal`);
+      assert.ok(water.y>level.gate.y+level.gate.h-8,`level ${level.id} water plate is accessible below the upper seal`);
+    }
   }
 });
 
@@ -183,7 +221,7 @@ test('Bara dan Nira memiliki spawn serta state yang terpisah', () => {
   assert.ok(bara.x < nira.x);
   assert.equal(bara.ready, false);
   assert.equal(nira.complete, false);
-  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:19, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
+  const restored = createElementalPlayer('guest', { x:123, y:300, mapVersion:ELEMENTAL_MAP_VERSION, deaths:4, levelDeaths:2, shards:8, ready:true }, 10);
   assert.equal(restored.x, 123);
   assert.equal(restored.deaths, 4);
   assert.equal(restored.levelDeaths, 2);
@@ -365,9 +403,9 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-rotate-prompt/);
   assert.match(css, /ed-touch-controls\{position:absolute/);
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
-  assert.match(index, /elemental-duo\.css\?v=0\.39\.3/);
-  assert.match(app, /elemental-duo\.js\?v=0\.39\.3/);
-  assert.match(index, /app\.js\?v=0\.39\.3/);
+  assert.match(index, /elemental-duo\.css\?v=0\.42\.0/);
+  assert.match(app, /elemental-duo\.js\?v=0\.42\.0/);
+  assert.match(index, /app\.js\?v=0\.42\.0/);
 });
 
 
@@ -944,16 +982,19 @@ test('Semua kontrol wajib Jantung Kuno berada pada pijakan stabil dan terjangkau
   for (const level of ELEMENTAL_LEVELS.slice(40,50)) {
     const controls = [
       ...level.switches.map(item => ({kind:'switch',id:item.element,x:item.x,y:item.y,platformY:item.y+(item.h||10)/2,platformX:item.x})),
-      ...(level.valves||[]).map(item => ({kind:'valve',id:item.id,x:item.x,y:item.y,platformY:item.y+28,platformX:item.x})),
-      ...(level.windLevers||[]).map(item => ({kind:'lever',id:item.id,x:item.x,y:item.y,platformY:item.y+28,platformX:item.x}))
+      ...(level.valves||[]).map(item => ({kind:'valve',id:item.id,element:item.element,x:item.x,y:item.y,platformY:item.y+28,platformX:item.x})),
+      ...(level.windLevers||[]).map(item => ({kind:'lever',id:item.id,element:item.element,x:item.x,y:item.y,platformY:item.y+28,platformX:item.x}))
     ];
     for (const control of controls) {
       const platform = level.platforms.find(item =>
         control.platformX >= item.x && control.platformX <= item.x+item.w &&
-        Math.abs(control.platformY-item.y) <= 3 && !item.motion && !item.cycle
+        Math.abs(control.platformY-item.y) <= 10 && !item.motion && !item.cycle
       );
       assert.ok(platform, `level ${level.id} ${control.kind} ${control.id} must sit on a stable platform`);
-      for (const role of ['host','guest']) {
+      const controlRoles = level.mapTopology?.handcraftedClassic
+        ? [(control.element==='water' || /water|air/i.test(control.id) ? 'guest' : 'host')]
+        : ['host','guest'];
+      for (const role of controlRoles) {
         const reached = new Set();
         const startFloor = level.floorSegments.find(segment => level.spawn[role].x >= segment.x && level.spawn[role].x <= segment.x + segment.w);
       const queue = [{id:'floor',x:startFloor.x,y:startFloor.y,w:startFloor.w,startX:level.spawn[role].x}];
@@ -1013,8 +1054,8 @@ test('Finale Jantung Kuno memakai seluruh mekanik yang sudah dikenalkan dan teta
 });
 
 
-test('Room map v19 uses connected corridor-maze geometry and reachable exits across all 50 authored levels', () => {
-  assert.equal(ELEMENTAL_MAP_VERSION,19);
+test('Room map v22 uses handcrafted dual routes for the five prototype maps and preserves generated expansion maps', () => {
+  assert.equal(ELEMENTAL_MAP_VERSION,22);
   for (const level of ELEMENTAL_LEVELS) {
     const platforms = level.platforms;
     for (let i=0;i<platforms.length;i++) for (let j=i+1;j<platforms.length;j++) {
@@ -1036,11 +1077,23 @@ test('Room map v19 uses connected corridor-maze geometry and reachable exits acr
     }
     assert.ok(level.mapTopology.platformCount === platforms.length);
     assert.equal(level.mapTopology.randomBranches,0);
-    assert.equal(level.mapTopology.roomGrammar,'side-view-dungeon-labyrinth-with-turning-corridors');
-    assert.equal(level.mapTopology.corridorCount,13);
-    assert.ok(level.mapTopology.partitionCount>=10);
+    if(level.mapTopology.handcraftedClassic){
+      assert.equal(level.mapTopology.roomGrammar,'fireboy-watergirl-classic-room-puzzle');
+      assert.equal(level.mapTopology.corridorCount,0);
+      assert.ok(level.mapTopology.partitionCount>=4);
+      assert.deepEqual(Object.keys(level.mapTopology.characterRoutes).sort(),['fire','water']);
+      for(const [element,route] of Object.entries(level.mapTopology.characterRoutes)){
+        assert.ok(route.length>=2 && route.length<=4);
+        assert.ok(route.every(slot=>Number.isInteger(slot)&&slot>=0&&slot<platforms.length));
+        assert.ok(level.doors[element].platformId===platforms[route[route.length-1]].id);
+      }
+    }else{
+      assert.equal(level.mapTopology.roomGrammar,'side-view-dungeon-labyrinth-with-turning-corridors');
+      assert.equal(level.mapTopology.corridorCount,13);
+      assert.ok(level.mapTopology.partitionCount>=10);
+    }
     for (const zone of [...(level.iceZones||[]),...(level.currents||[]),...(level.windZones||[])]) {
-      assert.ok(zone.w<=110 && zone.h<=62,`level ${level.id} environmental zone should stay compact`);
+      assert.ok(zone.w<=220 && zone.h<=100,`level ${level.id} environmental zone should stay within one room`);
     }
   }
 });

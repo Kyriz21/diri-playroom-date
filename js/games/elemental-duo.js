@@ -6,7 +6,7 @@ import {
   getElementalViewport, getElementalCameraTarget,
   getElementalPlatformState, getElementalHazardState,
   getElementalCurrentState, getElementalWindState, getElementalSurfaceFriction
-} from './elemental-duo-logic.js?v=0.39.3';
+} from './elemental-duo-logic.js?v=0.42.0';
 
 const ESCAPE = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const CHARACTER = {
@@ -591,14 +591,14 @@ export function mountElementalDuo(root, context) {
       let needsPrototypeMigration = false;
       await runTransaction(metaRef, current => {
         if (!current) return {
-          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:5
+          phase:'lobby', level:1, startedAt:now(), createdAt:now(), transitioning:false, results:{}, prototypeVersion:8
         };
-        if (Number(current.prototypeVersion) === 5) return current;
+        if (Number(current.prototypeVersion) === 8) return current;
         needsPrototypeMigration = true;
         return {
           ...current, phase:'lobby', level:1, startedAt:now(),
           transitioning:false, transitionStartedAt:null, completedAt:null,
-          results:{}, prototypeVersion:5
+          results:{}, prototypeVersion:8
         };
       });
       if (needsPrototypeMigration) {
@@ -993,7 +993,7 @@ export function mountElementalDuo(root, context) {
     // Broken masonry fragments are solid, low enough to be cleared by the
     // normal jump, and create real narrow passages in the ruin maze.
     const previousXBeforeRubble = previousPlayerX;
-    for (const wall of (level.ruinWalls || []).filter(item=>item.solid)) {
+    for (const wall of (level.ruinWalls || []).filter(item=>item.solid || item.blockSideOnly)) {
       const body = {x:localPlayer.x-halfW,y:localPlayer.y-halfH+2,w:halfW*2,h:halfH*2-2};
       if (!rectsOverlap(body,wall)) continue;
       if (localPlayer.vx > 0 && previousXBeforeRubble+halfW <= wall.x+4) localPlayer.x = wall.x-halfW-1;
@@ -1007,7 +1007,7 @@ export function mountElementalDuo(root, context) {
     localPlayer.grounded = false;
     localPlayer.supportPlatformId = null;
     const floorPlatforms = (level.floorSegments || [{ id:'main-floor', x:0, y:ELEMENTAL_FLOOR_Y, w:ELEMENTAL_WORLD_WIDTH, h:60 }]).map(segment => ({ ...segment, kind:'floor' }));
-    const rubblePlatforms = (level.ruinWalls || []).filter(wall=>wall.solid).map(wall=>({...wall,kind:'ruin-wall'}));
+    const rubblePlatforms = (level.ruinWalls || []).filter(wall=>wall.solid && !wall.blockSideOnly).map(wall=>({...wall,kind:'ruin-wall'}));
     const collisionPlatforms = [...platforms.filter(item => item.current.active).map(item => item.current), ...floorPlatforms, ...rubblePlatforms];
     for (const platform of collisionPlatforms) {
       const horizontal = localPlayer.x + halfW > platform.x && localPlayer.x - halfW < platform.x + platform.w;
@@ -1172,15 +1172,18 @@ export function mountElementalDuo(root, context) {
       }
     }
 
-    // A barely visible temple relief gives the chamber a central landmark.
-    ctx.save();
-    ctx.globalAlpha = .085;
-    ctx.strokeStyle = palette.glow;
-    ctx.fillStyle = palette.base;
-    ctx.lineWidth = 7;
-    ctx.beginPath(); ctx.moveTo(width*.5,height*.22); ctx.lineTo(width*.59,height*.34); ctx.lineTo(width*.55,height*.53); ctx.lineTo(width*.5,height*.59); ctx.lineTo(width*.45,height*.53); ctx.lineTo(width*.41,height*.34); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.arc(width*.5,height*.39,32,0,Math.PI*2); ctx.stroke();
-    ctx.restore();
+    // Handcrafted rooms use their own arches, door alcoves and masonry.
+    // Keep the generic central emblem only on the legacy generated levels.
+    if (!level.mapTopology?.handcraftedClassic) {
+      ctx.save();
+      ctx.globalAlpha = .085;
+      ctx.strokeStyle = palette.glow;
+      ctx.fillStyle = palette.base;
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(width*.5,height*.22); ctx.lineTo(width*.59,height*.34); ctx.lineTo(width*.55,height*.53); ctx.lineTo(width*.5,height*.59); ctx.lineTo(width*.45,height*.53); ctx.lineTo(width*.41,height*.34); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(width*.5,height*.39,32,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
 
     // World accents stay subtle so the shared classic dungeon language remains clear.
     if (level.worldIndex === 1 || level.worldIndex === 5) {
@@ -1246,7 +1249,7 @@ export function mountElementalDuo(root, context) {
   }
 
   function drawSkyDecor(level, time) {
-    if (level.worldIndex !== 4) return;
+    if (level.worldIndex !== 4 || level.mapTopology?.handcraftedClassic) return;
     const palette = classicPalette(level);
     ctx.save();
     // The sky world is still a ruined interior: broken galleries, hanging
@@ -1281,6 +1284,7 @@ export function mountElementalDuo(root, context) {
   }
 
   function drawRuinRelief(level, time) {
+    if (level.mapTopology?.handcraftedClassic) return;
     const palette = classicPalette(level);
     const width = level.worldWidth || ELEMENTAL_WORLD_WIDTH;
     const height = level.worldHeight || ELEMENTAL_WORLD_HEIGHT;
@@ -1384,8 +1388,10 @@ export function mountElementalDuo(root, context) {
         const y = flow.y + 18 + row*((flow.h-36)/Math.max(1,verticalCount-1)) + (fy>=0 ? drift*.24 : -drift*.24);
         ctx.save(); ctx.translate(x,y); ctx.rotate(Math.abs(fx)+Math.abs(fy)<1 ? angle : angle);
         ctx.globalAlpha = .5 + .22*Math.sin(time*.006+row+col);
-        ctx.strokeStyle = '#d7fbff'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(3,-5); ctx.lineTo(8,0); ctx.lineTo(3,5); ctx.stroke();
+        ctx.fillStyle = 'rgba(215,251,255,.88)';
+        ctx.beginPath(); ctx.ellipse(0,0,3.5,1.7,angle,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha *= .55;
+        ctx.beginPath(); ctx.ellipse(-8,0,2,1.2,angle,0,Math.PI*2); ctx.fill();
         ctx.restore();
       }
       ctx.restore();
@@ -1415,8 +1421,10 @@ export function mountElementalDuo(root, context) {
         const px = baseX + (Math.abs(fx)>Math.abs(fy) ? Math.sign(fx || 1)*drift : Math.sin(time*.002+row+col)*3);
         const py = baseY + (Math.abs(fy)>=Math.abs(fx) ? Math.sign(fy || -1)*drift : Math.cos(time*.002+row+col)*3);
         ctx.save(); ctx.translate(px,py); ctx.rotate(angle);
-        ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 2.4; ctx.lineCap='round';
-        ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(9,0); ctx.moveTo(3,-5); ctx.lineTo(9,0); ctx.lineTo(3,5); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.82)';
+        ctx.beginPath(); ctx.ellipse(0,0,3.4,1.5,angle,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha *= .52;
+        ctx.beginPath(); ctx.ellipse(-9,0,2,1.1,angle,0,Math.PI*2); ctx.fill();
         ctx.restore();
       }
       ctx.restore();
@@ -2024,7 +2032,7 @@ export function mountElementalDuo(root, context) {
 
   function handleSnapshot(snapshot) {
     data = snapshot.val() || {};
-    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 5)) void initialiseMeta();
+    if (role === 'host' && (!data.meta || Number(data.meta.prototypeVersion) !== 8)) void initialiseMeta();
     if (!data.players?.[role]) void initialisePlayer();
     const other = data.players?.[otherRole];
     if (other && Number(other.mapVersion) === ELEMENTAL_MAP_VERSION && Number.isFinite(other.x) && Number.isFinite(other.y)) {

@@ -1,6 +1,16 @@
-# QA — Diri. Playroom Date v0.39.3
+# QA — Diri. Playroom Date v0.42.0
 
-## Hasil verifikasi otomatis v0.39.3
+## Hasil verifikasi otomatis v0.42.0
+- `npm test`: **194/194 lulus**.
+- Semua file JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`; Firebase Rules tidak berubah.
+- Lima layout manual memiliki dua spawn bawah, galeri pintu tengah yang lebar, dua pintu elemen, cabang permata atas, dan 11–12 pijakan/ledge per level.
+- Setiap sisi memiliki hazard aman dan hazard lawan pada jalur bawah; switch berada di sisi pintu masing-masing, dengan gerbang kerja sama di bagian tengah.
+- Level 2–5 memperkenalkan lift/es/uap, lava berdenyut, tuas angin, serta katup dan urutan switch.
+- Belum dilakukan playtest browser dan dua HP fisik dengan Firebase aktif.
+
+## Playtest manual yang tetap diperlukan
+## Hasil verifikasi otomatis v0.40.0
 - `npm test`: 194/194 lulus.
 - Semua file JavaScript lolos `node --check`; Firebase Rules JSON valid.
 - `ELEMENTAL_MAP_VERSION=19`, `prototypeVersion=5`; Firebase Rules tidak berubah.

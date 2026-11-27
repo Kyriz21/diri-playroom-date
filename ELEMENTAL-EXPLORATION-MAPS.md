@@ -1,4 +1,33 @@
-# Elemental Duo — Side-View Labyrinth Maze (v0.39.3)
+# Elemental Duo — Classic Co-op Prototype Maps (v0.42.0)
+
+## Struktur arena terbaru
+- Lima layout prototype disusun manual dengan grammar puzzle side-view klasik: dua spawn di bawah, dua jalur elemen, galeri utama yang lebar, gerbang tengah, dua pintu elemen, dan cabang atas untuk permata.
+- Jalur bawah di kedua sisi memuat kolam aman sesuai elemen karakter dan satu kolam elemen lawan yang harus dihindari atau dilompati.
+- Tiap karakter menempuh entry gallery → inner step → galeri switch/pintu miliknya. Kedua switch membuka gerbang bersama di tengah.
+- Dinding batu penuh diletakkan sebagai penghalang lintasan, bukan kusen berulang di sekeliling tiap platform. Platform jalur utama tetap dapat dijangkau dengan fisika lompatan sekarang.
+- Layout tiap level memiliki geometri dan mekanik berbeda; tidak lagi mengandalkan generator platform yang sama.
+
+## Lima level prototype
+1. **Twin Gate Temple** — dua kanal elemen, switch di galeri tengah, gerbang pusat, dan permata di galeri atas.
+2. **Twin Lift Hall** — menambahkan lift bergerak, pijakan es, arus, dan semburan uap.
+3. **Furnace Split Chambers** — menambahkan lava berdenyut dan ventilasi uap di ruang tengah.
+4. **Wind Cross Gallery** — menambahkan lift serta dua tuas untuk mengubah arus angin.
+5. **Ancient Twin Valve Vault** — menggabungkan katup, tuas angin, pijakan berurutan, arus, dan hazard yang dikendalikan katup.
+
+## Fisika, migrasi, dan ekspansi
+- `ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`; tinggi puncak teoretis sekitar 104,5 unit. Angka ini dipertahankan karena pengguna sudah menyatakan lompatan sebelumnya nyaman.
+- `ELEMENTAL_MAP_VERSION=22` dan `prototypeVersion=8` memindahkan posisi pemain serta state puzzle dari build sebelumnya ke spawn dan map baru. Statistik pemain dan keanggotaan room dipertahankan.
+- Lima map aktif mengambil satu prototype dari masing-masing dunia. 45 blueprint lainnya tetap berada di engine untuk ekspansi berikutnya.
+- Firebase Rules tidak berubah.
+
+## Verifikasi
+- `npm test`: 194/194 tes lulus.
+- Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid.
+- Playtest browser dan dua HP fisik masih diperlukan untuk memeriksa kenyamanan rute, collision dinding, interaksi bersama, dan sinkronisasi.
+
+---
+
+# Elemental Duo — Classic Co-op Level Rebuild (v0.40.0)
 
 ## Tata letak prototype labirin
 - Perspektif tetap side-view agar selaras dengan gerak kiri/kanan dan tombol lompat, tetapi arena dibangun sebagai jaringan kamar dungeon yang berbelok.

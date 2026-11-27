@@ -1,6 +1,30 @@
-# Elemental Duo — Panduan Game (build v0.39.3)
+# Elemental Duo — Panduan Game (build v0.42.0)
 
-## Pembaruan v0.39.3 — Side-View Labyrinth Maze
+## Pembaruan v0.42.0 — Fireboy & Watergirl Classic-style Co-op
+- Lima level prototype mengikuti komposisi puzzle side-view klasik: dua spawn bawah, galeri utama lebar, pintu Bara dan Nira di tingkat yang sama, jalur permata atas, serta gerbang kerja sama di tengah.
+- Setiap sisi bawah memiliki kolam yang aman bagi karakternya dan kolam elemen lawan yang harus dihindari atau dilompati.
+- Rute dasar masing-masing karakter: entry gallery → inner step → shared door gallery. Switch berada di sisi pintu sendiri; kedua switch membuka gerbang tengah.
+- Setiap layout memiliki 11–12 platform/ledge yang ditempatkan manual dengan komposisi berbeda. Dinding penghalang tidak lagi dibuat otomatis di setiap platform.
+- Level 2–5 memperkenalkan lift bergerak, es, uap, lava berdenyut, arus angin, katup, dan urutan switch.
+- `ELEMENTAL_JUMP_SPEED=560`, `ELEMENTAL_GRAVITY=1500`; puncak teoretis sekitar 104,5 unit. Analog tetap hanya untuk kiri/kanan.
+- `ELEMENTAL_MAP_VERSION=22` dan `prototypeVersion=8` memigrasikan posisi serta state puzzle dari map sebelumnya. Firebase Rules tidak berubah.
+## Rute utama
+Setiap level memiliki dua galeri bawah yang dapat dicapai dari spawn. Bara harus menghindari air dan Nira harus menghindari lava. Switch berada di galeri yang sama dengan pintu elemen masing-masing. Keduanya perlu mengaktifkan switch agar gerbang pusat terbuka. Platform di tingkat atas menjadi jalur opsional untuk mengambil permata.
+
+## Batas mekanik prototype
+Level prototype belum mengimplementasikan semua mekanik Fireboy and Watergirl (misalnya kotak dorong dan tombol tahan permanen). Mekanik aktif adalah lompatan, pijakan, hazard, permata, gerbang, lift, es, angin, katup, dan pintu elemen.
+
+## Verifikasi v0.42.0
+- `npm test`: 194/194 tes lulus.
+- JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
+- Geometri jalur, jangkauan lompatan, lokasi switch/valve/lever, hazard, checkpoint, dan pintu diperiksa otomatis.
+- Playtest visual di browser dan dua perangkat dengan Firebase aktif masih diperlukan.
+
+---
+
+# Elemental Duo — Panduan Game (build v0.40.0)
+
+## Pembaruan v0.40.0 — Classic Co-op Level Rebuild
 - Arena menggunakan perspektif dungeon tampak samping dengan koridor pendek dan kamar yang tersusun berbelok, bukan rak platform panjang seperti platformer biasa.
 - Lima prototype memiliki geometri koridor, ruang penghubung, partisi batu dan pintu elemen yang bervariasi.
 - Lantai dasar tersambung secara visual dengan lantai dungeon; lompatan tetap tersedia untuk melintasi reruntuhan dan celah.
@@ -20,7 +44,7 @@ Bara dan Nira harus melintasi rute yang berbeda sesuai elemennya, mengambil perm
 
 Mekanik kotak dorong dan tombol tahan masih menjadi kandidat pengembangan berikutnya; belum semua blueprint menerapkannya pada prototype lima level ini.
 
-## Verifikasi v0.39.3
+## Verifikasi v0.40.0
 - `npm test`: 194/194 tes lulus.
 - Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan tidak berubah.
 - Geometri platform, jalur lompatan, posisi hazard, checkpoint, dan collision reruntuhan diperiksa otomatis.

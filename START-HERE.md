@@ -1,32 +1,19 @@
-# Mulai di sini — Diri. Playroom Date v0.39.3
+# Mulai di sini — Diri. Playroom Date v0.42.0
 
 ## Yang berubah pada Elemental Duo
-- Prototype hanya membuka 5 level aktif, satu dari setiap tema dunia.
-- Lima tema memakai tata letak reruntuhan labirin air dan api: lorong akuaduk, cabang bertingkat, pintu elemen, kolam saluran, dan balok batu yang bisa dilompati.
-- Ornamen rune melingkar dan panah petunjuk yang membingungkan dihilangkan. Relief gerbang batu retak menggantikan ornamen tersebut.
-- Fisika lompatan v0.39.1 dipertahankan pada puncak sekitar 104,5 unit.
-- Engine tetap menyimpan 45 blueprint lanjutan untuk ekspansi setelah lima prototype diuji.
-- Firebase Rules dan mini-game lain tidak berubah.
+- Lima prototype mengikuti komposisi puzzle side-view klasik: dua spawn di sisi bawah, saluran air/lava di kedua sisi, galeri utama di tengah, dua pintu elemen, dan cabang atas untuk permata.
+- Setiap sisi memiliki satu hazard yang aman bagi karakternya dan satu hazard elemen lawan yang harus dihindari. Rute dibuat tiga tahap: entry gallery → inner step → shared door gallery.
+- Dinding penghalang ditempatkan manual pada titik lintasan; kusen otomatis yang membuat arena tampak seperti rak berulang sudah dihapus.
+- Level 2–5 memperkenalkan lift/es/uap, hazard berdenyut, tuas angin, dan katup.
+- Fisika lompatan dipertahankan dari build sebelumnya. Analog tetap hanya menggerakkan kiri/kanan.
+- 45 blueprint level lanjutan tetap tersimpan untuk ekspansi.
 
-## Memasang v0.39.3
-1. Ekstrak ZIP `Diri_Playroom_Date_v0.39.3_Side_View_Labyrinth_Maze.zip`.
-2. Unggah seluruh isi folder proyek ke root repository GitHub Pages dan timpa file lama.
+## Memasang v0.42.0
+1. Ekstrak ZIP `Diri_Playroom_Date_v0.42.0_Classic_Cooperative_Labyrinth.zip`.
+2. Backup repository GitHub Pages, lalu unggah seluruh isi proyek ke root repository dan timpa file lama.
 3. Pastikan `index.html`, `js/`, `css/`, `assets/`, `firebase-database.rules.json`, serta dokumentasi ikut terunggah.
-4. Arena kini berupa labirin dungeon tampak samping dengan koridor pendek yang berbelok, partisi batu dan kamar penghubung; lompatan tetap seperti build sebelumnya.
-5. Buat sesi Elemental Duo baru untuk playtest pertama. Sesi lama otomatis dimigrasikan ke prototype level 01 oleh `prototypeVersion=5`; state puzzle lama dibersihkan.
-6. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=19`. Firebase Rules tidak perlu dipublikasikan ulang.
-
-## Urutan 5 prototype
-1. Hutan Berbisik — Jejak Cahaya.
-2. Kedalaman Kristal — Retakan Pertama.
-3. Kerajaan Bara — Napas Lava.
-4. Reruntuhan Langit — Tangga Awan.
-5. Jantung Kuno — Simpul Pertama.
-
-## Verifikasi lokal
-- `npm test`: **194/194 lulus**.
-- JavaScript lolos `node --check`.
-- Uji dua HP dengan Firebase aktif dan pemeriksaan visual browser tetap diperlukan.
+4. Buat sesi Elemental Duo baru untuk playtest. Sesi lama dimigrasikan ke prototype level 01 oleh `prototypeVersion=8`; state puzzle per-level dibersihkan.
+5. Posisi pemain lama kembali ke spawn karena `ELEMENTAL_MAP_VERSION=22`. Firebase Rules tidak perlu dipublikasikan ulang karena file Rules tidak berubah.
 
 ---
 

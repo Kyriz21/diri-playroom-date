@@ -1,13 +1,21 @@
-# Diri. Playroom Date v0.39.3 — Photobooth, Mini-game & Elemental Duo
+# Diri. Playroom Date v0.42.0 — Photobooth, Mini-game & Elemental Duo
 
-## Pembaruan terbaru v0.39.3 — Side-View Labyrinth Maze
+## Pembaruan terbaru v0.42.0 — Fireboy & Watergirl Classic-style Co-op
+
+- Lima level Elemental Duo dirancang manual mengikuti pola puzzle side-view klasik: dua spawn bawah, empat kolam elemen di jalur bawah, galeri utama, dua pintu tengah, cabang permata atas, dan gerbang kerja sama.
+- Jalur Bara dan Nira masing-masing memuat hazard yang aman sesuai elemennya dan hazard elemen lawan yang perlu dihindari.
+- Setiap level memiliki 11–12 pijakan/ledge dengan rute entry → inner step → galeri pintu. Level 2–5 menambahkan lift/es/uap, lava berdenyut, angin, dan katup.
+- Lompatan tetap pada `560 / 1500` (puncak sekitar 104,5 unit); analog tetap hanya untuk gerakan horizontal.
+- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`; Firebase Rules tidak berubah. 194/194 tes otomatis lulus; playtest browser dan dua HP masih diperlukan.
+
+## Pembaruan terbaru v0.40.0 — Classic Co-op Level Rebuild
 
 - Arena prototype diubah lebih jauh dari susunan platform ala game side-scroller biasa menjadi **labirin dungeon tampak samping**: kamar yang lebih pendek, koridor bergantian kiri/kanan, pintu penghubung, pilar pemisah, dan jalur yang berbelok.
 - Lantai dasar kini menyatu secara visual dengan lantai dungeon; platform jangkar spawn/checkpoint tidak lagi digambar sebagai rak terpisah. Tiang penyangga di bawah platform dihilangkan.
 - Lima level tetap mewakili lima tema dunia. Masing-masing menggunakan variasi geometri ruang, posisi koridor, dinding dan pembukaan lorong yang berbeda.
 - Lompatan tetap menggunakan setelan nyaman sebelumnya (`560 / 1500`, puncak sekitar 104,5 unit); lompatan menjadi alat melewati reruntuhan/celah, bukan cara utama menavigasi deretan platform.
 - `ELEMENTAL_MAP_VERSION=19` dan `prototypeVersion=5` memigrasikan posisi serta state puzzle dari layout v0.39.2 ke spawn/layout labirin. Statistik pemain dan keanggotaan room dipertahankan; Firebase Rules tidak berubah.
-- GitHub Pages cache key dan package version menggunakan v0.39.3. Verifikasi: 194/194 tes otomatis lulus, JavaScript lolos `node --check`, dan Firebase Rules JSON valid.
+- GitHub Pages cache key dan package version menggunakan v0.40.0. Verifikasi: 194/194 tes otomatis lulus, JavaScript lolos `node --check`, dan Firebase Rules JSON valid.
 
 ## Pembaruan v0.39.2 (historis)
 

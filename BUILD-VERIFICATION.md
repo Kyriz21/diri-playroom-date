@@ -1,6 +1,18 @@
-# Build Verification — Diri. Playroom Date v0.39.3
+# Build Verification — Diri. Playroom Date v0.42.0
 
-## v0.39.3 — Side-View Labyrinth Maze
+## v0.42.0 — Fireboy & Watergirl Classic-style Co-op
+- `npm test`: **194/194 tes lulus**.
+- Semua file JavaScript lolos `node --check`; `firebase-database.rules.json` valid.
+- `ELEMENTAL_MAP_VERSION=22`, `prototypeVersion=8`, `jumpSpeed=560`, `gravity=1500`; Firebase Rules tidak berubah.
+- Lima level prototype dirancang manual dengan 11–12 platform/ledge per layout, dua spawn bawah, satu galeri utama yang lebar, dua pintu pada tingkat tengah, dan cabang atas untuk permata.
+- Tiap sisi bawah memiliki kolam elemen yang aman bagi karakternya serta kolam elemen lawan yang harus dihindari/dilompati. Rute tiap karakter melewati entry ledge, stepping stone, lalu galeri pintunya.
+- Switch berada di sisi masing-masing galeri; gerbang bersama membatasi lintasan tengah. Pintu Bara dan Nira berada pada galeri yang sama, bukan di puncak menara platform.
+- Level 2–5 menambah lift bergerak, es, uap, lava berdenyut, arus angin, katup, dan urutan switch.
+- Tes geometri memeriksa jangkauan platform, pintu/switch, empat hazard pool di jalur bawah, dinding penghalang, gerbang dan variasi mekanik.
+- Belum dilakukan playtest browser dan dua perangkat fisik dengan Firebase aktif.
+
+## Batas verifikasi
+## v0.40.0 — Classic Co-op Level Rebuild
 
 - Lima level prototype dirancang sebagai kamar dungeon dan koridor yang berbelok; tidak lagi menggunakan platform panjang bertingkat dengan tiang penyangga.
 - Tiga jangkar lantai bawah menyatu dengan lantai dungeon, sedangkan rute atas berpindah di antara kamar pendek kiri/kanan.
