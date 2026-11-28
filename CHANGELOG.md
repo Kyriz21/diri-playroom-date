@@ -336,3 +336,11 @@
 - Firebase Rules memperketat validasi `gatesPassed`, transisi hasil Flappy setelah 60 detik atau kedua pemain kehabisan nyawa, serta memastikan host dan guest online saat host memulai.
 - Cache import mini-game diperbarui ke v0.48.0; tidak ada dependensi npm baru.
 - Tes otomatis, pemeriksaan sintaks JS, parsing Rules JSON, dan keseimbangan ekspresi Rules dijalankan; live playtest dua perangkat dengan Firebase aktif masih diperlukan.
+
+
+## v0.51.2 — Bomber Arena permission diagnostics
+- Mengganti bootstrap paralel menjadi penulisan berurutan agar operasi Firebase yang ditolak dapat diidentifikasi secara spesifik.
+- Pesan error kini menyebut tahap dan path operasi (meta setup, state Player 1, state Player 2, input awal, verifikasi state, atau transisi ke playing).
+- Memverifikasi ulang state kedua pemain sebelum mengubah fase arena menjadi playing.
+- Memperbarui cache-busting modul Bomber Arena dan versi proyek. Firebase Rules tidak diubah.
+- `npm test`: 257/257 lulus. Pengujian live Firebase tetap diperlukan untuk mengetahui path yang ditolak pada project aktif.

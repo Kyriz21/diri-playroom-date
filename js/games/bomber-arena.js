@@ -6,7 +6,7 @@ import {
   createBomberPlayer, bomberCellKey, parseBomberCellKey,
   canBomberMove, getBomberBlastCells, getBomberWarningPreviews, getActiveBomberExplosionCells, applyBomberPowerup,
   damageBomberPlayer, getBomberWinner, formatBomberTime
-} from './bomber-arena-logic.js?v=0.50.0';
+} from './bomber-arena-logic.js?v=0.51.2';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const ROLES = ['host', 'guest'];
@@ -372,9 +372,6 @@ export function mountBomberArena(root, context) {
       renderWaiting();
       return;
     }
-    // The initial Bomber Arena meta write is guarded by Rules that verify both
-    // Ready flags. An already-active session from the older build has those
-    // flags cleared, so it must be returned to the lobby and started again.
     if (room?.lobby?.ready?.host !== true || room?.lobby?.ready?.guest !== true) {
       startupError = 'Status Siap kedua pemain tidak tersimpan untuk sesi ini. Host perlu kembali ke lobi, lalu kedua pemain menekan Siap dan memulai ulang.';
       startupRecoveryRequired = true;
@@ -384,6 +381,7 @@ export function mountBomberArena(root, context) {
     startupError = '';
     startupRecoveryRequired = false;
     initializing = true;
+    let stage = 'membaca status arena';
     try {
       const existing = await get(metaRef);
       let seed;
@@ -396,17 +394,19 @@ export function mountBomberArena(root, context) {
       } else {
         seed = randomSeed();
         createdAt = now();
+        stage = 'membuat metadata awal (bomberArena/meta)';
         await set(metaRef, { phase: 'setup', seed, startedAt: 0, durationMs: BOMBER_DURATION_MS, createdAt, endedAt: 0, winner: '', reason: '' });
       }
 
-      // Resume a partially-created setup without overwriting a guest input or
-      // a player state that was already written before a brief host reconnect.
-      const paths = [
-        `${basePath}/players/host/state`,
-        `${basePath}/players/guest/state`,
-        `${basePath}/players/host/input`
-      ];
-      const snapshots = await Promise.all(paths.map(path => get(ref(db, path))));
+      const hostStatePath = `${basePath}/players/host/state`;
+      const guestStatePath = `${basePath}/players/guest/state`;
+      const hostInputPath = `${basePath}/players/host/input`;
+      stage = 'membaca status pemain';
+      const snapshots = await Promise.all([
+        get(ref(db, hostStatePath)),
+        get(ref(db, guestStatePath)),
+        get(ref(db, hostInputPath))
+      ]);
       const startedAt = now() + 3000;
       const hostState = {
         ...(snapshots[0].exists() ? (snapshots[0].val() || {}) : createBomberPlayer('host', names.host)),
@@ -416,15 +416,33 @@ export function mountBomberArena(root, context) {
         ...(snapshots[1].exists() ? (snapshots[1].val() || {}) : createBomberPlayer('guest', names.guest)),
         invulnerableUntil: startedAt + BOMBER_SPAWN_PROTECTION_MS
       };
-      const writes = [set(ref(db, paths[0]), hostState), set(ref(db, paths[1]), guestState)];
-      if (!snapshots[2].exists()) writes.push(set(ref(db, paths[2]), { dx: 0, dy: 0, bombSeq: 0, updatedAt: now() }));
-      await Promise.all(writes);
+      // Sequential writes intentionally identify the exact denied path. A Promise.all
+      // obscures which child write failed and may leave a partially initialized room.
+      if (!snapshots[0].exists()) {
+        stage = 'menulis state Player 1 (bomberArena/players/host/state)';
+        await set(ref(db, hostStatePath), hostState);
+      }
+      if (!snapshots[1].exists()) {
+        stage = 'menulis state Player 2 (bomberArena/players/guest/state)';
+        await set(ref(db, guestStatePath), guestState);
+      }
+      if (!snapshots[2].exists()) {
+        stage = 'menulis input awal Player 1 (bomberArena/players/host/input)';
+        await set(ref(db, hostInputPath), { dx: 0, dy: 0, bombSeq: 0, updatedAt: now() });
+      }
+      stage = 'memverifikasi state kedua pemain';
+      const verified = await Promise.all([get(ref(db, hostStatePath)), get(ref(db, guestStatePath))]);
+      if (!verified[0].exists() || !verified[1].exists()) {
+        throw new Error('State salah satu pemain belum tersimpan setelah penulisan.');
+      }
+      stage = 'mengubah fase arena menjadi playing (bomberArena/meta)';
       await set(metaRef, { phase: 'playing', seed, startedAt, durationMs: BOMBER_DURATION_MS, createdAt, endedAt: 0, winner: '', reason: '' });
     } catch (error) {
-      startupError = `Firebase menolak inisialisasi arena: ${error.message}. Periksa koneksi dan Firebase Rules, lalu coba lagi.`;
+      const code = error?.code || error?.message || 'UNKNOWN_ERROR';
+      startupError = `Gagal pada tahap: ${stage}. Firebase: ${code}. Periksa Rules untuk path tersebut; kirim screenshot pesan ini agar path yang ditolak dapat diperbaiki secara spesifik.`;
       startupRecoveryRequired = false;
       renderWaiting();
-      notify(`Arena belum bisa disiapkan: ${error.message}`, 'error');
+      notify(`Arena gagal pada tahap ${stage}: ${code}`, 'error');
     } finally {
       initializing = false;
     }

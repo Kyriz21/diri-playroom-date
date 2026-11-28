@@ -492,7 +492,7 @@ test('Elemental Duo memiliki mode potret dan layar penuh yang meminta orientasi 
   assert.match(css, /ed-game-panel\.ed-fullpage-fallback\{position:fixed;inset:0\}/);
   assert.match(index, /elemental-duo\.css\?v=0\.44\.0/);
   assert.match(app, /elemental-duo\.js\?v=0\.44\.0/);
-  assert.match(index, /app\.js\?v=0\.51\.1/);
+  assert.match(index, /app\.js\?v=0\.51\.2/);
 });
 
 

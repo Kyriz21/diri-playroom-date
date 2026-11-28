@@ -1,4 +1,4 @@
-# Diri. Playroom Date v0.51.1
+# Diri. Playroom Date v0.51.2
 
 Diri. Playroom Date adalah ruang aktivitas pasangan LDR berbasis web, menggunakan GitHub Pages untuk frontend dan Firebase Realtime Database untuk room serta sinkronisasi dua perangkat.
 
@@ -22,14 +22,14 @@ Tampilan luar memakai nama **One Tap** dan hanya memiliki dua tindakan: **Buat R
 
 Kamera hanya diminta ketika pemain memilih Ambil Foto. Foto avatar dikompres ke JPEG 128×128 dengan batas 22 KB; avatar emoji tetap tersedia.
 
-## Bomber Arena v0.51.1 — room-start repair
+## Bomber Arena v0.51.2 — room-start repair
 
 Memperbaiki kegagalan bootstrap yang sebelumnya menyebabkan layar “Menunggu pemain…” tidak pernah masuk arena. Status Ready host dan guest dipertahankan saat sesi Bomber Arena dibuat karena Firebase Rules memakai kedua nilai tersebut untuk mengizinkan meta awal. Kedua perangkat harus tetap online. Bila sesi lama telanjur macet dengan status Ready terhapus, host perlu kembali ke lobi, meminta kedua pemain menekan Siap, lalu memulai sesi baru. Kegagalan bootstrap kini ditampilkan dengan pesan dan tindakan pemulihan, bukan loading tanpa batas. Firebase Rules tidak berubah.
 
 ## Instalasi
 1. Backup repository GitHub Pages.
 2. Ekstrak ZIP build dan unggah seluruh isinya ke root repository.
-3. Firebase Rules tidak berubah pada v0.51.1. Tidak perlu Publish ulang jika Rules v0.49.0 sudah aktif.
+3. Firebase Rules tidak berubah pada v0.51.2. Jika masih PERMISSION_DENIED, layar sekarang menunjukkan tahap/path yang ditolak; kirim pesan lengkap tersebut untuk diagnosis Rules yang tepat.
 4. Uji alur Buat Room, Join Room, presence, Ready, pemilihan avatar, permainan One Tap, serta hasil dengan dua perangkat.
 
 ## Pengujian lokal
