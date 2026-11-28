@@ -1,14 +1,14 @@
 export const ARCADE_STAGE_DURATION_MS = 60000;
 export const ARCADE_INTERMISSION_MS = 0;
 
-// Arcade is deliberately a single, classic Flappy-style challenge.
+// One Tap is a single, classic tap-to-fly challenge on a shared lane.
 export const ARCADE_STAGES = [
   {
-    id: 'flappy-face',
-    name: 'Flappy Face',
+    id: 'one-tap',
+    name: 'One Tap',
     type: 'flappy',
     icon: '🪽',
-    hint: 'Ketuk arena atau tombol LOMPAT untuk mengepak. Lewati celah pipa dan kumpulkan poin.',
+    hint: 'Ketuk arena atau tombol TAP untuk terbang. Lewati celah pipa di jalur bersama dan kumpulkan poin.',
     points: 10,
     gapSize: 0.35
   }
@@ -44,10 +44,10 @@ function random01(seed, stageIndex, itemIndex, salt = 0) {
   return arcadeHash(seed, stageIndex, itemIndex, salt) / 0xffffffff;
 }
 
-export function getArcadeLane(role) {
-  return role === 'guest'
-    ? { min: 0.54, max: 0.95, start: 0.76, direction: 1 }
-    : { min: 0.05, max: 0.46, start: 0.24, direction: -1 };
+// Both players share one central flight lane and the same obstacle stream.
+// `role` remains in the signature for backwards-compatible callers.
+export function getArcadeLane(_role) {
+  return { min: 0.05, max: 0.95, start: 0.5, direction: -1 };
 }
 
 export function createArcadePlayer(role, values = {}) {
@@ -67,11 +67,12 @@ export function createArcadePlayer(role, values = {}) {
   };
 }
 
-export function createArcadeEntities(seed, stageIndex = 0, role = 'host') {
-  const lane = getArcadeLane(role);
-  const startX = role === 'guest' ? lane.min - 0.06 : lane.max + 0.06;
+export function createArcadeEntities(seed, stageIndex = 0, _role = 'host') {
+  const lane = getArcadeLane();
+  // Gates travel once across the shared center lane, not in mirrored player lanes.
+  const startX = 1.12;
   const direction = lane.direction;
-  const distance = (lane.max - lane.min) + 0.18;
+  const distance = 1.3;
   return Array.from({ length: 22 }, (_, index) => {
     const vertical = random01(seed, stageIndex, index, 23);
     const gapSize = Math.max(0.29, 0.36 - index * 0.003);

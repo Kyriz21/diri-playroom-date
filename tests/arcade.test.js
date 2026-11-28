@@ -6,12 +6,13 @@ import {
   getArcadeEntityPosition, stepArcadePlayer, getArcadeRemaining, getArcadeWinner
 } from '../js/games/arcade-logic.js';
 
-test('Arcade hanya memiliki satu permainan Flappy Face selama 60 detik', () => {
+test('One Tap hanya memiliki satu permainan selama 60 detik', () => {
   assert.equal(ARCADE_STAGES.length, 1);
-  assert.equal(ARCADE_STAGES[0].id, 'flappy-face');
+  assert.equal(ARCADE_STAGES[0].id, 'one-tap');
+  assert.equal(ARCADE_STAGES[0].name, 'One Tap');
   assert.equal(ARCADE_STAGES[0].type, 'flappy');
   assert.equal(ARCADE_STAGE_DURATION_MS, 60000);
-  assert.match(ARCADE_STAGES[0].hint, /Ketuk arena atau tombol LOMPAT/);
+  assert.match(ARCADE_STAGES[0].hint, /Ketuk arena atau tombol TAP/);
 });
 
 test('Arcade menyediakan dua belas avatar cadangan yang aman', () => {
@@ -20,7 +21,7 @@ test('Arcade menyediakan dua belas avatar cadangan yang aman', () => {
   assert.ok(ARCADE_AVATARS.every(item => item.emoji && item.name));
 });
 
-test('gerbang pipa dibuat deterministik, berpasangan, dan berada pada setengah arena masing-masing', () => {
+test('kedua pemain menerima urutan pipa deterministik yang sama pada satu jalur bersama', () => {
   const hostA = createArcadeEntities(12345, 0, 'host');
   const hostB = createArcadeEntities(12345, 0, 'host');
   const guest = createArcadeEntities(12345, 0, 'guest');
@@ -29,11 +30,8 @@ test('gerbang pipa dibuat deterministik, berpasangan, dan berada pada setengah a
   assert.equal(guest.length, 22);
   assert.ok(hostA.every(entity => entity.kind === 'gate' && entity.gapSize >= 0.29));
   assert.ok(guest.every(entity => entity.kind === 'gate'));
-  for (let index = 0; index < hostA.length; index += 1) {
-    assert.equal(hostA[index].gapY, guest[index].gapY, 'pasangan pipa harus punya celah vertikal yang sama');
-    assert.ok(hostA[index].startX > 0.5);
-    assert.ok(guest[index].startX < 0.5);
-  }
+  assert.deepEqual(hostA, guest, 'pipa host dan guest harus berada pada lintasan dan waktu yang sama');
+  assert.ok(hostA.every(entity => entity.startX > 1 && entity.direction < 0));
 });
 
 test('hash arena stabil dan berubah jika seed atau nomor pipa berbeda', () => {
@@ -42,20 +40,21 @@ test('hash arena stabil dan berubah jika seed atau nomor pipa berbeda', () => {
   assert.notEqual(arcadeHash(9, 0, 4), arcadeHash(9, 0, 5));
 });
 
-test('kedua pemain mulai di sisi arena yang berlawanan dengan posisi tetap', () => {
+test('Player 1 dan Player 2 mulai pada koordinat X yang sama di tengah arena', () => {
   const host = createArcadePlayer('host');
   const guest = createArcadePlayer('guest');
-  assert.equal(host.x, 0.24);
-  assert.equal(guest.x, 0.76);
+  assert.equal(host.x, 0.5);
+  assert.equal(guest.x, 0.5);
   assert.equal(host.y, 0.5);
   assert.equal(guest.y, 0.5);
   assert.equal(host.lives, 3);
   assert.equal(guest.lives, 3);
   assert.ok(getArcadeLane('host').direction < 0);
-  assert.ok(getArcadeLane('guest').direction > 0);
+  assert.equal(getArcadeLane('host').start, getArcadeLane('guest').start);
+  assert.equal(getArcadeLane('host').direction, getArcadeLane('guest').direction);
 });
 
-test('tap atau tombol lompat memberi flap ke atas, gravitasi menarik karakter ke bawah', () => {
+test('tap pada One Tap memberi flap ke atas, gravitasi menarik karakter ke bawah', () => {
   const player = createArcadePlayer('host');
   const hopped = stepArcadePlayer({ player, role: 'host', input: { jumpPressed: true }, dt: 1 / 60, now: 1000 }).player;
   assert.ok(hopped.y < player.y);
@@ -91,7 +90,7 @@ test('berhasil melewati celah pipa menambah skor sepuluh poin satu kali', () => 
 test('menabrak pipa di luar celah mengurangi satu nyawa dan memberi invulnerability singkat', () => {
   const player = createArcadePlayer('host', { y: 0.2 });
   const gate = {
-    id: 'hit-gate', kind: 'gate', startX: 0.24, direction: -1, distance: 0.01,
+    id: 'hit-gate', kind: 'gate', startX: 0.5, direction: -1, distance: 0.01,
     gapY: 0.5, gapSize: 0.2, spawnAt: 0, lifeMs: 1000, value: 10
   };
   const hit = stepArcadePlayer({ player, role: 'host', entities: [gate], elapsedMs: 10, dt: 0, now: 1000 });

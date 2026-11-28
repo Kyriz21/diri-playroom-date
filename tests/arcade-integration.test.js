@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const read = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('Arcade tercantum aktif di katalog dan masuk ke alur lobby eksplisit', () => {
+test('One Tap tercantum aktif di katalog dan masuk ke alur lobby eksplisit', () => {
   const constants = read('../js/constants.js');
   const app = read('../js/app.js');
   const roomService = read('../js/services/room-service.js');
@@ -13,12 +13,22 @@ test('Arcade tercantum aktif di katalog dan masuk ke alur lobby eksplisit', () =
   assert.match(roomService, /EXPLICIT_LOBBY_GAMES = new Set\(\[[^\]]*'arcade'/);
   assert.match(app, /data-action="open-arcade-create"/);
   assert.match(app, /data-action="open-arcade-join"/);
-  assert.match(app, /import\('\.\/games\/arcade\.js\?v=0\.48\.0'\)/);
-  assert.match(app, /Flappy Face/);
+  assert.match(app, /import\('\.\/games\/arcade\.js\?v=0\.51\.0'\)/);
+  assert.match(app, /One Tap/);
+  assert.match(app, /Buat Room/);
+  assert.match(app, /Join Room/);
+  const landingCard = app.slice(app.indexOf('<section class=\"arcade-landing-card\">'), app.indexOf('<section class=\"bomber-landing-card\">'));
+  assert.equal((landingCard.match(/data-action=\"open-arcade-/g) || []).length, 2, 'kartu One Tap hanya memiliki Buat Room dan Join Room');
+  assert.match(landingCard, /PLAYER 1/);
+  assert.match(landingCard, /PLAYER 2/);
+  assert.doesNotMatch(landingCard, /Flappy Face|Insert coin|Join with a code|\\bVS\\b/);
+  assert.match(app, /Buat Room One Tap/);
+  assert.match(app, /Join Room One Tap/);
+  assert.match(app, /slotLabel = gameId === 'arcade'/);
   assert.doesNotMatch(app, /speedrun dua belas mini-game/);
 });
 
-test('Arcade memakai lobby dua pemain, presence, ready, dan Insert Coin oleh host', () => {
+test('One Tap memakai room dua pemain, presence, ready, dan mulai oleh host', () => {
   const game = read('../js/games/arcade.js');
   const rules = JSON.parse(read('../firebase-database.rules.json'));
   const roomRules = rules.rules.rooms.$roomCode;
@@ -30,15 +40,19 @@ test('Arcade memakai lobby dua pemain, presence, ready, dan Insert Coin oleh hos
   assert.ok(rules.rules.roomGames.$roomCode.$sessionId.arcade);
 });
 
-test('Arcade hanya merender Flappy Face dengan tap, tombol lompat, satu timer, dan satu rekap', () => {
+test('One Tap merender dua pemain pada jalur bersama dengan tap, satu timer, dan satu rekap', () => {
   const logic = read('../js/games/arcade-logic.js');
   const game = read('../js/games/arcade.js');
   assert.match(logic, /ARCADE_STAGE_DURATION_MS = 60000/);
-  assert.match(logic, /id: 'flappy-face'/);
+  assert.match(logic, /id: 'one-tap'/);
   assert.match(game, /data-ar-input="jump"/);
   assert.match(game, /canvasTapHandler/);
   assert.match(game, /Space.*ArrowUp|ArrowUp.*Space/);
-  assert.match(game, /FLAPPY FACE/);
+  assert.match(game, /ONE TAP/);
+  assert.match(game, /PLAYER 1/);
+  assert.match(game, /PLAYER 2/);
+  assert.match(game, /const x = sharedX \+ \(playerRole === 'host' \? -25 : 25\)/);
+  assert.match(game, /for \(const entity of entitiesByRole\.host\)/);
   assert.match(game, /arcade-result-card/);
   assert.match(game, /function renderResultOnce\(\) \{\s*if \(data\.meta\?\.phase === 'result'\) renderResult\(\);/);
   assert.doesNotMatch(game, /data-ar-input="up"|data-ar-input="down"/);
@@ -46,7 +60,7 @@ test('Arcade hanya merender Flappy Face dengan tap, tombol lompat, satu timer, d
   assert.doesNotMatch(game, /data-ar-input="left"|data-ar-input="right"|actionPressed/);
 });
 
-test('Arcade memiliki lobby avatar foto/emoji dan validasi avatar pada Firebase', () => {
+test('One Tap memiliki lobby avatar foto/emoji dan validasi avatar pada Firebase', () => {
   const game = read('../js/games/arcade.js');
   const rules = JSON.parse(read('../firebase-database.rules.json'));
   assert.match(game, /canvas\.toDataURL\('image\/jpeg'/);
@@ -55,7 +69,7 @@ test('Arcade memiliki lobby avatar foto/emoji dan validasi avatar pada Firebase'
   assert.match(rules.rules.roomGames.$roomCode.$sessionId.arcade.players.$role.avatar['.validate'], /22000/);
 });
 
-test('Firebase mengizinkan hasil Flappy Face setelah timer selesai atau kedua pemain kehabisan nyawa', () => {
+test('Firebase mengizinkan hasil One Tap setelah timer selesai atau kedua pemain kehabisan nyawa', () => {
   const rules = JSON.parse(read('../firebase-database.rules.json'));
   const arcade = rules.rules.roomGames.$roomCode.$sessionId.arcade;
   const metaWrite = arcade.meta['.write'];

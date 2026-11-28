@@ -33,12 +33,13 @@ Tiga aktivitas menggunakan room dua perangkat dan menyediakan latihan di satu pe
 - Mode satu perangkat tersedia untuk latihan solo 12 atau 20 soal.
 - Skor IQ bersifat hiburan dan tidak setara dengan tes IQ terstandar/klinis.
 
-## Arcade — Flappy Face v0.48.0
-- Arcade hanya memiliki satu tantangan: Flappy Face selama 60 detik.
-- Dua karakter berada di arena yang sama; masing-masing punya tiga nyawa dan memperoleh 10 poin untuk setiap celah pipa yang berhasil dilewati.
-- Tap/klik arena atau tombol LOMPAT untuk memberi flap ke atas. Gravitasi menarik karakter turun ketika tidak mengepak.
-- Desktop mendukung Spasi, panah atas, atau W; HP memakai tap atau tombol LOMPAT.
-- Pemenang ditentukan dari jumlah pipa/skor. Rekap satu kartu muncul saat timer berakhir atau kedua pemain kehabisan nyawa.
+## One Tap v0.51.0
+- One Tap adalah satu tantangan terbang selama 60 detik.
+- Player 1 dan Player 2 memiliki koordinat X yang sama di tengah arena dan memakai satu urutan pipa deterministik yang sama; karakter digambar sedikit berdampingan agar tidak saling menutupi.
+- Setiap pemain memiliki gravitasi, posisi vertikal, tiga nyawa, dan skor sendiri. Setiap pipa yang berhasil dilewati memberi 10 poin.
+- Tap/klik arena atau tombol TAP untuk mengepak; desktop mendukung Spasi, panah atas, atau W.
+- Hasil membandingkan skor/gerbang kedua pemain. Rekap satu kartu muncul saat timer selesai atau kedua pemain kehabisan nyawa.
+- Landing One Tap hanya menampilkan Buat Room dan Join Room. Firebase Rules tidak berubah pada v0.51.0.
 - Foto avatar dikompres menjadi JPEG 128×128 dengan batas 22 KB; avatar emoji juga tersedia.
 
 ## Privasi dan Firebase

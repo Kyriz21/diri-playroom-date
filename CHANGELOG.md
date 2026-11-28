@@ -1,3 +1,13 @@
+## v0.51.0 — One Tap shared lane
+- Mengganti nama tampilan game dari Arcade/Flappy Face menjadi **One Tap** pada katalog, landing page, form room, lobby, arena, HUD, dan hasil.
+- Landing One Tap hanya menampilkan dua tindakan: **Buat Room** dan **Join Room**. Pratinjau menggunakan label Player 1 dan Player 2.
+- Menghapus pembagian arena kiri/kanan dan garis pemisah. Kedua pemain memulai di koordinat X yang sama (0,5) pada titik tengah lintasan.
+- Mengganti dua rangkaian pipa berlawanan menjadi satu urutan pipa deterministik yang sama untuk kedua pemain, melintas melalui jalur tengah.
+- Avatar digambar berdekatan di sekitar titik tengah agar Player 1 dan Player 2 terlihat terpisah; offset ini hanya visual, sedangkan hitbox X dan tabrakan tetap menggunakan koordinat tengah yang sama.
+- Skor, nyawa, posisi vertikal, dan input tap tetap terpisah per pemain. Kedua pemain tetap memiliki tiga nyawa dan memperoleh 10 poin per pipa yang dilewati.
+- Firebase Rules dan struktur node room tidak berubah. Tidak perlu Publish ulang jika Rules v0.49.0 sudah aktif.
+- `npm test`: **254/254 tes lulus**. Seluruh JavaScript diperiksa dengan `node --check`; Firebase Rules JSON diparse. Pengujian browser dan dua perangkat nyata tetap diperlukan.
+
 ## v0.50.0 — Bomber Arena map variety, fair items & spawn safety
 - Menambahkan tiga profil arena deterministik: Lapangan Terbuka, Persimpangan, dan Benteng Tengah. Semua profil mempertahankan simetri rotasi 180° serta pemeriksaan konektivitas sebelum peti ditempatkan.
 - Distribusi power-up dibatasi 2–4 pasangan peti per arena; kedua sisi pasangan selalu menyimpan tipe item yang sama.

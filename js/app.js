@@ -97,11 +97,11 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'One Tap', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
-  dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
-  createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
-  joinForm.querySelector('button[type="submit"]').innerHTML = `Gabung ${activityName} <span>→</span>`;
+  dialogTitle.textContent = gameId === 'arcade' ? (createMode ? 'Buat Room One Tap' : 'Join Room One Tap') : (createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`);
+  createForm.querySelector('button[type="submit"]').innerHTML = gameId === 'arcade' ? 'Buat Room <span>♡</span>' : `Buat sesi ${activityName} <span>♡</span>`;
+  joinForm.querySelector('button[type="submit"]').innerHTML = gameId === 'arcade' ? 'Join Room <span>→</span>' : `Gabung ${activityName} <span>→</span>`;
   createForm.hidden = !createMode;
   joinForm.hidden = createMode;
   const savedName = loadDisplayName();
@@ -271,8 +271,8 @@ function renderLanding() {
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
     </section>
     <section class="arcade-landing-card">
-      <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE CLOCK</span><h2>Arcade <span>✦</span></h2><p>Jadikan wajah kalian karakter terbang. Ketuk layar atau tekan tombol untuk mengepak, lewati celah pipa, dan adu skor selama 60 detik.</p><div class="arcade-landing-tags"><span>Flappy Face</span><span>Foto wajah sendiri</span><span>Shared arena</span></div><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Insert coin <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join with a code</button></div></div>
-      <div class="arcade-preview-screen" aria-label="Pratinjau arena arcade dua pemain"><div class="arcade-preview-top"><span>FLAPPY FACE</span><span>FLAP DUEL · 60s</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>${escapeHtml(loadDisplayName() || 'Mia')} · 04</b><span>VS</span><b>04 · Leo</b></div></div>
+      <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE SHARED LANE</span><h2>One Tap <span>✦</span></h2><p>Dua pemain berada di jalur terbang yang sama. Ketuk layar untuk mengepak, lewati pipa bersama, dan kumpulkan skor selama 60 detik.</p><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Buat Room <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join Room</button></div></div>
+      <div class="arcade-preview-screen" aria-label="Pratinjau One Tap untuk Player 1 dan Player 2"><div class="arcade-preview-top"><span>ONE TAP</span><span>SHARED LANE · 60s</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>PLAYER 1</b><span>ONE LANE</span><b>PLAYER 2</b></div></div>
     </section>
     <section class="bomber-landing-card">
       <div class="bomber-landing-copy"><span class="bomber-kicker">CLASSIC GRID BATTLE · 1 VS 1</span><h2>Bomber Arena <i>💣</i></h2><p>Pasang bom, hancurkan peti, cari power-up, dan jebak pasanganmu di arena labirin. Hati-hati—ledakanmu sendiri juga berbahaya.</p><div class="bomber-landing-tags"><span>Grid 13 × 11</span><span>3 nyawa</span><span>Duel real-time</span></div><div class="bomber-landing-actions"><button class="button button-primary" data-action="open-bomber-create">Buat arena <span>→</span></button><button class="button button-secondary" data-action="open-bomber-join">Gabung kode</button></div></div>
@@ -299,7 +299,7 @@ function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
   const gameId = room.lobby?.selections?.host || 'photobooth';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'One Tap', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   if (needsExplicitLobby(gameId)) {
     const ready = room.lobby?.ready || {};
     const membersJoined = Boolean(room.host?.uid && room.guest?.uid);
@@ -307,19 +307,20 @@ function renderWaitingRoom(room, current) {
     const bothOnline = membersJoined && online.host && online.guest;
     const bothReady = bothOnline && ready.host === true && ready.guest === true;
     const playerCard = (playerRole, player, tone) => {
+      const slotLabel = gameId === 'arcade' ? (playerRole === 'host' ? 'PLAYER 1' : 'PLAYER 2') : (playerRole === 'host' ? 'PEMBUAT SESI' : 'PEMAIN KEDUA');
       const memberJoined = Boolean(player?.uid);
       const isOnline = online[playerRole];
       const isReady = ready[playerRole] === true;
       const isSelf = current.role === playerRole;
       const status = !memberJoined ? 'Belum bergabung' : !isOnline ? 'Terdaftar · menghubungkan perangkat' : isReady ? 'Online · siap bermain ✓' : 'Online · belum siap';
-      return `<article class="brain-lobby-player ${tone} ${isOnline ? 'is-present' : 'is-waiting'}"><span class="brain-lobby-avatar">${playerRole === 'host' ? '♡' : '✦'}</span><div><small>${playerRole === 'host' ? 'PEMBUAT SESI' : 'PEMAIN KEDUA'}</small><strong>${escapeHtml(player?.name || (playerRole === 'guest' ? 'Menunggu pasangan' : 'Pembuat sesi'))}</strong><span class="brain-lobby-status ${isReady && isOnline ? 'is-ready' : ''}">${status}</span></div>${isSelf && memberJoined ? `<span class="brain-lobby-you">KAMU</span>` : ''}</article>`;
+      return `<article class="brain-lobby-player ${tone} ${isOnline ? 'is-present' : 'is-waiting'}"><span class="brain-lobby-avatar">${playerRole === 'host' ? '♡' : '✦'}</span><div><small>${slotLabel}</small><strong>${escapeHtml(player?.name || (playerRole === 'guest' ? 'Menunggu pasangan' : 'Pembuat sesi'))}</strong><span class="brain-lobby-status ${isReady && isOnline ? 'is-ready' : ''}">${status}</span></div>${isSelf && memberJoined ? `<span class="brain-lobby-you">KAMU</span>` : ''}</article>`;
     };
     appRoot.innerHTML = `
       <section class="brain-room-lobby panel">
         <button class="button button-quiet" data-action="leave-room">← Keluar</button>
         <div class="brain-lobby-head"><span class="date-kicker">LOBI PEMAIN · ${activityName.toUpperCase()}</span><div class="brain-lobby-symbol">♡</div><h1>${bothOnline ? 'Pastikan kedua pemain siap' : membersJoined ? 'Menghubungkan kedua perangkat' : 'Menunggu pasangan bergabung'}</h1><p>${bothOnline ? 'Periksa nama dan status online. Masing-masing tekan tombol Siap. Permainan baru dimulai setelah pembuat sesi menekan Mulai.' : 'Kedua perangkat harus terhubung dan terdeteksi online sebelum permainan dapat dimulai.'}</p></div>
         <div class="brain-lobby-code"><small>KODE UNDANGAN</small><strong>${escapeHtml(current.code)}</strong><button class="button button-secondary button-small" data-action="copy-code">Salin kode</button></div>
-        <div class="brain-lobby-players">${playerCard('host', room.host, 'is-pink')}<div class="brain-lobby-versus">VS</div>${playerCard('guest', room.guest, 'is-blue')}</div>
+        <div class="brain-lobby-players">${playerCard('host', room.host, 'is-pink')}<div class="brain-lobby-versus">${gameId === 'arcade' ? '＋' : 'VS'}</div>${playerCard('guest', room.guest, 'is-blue')}</div>
         <div class="brain-lobby-controls">
           ${!bothOnline ? `<div class="brain-lobby-wait-note"><span class="brain-lobby-pulse"></span> ${membersJoined ? 'Menunggu koneksi kedua perangkat…' : 'Menunggu pemain kedua…'}</div>` : `<button class="button ${ready[current.role] ? 'button-secondary' : 'button-primary'}" data-action="toggle-room-ready">${ready[current.role] ? 'Batalkan status siap' : 'Saya siap bermain ✓'}</button>`}
           ${current.role === 'host' ? `<button class="button button-primary brain-lobby-start" data-action="start-room-game" ${bothReady ? '' : 'disabled'}>Mulai ${escapeHtml(activityName)} →</button>` : `<p class="brain-lobby-wait-note">${bothReady ? 'Kalian berdua siap. Menunggu pembuat sesi memulai…' : 'Tunggu sampai kedua pemain online dan siap.'}</p>`}
@@ -362,12 +363,12 @@ function renderActiveSession(room, current) {
   const isIQDuel = session.gameId === 'iqduel';
   const isArcade = session.gameId === 'arcade';
   const isBomberArena = session.gameId === 'bomberarena';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : isArcade ? 'Arcade' : isBomberArena ? 'Bomber Arena' : 'Photobooth';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : isArcade ? 'One Tap' : isBomberArena ? 'Bomber Arena' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isBomberArena
     ? import('./games/bomber-arena.js?v=0.50.0').then(module => ({ mount: module.mountBomberArena }))
     : isArcade
-      ? import('./games/arcade.js?v=0.48.0').then(module => ({ mount: module.mountArcade }))
+      ? import('./games/arcade.js?v=0.51.0').then(module => ({ mount: module.mountArcade }))
     : isLoveMatch
       ? import('./games/love-match.js?v=0.48.0').then(module => ({ mount: module.mountLoveMatch }))
       : isColorMatch

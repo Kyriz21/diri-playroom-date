@@ -1,4 +1,16 @@
-# Build Verification — Diri. Playroom Date v0.50.0
+# Build Verification — Diri. Playroom Date v0.51.0
+
+## v0.51.0 — One Tap Shared Lane
+- `npm test`: **254/254 tes lulus**.
+- One Tap landing card displays only Buat Room and Join Room actions; title and dialog text use One Tap.
+- Explicit room lobby labels the members Player 1 and Player 2 while retaining account display names as secondary text.
+- Both player simulation states start at `x = 0.5`; both roles receive identical deterministic gate arrays for the same seed.
+- Gate collision/scoring is evaluated at the shared center X; each player's Y, lives, input, and score remain independent.
+- Arena render draws the common obstacle stream once; player sprites are visually offset by 25 canvas pixels on either side of the center without changing their collision coordinate.
+- `firebase-database.rules.json` unchanged; no Rules republish is required when v0.49.0 Rules are active.
+- All JavaScript files checked with `node --check`; Firebase Rules JSON parsed successfully.
+- Browser rendering and live two-device Firebase playtest have not yet been performed.
+
 
 ## v0.50.0 — Bomber Arena Map Variety & Spawn Fairness
 - `npm test`: **254/254 tes lulus**.

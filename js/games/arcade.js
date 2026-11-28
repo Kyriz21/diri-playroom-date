@@ -46,7 +46,8 @@ function imageFromAvatar(value) {
 export function mountArcade(root, context) {
   const { code, session, room, role, player, onBack, toast: globalToast = () => {} } = context;
   const opponentRole = role === 'host' ? 'guest' : 'host';
-  const names = { host: room.host?.name || 'Pemain 1', guest: room.guest?.name || 'Pemain 2' };
+  const names = { host: room.host?.name || 'Player 1', guest: room.guest?.name || 'Player 2' };
+  const playerLabels = { host: 'Player 1', guest: 'Player 2' };
   const basePath = `roomGames/${code}/${session.sessionId}/arcade`;
   const baseRef = ref(db, basePath);
   const metaRef = ref(db, `${basePath}/meta`);
@@ -96,7 +97,7 @@ export function mountArcade(root, context) {
     root.innerHTML = `
       <section class="arcade-shell">
         <header class="arcade-header">
-          <div><span class="arcade-kicker">DIRI. · TWO PLAYERS, ONE CLOCK</span><h1>Arcade <span>✦</span></h1><p>Dua karakter, satu tantangan Flappy Face. Ketuk untuk mengepak dan lewati pipa.</p></div>
+          <div><span class="arcade-kicker">DIRI. · ONE TAP</span><h1>One Tap <span>✦</span></h1><p>Player 1 dan Player 2 terbang pada satu jalur yang sama. Ketuk untuk mengepak dan hindari pipa.</p></div>
           <div class="arcade-header-actions"><span class="arcade-room-code">${esc(code)}</span><button class="button button-quiet button-small" data-ar-action="back">Kembali</button></div>
         </header>
         <div data-ar-screen></div>
@@ -120,15 +121,15 @@ export function mountArcade(root, context) {
     const screen = root.querySelector('[data-ar-screen]');
     screen.innerHTML = `
       <section class="arcade-setup-card">
-        <div class="arcade-setup-intro"><span class="arcade-eyebrow">INSERT COIN · FLAPPY FACE</span><h2>Siapkan wajah jagoanmu</h2><p>Pakai foto kamera, pilih dari galeri, atau gunakan karakter lucu. Lalu tap layar atau tombol LOMPAT untuk mengepak melewati pipa.</p></div>
+        <div class="arcade-setup-intro"><span class="arcade-eyebrow">ONE TAP · LOBBY</span><h2>Siapkan karakter kalian</h2><p>Pakai foto kamera, pilih dari galeri, atau gunakan karakter lucu. Player 1 dan Player 2 akan bermain di jalur terbang yang sama.</p></div>
         <div class="arcade-avatar-pair">
-          <article class="arcade-avatar-card is-pink"><div data-ar-avatar="mine">${avatarMarkup(mineAvatar, names[role], true)}</div><strong>${esc(names[role])}</strong><small>Karakter kamu</small><span class="arcade-player-status ${mine.ready ? 'is-ready' : ''}" data-ar-ready="${role}">${mine.ready ? 'Siap bermain ✓' : 'Belum siap'}</span></article>
-          <div class="arcade-versus">VS</div>
-          <article class="arcade-avatar-card is-blue"><div data-ar-avatar="partner">${avatarMarkup(partnerAvatar, names[opponentRole])}</div><strong>${esc(names[opponentRole])}</strong><small>Karakter pasangan</small><span class="arcade-player-status ${partner.ready ? 'is-ready' : ''}" data-ar-ready="${opponentRole}">${partner.ready ? 'Siap bermain ✓' : 'Menyiapkan karakter…'}</span></article>
+          <article class="arcade-avatar-card is-pink"><div data-ar-avatar="mine">${avatarMarkup(mineAvatar, names[role], true)}</div><strong>${playerLabels[role]}</strong><small>${esc(names[role])}</small><span class="arcade-player-status ${mine.ready ? 'is-ready' : ''}" data-ar-ready="${role}">${mine.ready ? 'Siap bermain ✓' : 'Belum siap'}</span></article>
+          <div class="arcade-versus arcade-together" aria-label="Satu jalur bersama">＋</div>
+          <article class="arcade-avatar-card is-blue"><div data-ar-avatar="partner">${avatarMarkup(partnerAvatar, names[opponentRole])}</div><strong>${playerLabels[opponentRole]}</strong><small>${esc(names[opponentRole])}</small><span class="arcade-player-status ${partner.ready ? 'is-ready' : ''}" data-ar-ready="${opponentRole}">${partner.ready ? 'Siap bermain ✓' : 'Menyiapkan karakter…'}</span></article>
         </div>
         <div class="arcade-avatar-picker"><div class="arcade-picker-heading"><strong>Pilih karakter</strong><span>Atau ganti dengan foto wajahmu</span></div><div class="arcade-avatar-options">${ARCADE_AVATARS.map(item => `<button type="button" class="arcade-avatar-option ${mineAvatar === `character:${item.id}` ? 'is-selected' : ''}" data-ar-avatar-choice="${item.id}" aria-label="Pilih ${item.name}" title="${item.name}">${item.emoji}</button>`).join('')}</div><div class="arcade-photo-actions"><button class="button button-secondary button-small" data-ar-action="camera">📷 Ambil foto</button><button class="button button-secondary button-small" data-ar-action="gallery">🖼 Pilih dari galeri</button><input type="file" accept="image/*" data-ar-gallery hidden></div></div>
         <div class="arcade-howto-grid"><div><b>TAP / KLIK</b><span>Kepakkan sayap</span></div><div><b>SPACE / ↑</b><span>Flap di keyboard</span></div><div><b>♥ × 3</b><span>Tiga kesempatan</span></div></div>
-        <div class="arcade-coin-row"><div><span class="arcade-coin-icon">🕹️</span><div><strong>${bothReady ? 'Dua pemain siap!' : 'Menunggu dua pemain…'}</strong><small>${bothReady ? 'Host dapat memasukkan koin untuk memulai satu tantangan 60 detik.' : 'Kalian berdua harus memilih karakter dan menyatakan siap.'}</small></div></div><div class="arcade-coin-actions"><button class="button button-secondary" data-ar-action="ready" ${mine.ready || avatarBusy || readyBusy || !bothOnline() ? 'disabled' : ''}>${mine.ready ? 'Kamu siap ✓' : readyBusy ? 'Menyimpan…' : 'Saya siap'}</button>${role === 'host' ? `<button class="button button-primary arcade-insert-button" data-ar-action="insert-coin" ${bothReady && !starting ? '' : 'disabled'}>${starting ? 'Menyiapkan…' : 'Insert coin →'}</button>` : `<span class="arcade-waiting-note">${bothReady ? 'Menunggu host memasukkan koin…' : 'Tunggu pasangan siap.'}</span>`}</div></div>
+        <div class="arcade-coin-row"><div><span class="arcade-coin-icon">🕹️</span><div><strong>${bothReady ? 'Dua pemain siap!' : 'Menunggu dua pemain…'}</strong><small>${bothReady ? 'Host dapat memulai permainan One Tap selama 60 detik.' : 'Kalian berdua harus memilih karakter dan menyatakan siap.'}</small></div></div><div class="arcade-coin-actions"><button class="button button-secondary" data-ar-action="ready" ${mine.ready || avatarBusy || readyBusy || !bothOnline() ? 'disabled' : ''}>${mine.ready ? 'Kamu siap ✓' : readyBusy ? 'Menyimpan…' : 'Saya siap'}</button>${role === 'host' ? `<button class="button button-primary arcade-insert-button" data-ar-action="insert-coin" ${bothReady && !starting ? '' : 'disabled'}>${starting ? 'Menyiapkan…' : 'Mulai One Tap →'}</button>` : `<span class="arcade-waiting-note">${bothReady ? 'Menunggu host memasukkan koin…' : 'Tunggu pasangan siap.'}</span>`}</div></div>
         <p class="arcade-privacy-note">Kamera hanya aktif setelah kamu menekan Ambil foto. Kamu juga bisa bermain tanpa foto.</p>
       </section>`;
   }
@@ -138,13 +139,13 @@ export function mountArcade(root, context) {
     screen.innerHTML = `
       <section class="arcade-game-card">
         <div class="arcade-game-hud">
-          <div class="arcade-hud-player is-pink"><span class="arcade-hud-avatar" data-ar-mini-avatar="host">${avatarEmoji(data.players?.host?.avatar)}</span><div><strong>${esc(names.host)}</strong><small><b data-ar-score="host">0</b> GATE · <span data-ar-lives="host">♥♥♥</span></small></div></div>
-          <div class="arcade-stage-hud"><span data-ar-stage-count>DUEL · 60 DETIK</span><strong data-ar-stage-name>FLAPPY FACE</strong><div class="arcade-stage-progress"><i data-ar-stage-progress></i></div><b data-ar-timer>60.0</b></div>
-          <div class="arcade-hud-player is-blue"><div><strong>${esc(names.guest)}</strong><small><b data-ar-score="guest">0</b> GATE · <span data-ar-lives="guest">♥♥♥</span></small></div><span class="arcade-hud-avatar" data-ar-mini-avatar="guest">${avatarEmoji(data.players?.guest?.avatar)}</span></div>
+          <div class="arcade-hud-player is-pink"><span class="arcade-hud-avatar" data-ar-mini-avatar="host">${avatarEmoji(data.players?.host?.avatar)}</span><div><strong>PLAYER 1</strong><small><b data-ar-score="host">0</b> PIPA · <span data-ar-lives="host">♥♥♥</span></small></div></div>
+          <div class="arcade-stage-hud"><span data-ar-stage-count>ONE TAP · 60 DETIK</span><strong data-ar-stage-name>ONE TAP</strong><div class="arcade-stage-progress"><i data-ar-stage-progress></i></div><b data-ar-timer>60.0</b></div>
+          <div class="arcade-hud-player is-blue"><div><strong>PLAYER 2</strong><small><b data-ar-score="guest">0</b> PIPA · <span data-ar-lives="guest">♥♥♥</span></small></div><span class="arcade-hud-avatar" data-ar-mini-avatar="guest">${avatarEmoji(data.players?.guest?.avatar)}</span></div>
         </div>
-        <div class="arcade-arena-wrap"><canvas class="arcade-arena" data-ar-canvas width="960" height="540" aria-label="Arena Flappy Face dua pemain. Ketuk untuk mengepak."></canvas><div class="arcade-arena-banner" data-ar-banner hidden></div></div>
-        <div class="arcade-controls"><div class="arcade-control-label"><strong>Kontrol ${esc(names[role])}</strong><span>Tap arena atau tekan tombol</span></div><div class="arcade-control-pad"><button class="is-jump arcade-flap-button" data-ar-input="jump" aria-label="Lompat atau kepak">↟<small>LOMPAT</small></button></div></div>
-        <p class="arcade-control-note">HP: tap di arena atau tombol LOMPAT. Desktop: klik arena, Spasi, atau tombol ↑. Lepas tombol untuk turun kembali.</p>
+        <div class="arcade-arena-wrap"><canvas class="arcade-arena" data-ar-canvas width="960" height="540" aria-label="Arena One Tap bersama. Player 1 dan Player 2 berada pada jalur yang sama. Ketuk untuk terbang."></canvas><div class="arcade-arena-banner" data-ar-banner hidden></div></div>
+        <div class="arcade-controls"><div class="arcade-control-label"><strong>Kontrol ${playerLabels[role]}</strong><span>Tap arena atau tekan tombol</span></div><div class="arcade-control-pad"><button class="is-jump arcade-flap-button" data-ar-input="jump" aria-label="Tap untuk terbang">↟<small>TAP</small></button></div></div>
+        <p class="arcade-control-note">HP: tap arena atau tombol TAP. Desktop: klik arena, Spasi, atau tombol ↑. Lepas untuk turun kembali.</p>
       </section>`;
     canvas = root.querySelector('[data-ar-canvas]');
     ctx = canvas?.getContext('2d');
@@ -167,15 +168,15 @@ export function mountArcade(root, context) {
     const screen = root.querySelector('[data-ar-screen]');
     const players = data.players || {};
     const winner = getArcadeWinner(players);
-    const winnerLabel = winner.winner === 'draw' ? 'Skor imbang!' : `${esc(names[winner.winner])} menang!`;
+    const winnerLabel = winner.winner === 'draw' ? 'Skor imbang!' : `${playerLabels[winner.winner]} menang!`;
     const playerCard = playerRole => {
       const score = Number(players[playerRole]?.score || 0);
       const gates = Number(players[playerRole]?.gatesPassed || 0);
       const lives = Math.max(0, Number(players[playerRole]?.lives ?? 0));
-      return `<article class="${playerRole === 'host' ? 'is-pink' : 'is-blue'}"><span>${esc(names[playerRole])}</span><strong>${score}</strong><small>${gates} pipa terlewati · ${lives}/3 nyawa tersisa</small></article>`;
+      return `<article class="${playerRole === 'host' ? 'is-pink' : 'is-blue'}"><span>${playerLabels[playerRole]}</span><strong>${score}</strong><small>${gates} pipa terlewati · ${lives}/3 nyawa tersisa</small></article>`;
     };
     screen.innerHTML = `
-      <section class="arcade-result-card"><div class="arcade-result-top"><span class="arcade-eyebrow">FLAPPY FACE · HASIL AKHIR</span><div class="arcade-result-trophy">${winner.winner === 'draw' ? '🤝' : '🏆'}</div><h2>${winnerLabel}</h2><p>Satu ronde Flappy Face selesai. Skor dihitung dari jumlah pipa yang berhasil dilewati.</p></div>
+      <section class="arcade-result-card"><div class="arcade-result-top"><span class="arcade-eyebrow">ONE TAP · HASIL AKHIR</span><div class="arcade-result-trophy">${winner.winner === 'draw' ? '🤝' : '🏆'}</div><h2>${winnerLabel}</h2><p>Satu ronde One Tap selesai. Skor dihitung dari jumlah pipa yang berhasil dilewati pada jalur bersama.</p></div>
         <div class="arcade-result-score-pair">${playerCard('host')}${playerCard('guest')}</div>
         <div class="arcade-result-actions"><button class="button button-primary" data-ar-action="back-to-lobby" ${role === 'host' ? '' : 'disabled'}>Kembali ke lobi</button><span>${role === 'host' ? 'Kamu bisa memilih tantangan lagi atau permainan lain.' : 'Menunggu pembuat sesi kembali ke lobi…'}</span></div>
       </section>`;
@@ -204,7 +205,7 @@ export function mountArcade(root, context) {
     const coinText = root.querySelector('.arcade-coin-row strong');
     const coinNote = root.querySelector('.arcade-coin-row small');
     if (coinText) coinText.textContent = bothReady ? 'Dua pemain online dan siap!' : bothOnline() ? 'Menunggu kedua pemain siap…' : 'Menunggu dua perangkat online…';
-    if (coinNote) coinNote.textContent = bothReady ? 'Pembuat sesi dapat memasukkan koin untuk memulai.' : 'Pastikan kedua perangkat online, lalu pilih karakter dan nyatakan siap.';
+    if (coinNote) coinNote.textContent = bothReady ? 'Pembuat room dapat memulai One Tap.' : 'Pastikan kedua perangkat online, lalu pilih karakter dan nyatakan siap.';
   }
 
   function updateAvatarCache() {
@@ -222,9 +223,9 @@ export function mountArcade(root, context) {
 
   function updateStageHud() {
     if (!stageNode || !data.meta || data.meta.phase !== 'playing') return;
-    stageNode.textContent = 'FLAPPY FACE';
+    stageNode.textContent = 'ONE TAP';
     const count = root.querySelector('[data-ar-stage-count]');
-    if (count) count.textContent = 'DUEL · 60 DETIK';
+    if (count) count.textContent = 'ONE TAP · 60 DETIK';
   }
 
   function drawBackground(context) {
@@ -248,9 +249,9 @@ export function mountArcade(root, context) {
     }
     context.restore();
     context.fillStyle = 'rgba(9,10,24,.68)'; context.fillRect(0, 500, width, 40);
-    context.fillStyle = 'rgba(95,222,238,.55)'; context.fillRect(0, 497, width / 2, 3);
-    context.fillStyle = 'rgba(244,126,188,.55)'; context.fillRect(width / 2, 497, width / 2, 3);
-    context.setLineDash([7, 9]); context.strokeStyle = 'rgba(255,255,255,.12)'; context.beginPath(); context.moveTo(width / 2, 0); context.lineTo(width / 2, height); context.stroke(); context.setLineDash([]);
+    const laneGlow = context.createLinearGradient(0, 0, width, 0);
+    laneGlow.addColorStop(0, 'rgba(114,215,255,.72)'); laneGlow.addColorStop(.5, 'rgba(255,255,255,.9)'); laneGlow.addColorStop(1, 'rgba(255,130,189,.72)');
+    context.fillStyle = laneGlow; context.fillRect(0, 497, width, 3);
     for (const [x, tint] of [[12, '#9b85ef'], [936, '#f3c28e']]) {
       context.save(); context.shadowColor = tint; context.shadowBlur = 18; context.strokeStyle = tint; context.lineWidth = 5;
       context.strokeRect(x, 195, 12, 220); context.strokeRect(x + (x < 100 ? 16 : -16), 218, 8, 175); context.restore();
@@ -292,7 +293,9 @@ export function mountArcade(root, context) {
 
   function drawPlayer(context, playerRole, playerState, now) {
     if (!playerState) return;
-    const x = Number(playerState.x ?? (playerRole === 'host' ? .24 : .76)) * 960;
+    const sharedX = Number(playerState.x ?? .5) * 960;
+    // A small visual offset keeps both avatars readable; their collision X stays identical at the shared lane.
+    const x = sharedX + (playerRole === 'host' ? -25 : 25);
     const y = Number(playerState.y ?? .5) * 540;
     const image = avatarImages[playerRole];
     const tint = playerRole === 'host' ? '#ff82bd' : '#72d7ff';
@@ -307,7 +310,7 @@ export function mountArcade(root, context) {
     if (image?.complete && image.naturalWidth) context.drawImage(image, x - 18, y - 18 + bob, 36, 36);
     else { context.fillStyle = '#22253e'; context.font = '24px system-ui'; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(avatarEmoji(playerState.avatar), x, y + bob + 1); }
     context.restore();
-    context.fillStyle = '#fff'; context.font = '700 12px system-ui'; context.textAlign = 'center'; context.shadowBlur = 4; context.fillText(names[playerRole], x, y - 31 + bob);
+    context.fillStyle = '#fff'; context.font = '700 12px system-ui'; context.textAlign = 'center'; context.shadowBlur = 4; context.fillText(playerLabels[playerRole].toUpperCase(), x, y - 31 + bob);
     context.restore();
   }
 
@@ -318,10 +321,8 @@ export function mountArcade(root, context) {
     drawBackground(ctx);
     const stage = ARCADE_STAGES[0];
     const elapsed = Math.max(0, nowServer() - Number(data.meta.startedAt || nowServer()));
-    for (const playerRole of ['host', 'guest']) {
-      for (const entity of entitiesByRole[playerRole]) {
-        drawEntity(ctx, entity, getArcadeEntityPosition(entity, elapsed), stage);
-      }
+    for (const entity of entitiesByRole.host) {
+      drawEntity(ctx, entity, getArcadeEntityPosition(entity, elapsed), stage);
     }
     drawPlayer(ctx, 'host', role === 'host' && localSim ? localSim : data.players?.host, now);
     drawPlayer(ctx, 'guest', role === 'guest' && localSim ? localSim : data.players?.guest, now);
@@ -374,7 +375,7 @@ export function mountArcade(root, context) {
     }
     const initial = {
       name: names[role], avatar: `character:${role === 'host' ? 'cat' : 'rabbit'}`, ready: false,
-      x: role === 'host' ? 0.24 : 0.76, y: 0.5, score: 0, stageScore: 0, lives: 3, gatesPassed: 0,
+      x: 0.5, y: 0.5, score: 0, stageScore: 0, lives: 3, gatesPassed: 0,
       scores: {}, updatedAt: nowServer()
     };
     await set(playerRef, initial);
@@ -420,7 +421,7 @@ export function mountArcade(root, context) {
         const startAt = nowServer() + 2500;
         return { ...current, phase: 'playing', stageIndex: 0, stageStartedAt: startAt, startedAt: startAt, endedAt: 0 };
       }, { applyLocally: false });
-    } catch (error) { notify(`Arcade belum bisa dimulai: ${error.message}`, 'error'); }
+    } catch (error) { notify(`One Tap belum bisa dimulai: ${error.message}`, 'error'); }
     finally { starting = false; updateSetupUI(); }
   }
 
@@ -432,17 +433,15 @@ export function mountArcade(root, context) {
       stageScore: 0,
       lives: 3,
       gatesPassed: 0,
-      x: role === 'host' ? 0.24 : 0.76,
+      x: 0.5,
       y: 0.5,
       avatar: safeAvatar(stored.avatar),
       consumed: [],
       passed: [],
       invulnerableUntil: 0
     });
-    entitiesByRole = {
-      host: createArcadeEntities(Number(data.meta?.seed || 1), 0, 'host'),
-      guest: createArcadeEntities(Number(data.meta?.seed || 1), 0, 'guest')
-    };
+    const sharedEntities = createArcadeEntities(Number(data.meta?.seed || 1), 0);
+    entitiesByRole = { host: sharedEntities, guest: sharedEntities };
     void writeOwn({ x: localSim.x, y: localSim.y, score: 0, stageScore: 0, lives: 3, gatesPassed: 0 });
     updateStageHud();
   }
@@ -464,7 +463,7 @@ export function mountArcade(root, context) {
       }, { applyLocally: false });
     } catch (error) {
       const t = Date.now();
-      if (t - lastNotifyAt > 5000) { lastNotifyAt = t; notify(`Hasil Flappy Face belum bisa disimpan: ${error.message}`, 'error'); }
+      if (t - lastNotifyAt > 5000) { lastNotifyAt = t; notify(`Hasil One Tap belum bisa disimpan: ${error.message}`, 'error'); }
     } finally { transitionBusy = false; }
   }
 
@@ -580,9 +579,9 @@ export function mountArcade(root, context) {
     }, error => notify(`Status koneksi pemain tidak dapat dibaca: ${error.message}`, 'error'));
     unsubscribeGame = onValue(baseRef, snapshot => {
       data = snapshot.val() || {};
-      if (!data.meta && role === 'host') void seedMeta().catch(error => notify(`Sesi Arcade belum siap: ${error.message}`, 'error'));
+      if (!data.meta && role === 'host') void seedMeta().catch(error => notify(`Room One Tap belum siap: ${error.message}`, 'error'));
       renderFromData();
-    }, error => notify(`Koneksi Arcade terputus: ${error.message}`, 'error'));
+    }, error => notify(`Koneksi One Tap terputus: ${error.message}`, 'error'));
     if (!rafId) rafId = requestAnimationFrame(tick);
   }
 
@@ -601,7 +600,7 @@ export function mountArcade(root, context) {
   document.addEventListener('keydown', keyDown);
   document.addEventListener('keyup', keyUp);
   window.addEventListener('resize', resizeCanvas);
-  void initialize().catch(error => notify(`Arcade gagal disiapkan: ${error.message}`, 'error'));
+  void initialize().catch(error => notify(`One Tap gagal disiapkan: ${error.message}`, 'error'));
 
   return {
     destroy() {

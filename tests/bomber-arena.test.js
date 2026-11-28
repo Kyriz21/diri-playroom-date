@@ -362,8 +362,8 @@ test('cache Bomber Arena dan versi proyek diperbarui untuk build polish', () => 
   const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(pkg.version, '0.50.0');
+  assert.equal(pkg.version, '0.51.0');
   assert.match(index, /bomber-arena\.css\?v=0\.50\.0/);
-  assert.match(index, /app\.js\?v=0\.50\.0/);
+  assert.match(index, /app\.js\?v=0\.51\.0/);
   assert.match(app, /bomber-arena\.js\?v=0\.50\.0/);
 });

@@ -1,4 +1,4 @@
-# Diri. Playroom Date v0.50.0
+# Diri. Playroom Date v0.51.0
 
 Diri. Playroom Date adalah ruang aktivitas pasangan LDR berbasis web, menggunakan GitHub Pages untuk frontend dan Firebase Realtime Database untuk room serta sinkronisasi dua perangkat.
 
@@ -6,7 +6,7 @@ Diri. Playroom Date adalah ruang aktivitas pasangan LDR berbasis web, menggunaka
 - Photobooth: foto sendiri atau bersama, editor, bingkai, dan ekspor.
 - Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop.
 - Love Match, Color Match, dan IQ Duel: mini-game dengan lobby bersama dan satu kartu rekap akhir.
-- Arcade: satu tantangan Flappy Face dalam arena bersama. Ketuk layar atau tekan LOMPAT untuk mengepak dan melewati pipa.
+- One Tap: dua pemain terbang pada satu jalur tengah dengan rintangan yang sama. Lobby luar hanya menyediakan Buat Room dan Join Room; skor dan nyawa tetap dicatat per pemain.
 - Bomber Arena: duel Bomberman-style pada grid 13 × 11, tiga profil arena deterministik, peti simetris, 2–4 pasangan power-up, perlindungan spawn, bom bersumbu silang, chain reaction, tiga nyawa, dan rekap hasil.
 - Elemental Duo tetap tersimpan sebagai konsep arsip dan tidak ditampilkan di menu utama.
 
@@ -15,18 +15,18 @@ Diri. Playroom Date adalah ruang aktivitas pasangan LDR berbasis web, menggunaka
 - Color Match menjalankan lima ronde dengan target RGB acak. Target tidak diulang terlalu mirip dalam satu sesi; hasil seluruh ronde tampil sebagai satu rekap.
 - IQ Duel memiliki 100 soal dari lima kategori. Setiap sesi memilih 12 atau 20 soal secara seimbang dan acak, lalu menampilkan skor per kategori serta pembahasan seluruh soal.
 
-## Arcade v0.48.0 — Flappy Face
-Arcade sekarang hanya memiliki satu permainan bergaya Flappy Bird. Dua karakter bermain di arena yang sama selama 60 detik. Setiap pemain memiliki tiga nyawa dan mengumpulkan 10 poin untuk setiap celah pipa yang berhasil dilewati. Pemenang ditentukan dari skor/gerbang terlewati; hasil seri jika skornya sama.
+## One Tap v0.51.0
+One Tap adalah tantangan terbang satu sentuhan selama 60 detik. Player 1 dan Player 2 memakai satu koordinat lintasan X di tengah arena dan menerima satu urutan pipa yang sama. Avatar ditampilkan berdampingan dekat titik tengah agar keduanya tetap terlihat, tetapi collision dan perhitungan skor menggunakan jalur bersama. Setiap pemain tetap memiliki tiga nyawa dan skor masing-masing; hasil menentukan pemain dengan pipa terlewati terbanyak, atau seri jika sama.
 
-Kontrol: tap/klik area arena atau tekan tombol **LOMPAT**. Desktop juga mendukung Spasi, panah atas, atau W. Saat tidak mengepak, gravitasi menarik karakter turun. Tidak ada kontrol arah, tombol aksi tambahan, atau pergantian mini-game.
+Tampilan luar memakai nama **One Tap** dan hanya memiliki dua tindakan: **Buat Room** dan **Join Room**. Sesudah room dibuat/diikuti, kedua pemain memilih avatar atau foto, menekan status Siap, lalu host memulai permainan. Kontrol: tap arena atau tombol **TAP**; desktop juga mendukung Spasi, panah atas, atau W. Gravitasi menarik karakter turun ketika tidak mengepak.
 
-Kamera hanya diminta ketika pemain memilih Ambil Foto. Foto dipotong dan dikompres ke JPEG 128×128 dengan batas 22 KB untuk avatar sesi; avatar emoji tetap tersedia.
+Kamera hanya diminta ketika pemain memilih Ambil Foto. Foto avatar dikompres ke JPEG 128×128 dengan batas 22 KB; avatar emoji tetap tersedia.
 
 ## Instalasi
 1. Backup repository GitHub Pages.
 2. Ekstrak ZIP build dan unggah seluruh isinya ke root repository.
-3. Firebase Rules tidak berubah pada v0.50.0. Tidak perlu Publish ulang jika Rules v0.49.0 sudah aktif; jika belum, publikasikan file Rules dari build v0.49.0.
-4. Uji alur buat room, join, presence, Ready, pemilihan avatar, Insert Coin, permainan Flappy Face, dan hasil dengan dua perangkat.
+3. Firebase Rules tidak berubah pada v0.51.0. Tidak perlu Publish ulang jika Rules v0.49.0 sudah aktif.
+4. Uji alur Buat Room, Join Room, presence, Ready, pemilihan avatar, permainan One Tap, serta hasil dengan dua perangkat.
 
 ## Pengujian lokal
 - `npm test`
