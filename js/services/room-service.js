@@ -5,12 +5,12 @@ import {
 import { ROOM_TTL_MS, RECONNECT_GRACE_MS } from '../constants.js';
 import {
   generateRoomCode, normalizeRoomCode, getPlayerRole,
-  isRoomExpired, canStartGame, canClearGuest, isAllowedGameId
+  isRoomExpired, canStartGame, canClearGuest, isAllowedGameId, isSelectableGameId
 } from '../room-utils.js';
 
 const roomRef = (code) => ref(db, `rooms/${normalizeRoomCode(code)}`);
 const roomPath = (code) => `rooms/${normalizeRoomCode(code)}`;
-const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade', 'bomberarena']);
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade']);
 const needsExplicitLobby = (gameId) => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 function cleanName(name) {
@@ -29,6 +29,7 @@ export async function createRoom({ uid, name, gameId = 'photobooth' }) {
   if (!uid) throw new Error('Identitas pemain belum siap.');
   const playerName = cleanName(name);
   if (!isAllowedGameId(gameId)) throw new Error('Aktivitas yang dipilih tidak dikenal.');
+  if (!isSelectableGameId(gameId)) throw new Error('Aktivitas ini sedang diarsipkan dan tidak dapat digunakan untuk sesi baru.');
 
   // Random code + create-only database rule prevents overwriting an existing room.
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -130,6 +131,7 @@ export async function touchRoom(code) {
 
 export async function setGameSelection({ code, role, gameId }) {
   if (!isAllowedGameId(gameId)) throw new Error('Pilihan permainan tidak dikenal.');
+  if (!isSelectableGameId(gameId)) throw new Error('Permainan ini sedang diarsipkan dan tidak dapat dipilih.');
   const updates = {
     [`lobby/selections/${role}`]: gameId,
     'lobby/ready/host': false,
@@ -176,13 +178,11 @@ export async function startSelectedGame({ code, uid }) {
     'lobby/activeSession': session,
     lastMeaningfulActivityAt: serverTimestamp()
   };
-  // Bomber Arena's first meta write is authorized by Firebase Rules only when
-  // both lobby Ready flags are still true. Keep that proof until its setup is
-  // initialized; returnToLobby() resets the flags when the match ends.
-  if (gameId !== 'bomberarena') {
-    updates['lobby/ready/host'] = false;
-    updates['lobby/ready/guest'] = false;
-  }
+  // Every selectable game consumes the Ready flags when a session starts.
+  // Archived games (including Bomber Arena) cannot reach this function because
+  // canStartGame() only accepts currently selectable catalog entries.
+  updates['lobby/ready/host'] = false;
+  updates['lobby/ready/guest'] = false;
   await update(roomRef(code), updates);
   return session;
 }

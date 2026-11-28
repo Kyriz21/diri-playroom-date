@@ -1,7 +1,9 @@
 import { ROOM_TTL_MS, RECONNECT_GRACE_MS, ROOM_CODE_LENGTH, GAME_CATALOG } from './constants.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ALLOWED_GAMES = new Set(GAME_CATALOG.map(game => game.id));
+const GAME_BY_ID = new Map(GAME_CATALOG.map(game => [game.id, game]));
+const ALLOWED_GAMES = new Set(GAME_BY_ID.keys());
+const SELECTABLE_GAMES = new Set(GAME_CATALOG.filter(game => game.state === 'active').map(game => game.id));
 
 export function normalizeRoomCode(value) {
   return String(value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, ROOM_CODE_LENGTH);
@@ -20,6 +22,12 @@ export function generateRoomCode(cryptoObject = globalThis.crypto) {
 
 export function isAllowedGameId(gameId) {
   return ALLOWED_GAMES.has(gameId);
+}
+
+// Archived games remain recognized for backward-compatible active sessions,
+// but cannot be selected for a new room or started from an old waiting room.
+export function isSelectableGameId(gameId) {
+  return SELECTABLE_GAMES.has(gameId);
 }
 
 export function getPlayerRole(room, uid) {
@@ -47,7 +55,7 @@ export function canStartGame(room) {
   return Boolean(
     selected &&
     selected === selections.guest &&
-    isAllowedGameId(selected) &&
+    isSelectableGameId(selected) &&
     ready.host === true &&
     ready.guest === true
   );

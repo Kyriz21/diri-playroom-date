@@ -85,6 +85,22 @@ test('Color Match memberi akurasi 100 untuk warna yang sama dan menurunkan skor 
   assert.equal(imperfect.error, 255);
 });
 
+
+test('Color Match mendeklarasikan mutex transisi agar timer preview dapat masuk ke fase menebak', () => {
+  const game = read('../js/games/color-match.js');
+  assert.match(game, /let transitioning = false;/);
+  assert.doesNotMatch(game, /let advancing = false;/);
+  const previewTransition = game.slice(game.indexOf('async function updatePreviewToGuessing'), game.indexOf('function updatePreviewTimer'));
+  assert.match(previewTransition, /role !== 'host' \|\| transitioning \|\| pub\.meta\?\.phase !== 'preview'/);
+  assert.match(previewTransition, /phase: 'guessing'/);
+  assert.match(previewTransition, /if \(result\.committed && result\.snapshot\?\.exists\(\)\)/);
+  assert.match(previewTransition, /pub = \{ \.\.\.pub, meta: result\.snapshot\.val\(\) \}/);
+  const scoringTransition = game.slice(game.indexOf('async function scoreRemoteIfReady'), game.indexOf('async function buildRemoteRoundResult'));
+  assert.match(scoringTransition, /transitioning = true/);
+  assert.match(scoringTransition, /finally \{ transitioning = false; \}/);
+  assert.match(game, /draftGuess = \{ r: 128, g: 128, b: 128 \};/);
+});
+
 test('IQ Duel memiliki bank soal yang cukup dan semua jawaban berada dalam pilihan', () => {
   assert.equal(IQ_QUESTIONS.length, 100);
   assert.ok(new Set(IQ_QUESTIONS.map(question => question.id)).size === IQ_QUESTIONS.length);

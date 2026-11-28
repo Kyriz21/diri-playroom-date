@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeRoomCode, generateRoomCode, getPlayerRole, isRoomExpired,
-  canStartGame, canClearGuest, formatRemaining
+  canStartGame, canClearGuest, formatRemaining, isAllowedGameId, isSelectableGameId
 } from '../js/room-utils.js';
 import { ROOM_TTL_MS, RECONNECT_GRACE_MS } from '../js/constants.js';
 
@@ -53,6 +53,15 @@ test('requires matching selections and both Ready flags before Start', () => {
   assert.equal(canStartGame(room), false);
   room.lobby.selections.guest = 'thisorthat';
   room.lobby.activeSession = { gameId: 'thisorthat' };
+  assert.equal(canStartGame(room), false);
+});
+
+test('archived games remain recognized for legacy sessions but cannot be selected or started', () => {
+  const room = sampleRoom();
+  room.lobby.selections.host = 'bomberarena';
+  room.lobby.selections.guest = 'bomberarena';
+  assert.equal(isAllowedGameId('bomberarena'), true);
+  assert.equal(isSelectableGameId('bomberarena'), false);
   assert.equal(canStartGame(room), false);
 });
 

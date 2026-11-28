@@ -311,3 +311,74 @@
   .gp-rating-actions { grid-template-columns:1fr; }
   .gp-rate-button { display:flex; justify-content:space-between; align-items:center; padding:11px 13px; }
 }
+
+/* v0.51.4 — Compact illustrated previews for home mini-game cards. */
+.date-game-preview {
+  display:grid;
+  grid-template-columns:minmax(128px,.48fr) minmax(210px,1fr) minmax(180px,.78fr) auto;
+  align-items:center;
+  gap:clamp(12px,2vw,22px);
+}
+.date-game-preview > .date-kicker { justify-self:start; align-self:start; max-width:150px; line-height:1.45; }
+.date-game-preview > .date-game-actions { align-self:center; }
+.landing-game-preview { position:relative; width:100%; min-width:0; min-height:130px; padding:11px 12px 9px; overflow:hidden; border:1px solid #eee7f0; border-radius:16px; box-shadow:0 8px 18px rgba(71,54,83,.06); }
+.lhp-top,.lhp-bottom { position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; gap:7px; font-size:7px; line-height:1.2; font-weight:900; letter-spacing:.1em; }
+.lhp-top { color:#77717f; }
+.lhp-bottom { margin-top:7px; color:#9a92a0; letter-spacing:.08em; }
+.lhp-bottom i { width:6px; height:6px; flex:0 0 6px; border-radius:50%; background:#df8db3; box-shadow:0 0 0 3px rgba(223,141,179,.13); }
+/* Collaborative drawing */
+.draw-home-preview { background:linear-gradient(145deg,#fff8fb,#f4f0ff); }
+.draw-home-paper { position:relative; display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:9px; }
+.draw-home-sheet { position:relative; height:73px; overflow:hidden; border:1px solid #eee4ef; border-radius:9px; background:#fff; box-shadow:0 3px 8px rgba(90,70,105,.05); }
+.draw-home-sheet:before,.draw-home-sheet:after,.draw-home-sheet i { content:""; position:absolute; display:block; height:5px; border-radius:99px; }
+.draw-home-sheet:before { width:57%; top:22px; left:14%; transform:rotate(-25deg); }
+.draw-home-sheet:after { width:45%; top:41px; left:34%; transform:rotate(18deg); }
+.draw-home-sheet i { width:29%; top:52px; left:19%; transform:rotate(-9deg); }
+.draw-home-sheet.pink:before,.draw-home-sheet.pink:after,.draw-home-sheet.pink i { background:#e88cad; }
+.draw-home-sheet.lilac:before,.draw-home-sheet.lilac:after,.draw-home-sheet.lilac i { background:#9e8ad8; }
+.draw-home-sheet b { position:absolute; right:6px; bottom:5px; color:#a59aa9; font-size:7px; }
+.draw-home-sync { position:absolute; z-index:3; top:26px; left:50%; display:grid; place-items:center; width:19px; height:19px; transform:translateX(-50%); border:2px solid #fff; border-radius:50%; color:#a17ca9; background:#f5eaf6; font-size:11px; font-weight:900; }
+/* Guess Partner */
+.guess-home-preview { background:linear-gradient(145deg,#fff8fb,#f5f1ff); }
+.guess-home-question { margin:10px 0 8px; padding:9px 10px; border:1px solid #efe4f0; border-radius:9px; color:#51465c; background:rgba(255,255,255,.9); font-size:10px; line-height:1.35; font-weight:850; text-align:center; }
+.guess-home-answers { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.guess-home-answers>div { position:relative; display:grid; gap:4px; min-width:0; padding:7px; border:1px solid #f0e7f0; border-radius:8px; background:#fff; }
+.guess-home-answers b { color:#bd6d94; font-size:6px; letter-spacing:.09em; }
+.guess-home-answers span { color:#8e8793; font-size:7px; }
+.guess-home-answers i { position:absolute; right:6px; top:5px; color:#b18cc6; font-size:10px; font-style:normal; }
+/* Bomb Storm */
+.bomb-home-preview { color:#f8efff; border-color:#39304e; background:radial-gradient(circle at 25% 15%,rgba(104,93,153,.55),transparent 36%),linear-gradient(145deg,#27223b,#151827); }
+.bomb-home-preview .lhp-top,.bomb-home-preview .lhp-bottom { color:#c9bddc; }
+.bomb-home-sky { position:relative; height:76px; margin-top:5px; overflow:hidden; border-bottom:1px solid rgba(199,183,234,.24); background-image:radial-gradient(circle at 13% 20%,#fff 1px,transparent 1.5px),radial-gradient(circle at 79% 18%,#e6c6ff 1px,transparent 1.5px),radial-gradient(circle at 48% 72%,#fff 1px,transparent 1.5px); background-size:70px 50px,90px 45px,110px 60px; }
+.bomb-home-player { position:absolute; z-index:2; left:48%; bottom:1px; display:grid; place-items:center; width:30px; height:30px; border:2px solid #fff; border-radius:50% 50% 42% 42%; background:linear-gradient(145deg,#f49fc7,#8c78d5); box-shadow:0 0 18px rgba(231,136,194,.45); font-size:17px; }
+.bomb-home-fall { position:absolute; display:grid; place-items:center; width:13px; height:13px; border:2px solid #c6b9d9; border-radius:50%; color:transparent; background:linear-gradient(145deg,#444153,#171724); box-shadow:0 0 8px rgba(255,255,255,.18); }
+.bomb-home-fall:after { content:""; position:absolute; top:-5px; width:5px; height:4px; border-radius:2px; background:#d6c9df; }
+.bomb-home-fall.f1 { top:12px; left:27%; }.bomb-home-fall.f2 { top:28px; right:20%; transform:scale(.78); }
+.bomb-home-heart { position:absolute; color:#ff80b5; font-size:13px; text-shadow:0 0 8px #ee7bac; }.bomb-home-heart.h1 { top:35px; left:15%; }.bomb-home-heart.h2 { top:8px; right:38%; }
+.bomb-home-star { position:absolute; color:#e7d8ff; }.bomb-home-star.s1 { top:4px; left:63%; }.bomb-home-star.s2 { top:48px; right:8%; }
+/* Balloon Pop */
+.balloon-home-preview { background:linear-gradient(145deg,#f2faff,#f9f1ff); }
+.balloon-home-sky { position:relative; height:76px; margin-top:5px; overflow:hidden; background:radial-gradient(ellipse at 50% 120%,rgba(200,185,239,.34),transparent 60%); }
+.balloon-orb { position:absolute; display:grid; place-items:center; width:25px; height:31px; border:1px solid rgba(255,255,255,.85); border-radius:52% 48% 50% 50%; color:#fff; font-size:10px; font-style:normal; box-shadow:inset -4px -5px 8px rgba(67,45,86,.12),0 4px 9px rgba(82,64,105,.12); }
+.balloon-orb:after { content:""; position:absolute; top:29px; width:1px; height:14px; background:rgba(132,119,151,.5); }
+.balloon-orb.a { left:12%; top:9px; background:#ee83b0; }.balloon-orb.b { left:36%; top:24px; background:#9c8bdc; }.balloon-orb.c { right:31%; top:5px; background:#77c8c2; }.balloon-orb.d { right:9%; top:28px; background:#f2bc63; }
+.balloon-home-bomb { position:absolute; z-index:2; top:22px; left:57%; font-size:19px; filter:drop-shadow(0 3px 4px rgba(44,35,52,.2)); }
+.balloon-home-tap { position:absolute; z-index:3; left:50%; top:48%; transform:translate(-50%,-50%) rotate(-8deg); padding:4px 9px; border:2px solid #fff; border-radius:99px; color:#fff; background:#d974a2; box-shadow:0 3px 10px rgba(100,65,105,.2); font-size:8px; font-weight:950; letter-spacing:.1em; }
+@media(max-width:1000px) {
+  .date-game-preview { grid-template-columns:minmax(110px,.4fr) minmax(0,1fr) minmax(175px,.65fr); }
+  .date-game-preview > .date-game-actions { grid-column:2 / 4; justify-self:start; }
+}
+@media(max-width:800px) {
+  .date-game-preview { grid-template-columns:minmax(0,1fr) minmax(160px,.72fr); gap:12px; }
+  .date-game-preview > .date-kicker,.date-game-preview > div:nth-of-type(1) { grid-column:1 / -1; }
+  .date-game-preview > .landing-game-preview { grid-column:1; max-width:330px; }
+  .date-game-preview > .date-game-actions { grid-column:2; grid-row:3; align-self:center; justify-self:stretch; flex-direction:column; }
+  .date-game-preview > .date-game-actions .button { width:100%; }
+}
+@media(max-width:520px) {
+  .date-game-preview { grid-template-columns:1fr; }
+  .date-game-preview > .date-kicker,.date-game-preview > div:nth-of-type(1),.date-game-preview > .landing-game-preview,.date-game-preview > .date-game-actions { grid-column:1; grid-row:auto; }
+  .date-game-preview > .landing-game-preview { width:100%; max-width:none; min-height:145px; }
+  .date-game-preview > .date-game-actions { flex-direction:row; }
+  .date-game-preview > .date-game-actions .button { width:auto; flex:1; }
+}

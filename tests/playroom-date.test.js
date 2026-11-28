@@ -73,10 +73,11 @@ test('Foto Sendiri requires four camera captures before opening the editor', asy
 });
 
 
-test('Love Match, Color Match, IQ Duel, Arcade, and Bomber Arena use a shared explicit player lobby before starting', async () => {
+test('Love Match, Color Match, IQ Duel, and Arcade use an explicit player lobby; Bomber Arena is archived', async () => {
   const app = await readFile(new URL('js/app.js', root), 'utf8');
   const rooms = await readFile(new URL('js/services/room-service.js', root), 'utf8');
-  assert.match(app, /EXPLICIT_LOBBY_GAMES = new Set\(\['lovematch', 'colormatch', 'iqduel', 'arcade', 'bomberarena'\]\)/);
+  const utils = await readFile(new URL('js/room-utils.js', root), 'utf8');
+  assert.match(app, /EXPLICIT_LOBBY_GAMES = new Set\(\['lovematch', 'colormatch', 'iqduel', 'arcade'\]\)/);
   assert.match(app, /data-action="toggle-room-ready"/);
   assert.match(app, /data-action="start-room-game"/);
   assert.match(app, /room\.presence\?\.host\?\.connected === true/);
@@ -87,4 +88,20 @@ test('Love Match, Color Match, IQ Duel, Arcade, and Bomber Arena use a shared ex
   assert.match(rooms, /Kedua perangkat harus online di lobi/);
   assert.match(rooms, /Kedua perangkat harus tetap online/);
   assert.match(rooms, /const explicitLobby = needsExplicitLobby/);
+  assert.match(utils, /export function isSelectableGameId/);
+  assert.match(utils, /isSelectableGameId\(selected\)/);
+});
+
+test('home menyediakan preview visual untuk seluruh mini-game unggulan yang sebelumnya hanya berupa copy', async () => {
+  const app = await readFile(new URL('js/app.js', root), 'utf8');
+  for (const preview of ['draw-home-preview', 'guess-home-preview', 'bomb-home-preview', 'balloon-home-preview']) {
+    assert.ok(app.includes(preview), `preview ${preview} harus tersedia di home`);
+  }
+  assert.match(app, /arcade-preview-screen/);
+  assert.match(app, /love-preview-question/);
+  assert.match(app, /color-preview-swatch/);
+  assert.match(app, /iq-preview-grid/);
+  assert.match(app, /date-film-strip/);
+  assert.doesNotMatch(app, /<section class="bomber-landing-card">/);
+  assert.doesNotMatch(app, /data-action="open-bomber-(?:create|join)"/);
 });

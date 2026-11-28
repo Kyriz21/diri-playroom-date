@@ -1,4 +1,8 @@
-# Bomber Arena — v0.50.0
+# Bomber Arena — diarsipkan sejak v0.51.4
+
+> **Status saat ini:** Bomber Arena dinonaktifkan untuk room baru karena masalah inisialisasi Firebase yang belum terselesaikan. Kode gameplay tetap dipertahankan hanya untuk kompatibilitas sesi lama yang sudah aktif. Jangan gunakan langkah alur sesi di bawah untuk membuat room baru. Firebase Rules tetap disimpan; rilis v0.51.4 tidak mengubah Rules.
+
+## Referensi teknis versi v0.50.0
 
 Bomber Arena adalah mini-game duel grid real-time untuk dua pemain. Kedua pemain bergerak di satu arena 13 × 11, memasang bom, menghancurkan peti, mengambil power-up, dan berusaha menghabiskan tiga nyawa lawan.
 

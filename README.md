@@ -1,21 +1,20 @@
-# Diri. Playroom Date v0.51.3
+# Diri. Playroom Date v0.51.4
 
-## Bomber Arena — Firebase metadata permission repair
+## Fokus rilis
 
-v0.51.3 memperbaiki Rules khusus pada `roomGames/{roomCode}/{sessionId}/bomberArena/meta`.
+- **Bomber Arena diarsipkan sementara.** Tidak muncul sebagai pilihan untuk room baru dan tidak dapat dimulai dari lobi. Source game dipertahankan untuk kompatibilitas sesi Bomber Arena lama yang sudah aktif. Firebase Rules tidak diubah pada rilis ini.
+- **Preview home dilengkapi** untuk Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop. Preview game unggulan lainnya tetap tersedia.
+- **Color Match diperbaiki:** transisi otomatis dari fase mengingat (`preview`) ke fase menebak (`guessing`) sebelumnya gagal karena mutex `transitioning` tidak dideklarasikan. Sekarang transisi menggunakan mutex yang benar, memeriksa hasil transaksi Firebase, dan memperbarui state host setelah commit.
+- Draft RGB direset saat ronde baru dimulai.
 
-Akar masalah yang ditargetkan: pembuatan metadata `setup` mengulang pemeriksaan Ready dan Presence, padahal `lobby/activeSession` hanya dapat dibuat oleh host ketika kedua pemain sudah Ready dan keduanya online. Pemeriksaan berulang ini dapat menolak bootstrap saat presence berubah sesaat atau cache status antarperangkat belum seragam.
+## Instalasi
 
-Perbaikan: metadata awal hanya dapat dibuat oleh host yang terautentikasi untuk room dan session Bomber Arena aktif, selama room masih valid dan ada guest. Transisi `setup` ke `playing` tetap mensyaratkan kedua state pemain tersedia dan kedua presence online. Simulasi, input, bom, power-up, dan hasil tetap dibatasi sebagaimana sebelumnya.
+1. Backup repository GitHub Pages.
+2. Ekstrak ZIP v0.51.4 dan upload seluruh isinya ke root repository, timpa file lama.
+3. Tidak perlu mengganti atau memublikasikan ulang Firebase Rules untuk rilis ini.
+4. Tunggu deployment selesai, lalu lakukan hard refresh pada browser kedua perangkat.
+5. Uji Color Match dengan room baru dan pastikan layar berpindah dari preview ke guessing setelah durasi mengingat warna habis.
 
-## Instalasi penting
+## Catatan pengujian
 
-1. Backup repository GitHub Pages dan Firebase Rules yang sedang aktif.
-2. Upload seluruh isi ZIP ini ke root repository GitHub Pages.
-3. Buka Firebase Console → Realtime Database → Rules.
-4. Ganti Rules dengan file `firebase-database.rules.json` dari build ini, lalu Publish. Rules pada versi ini **berubah**; tidak cukup hanya mengunggah file website.
-5. Buat room baru dan uji dengan dua perangkat. Jangan gunakan room lama.
-
-Jangan membuka akses umum (`.read: true` / `.write: true`). Rules tetap membatasi penulisan metadata setup ke host aktif, session yang cocok, dan room dengan guest.
-
-Automated test memeriksa struktur dan kontrak Rules. Pengujian terhadap Firebase project aktif tetap harus dilakukan setelah Rules dipublikasikan.
+`npm test`: **261/261 tes lulus**. Pemeriksaan sintaks JavaScript dilakukan pada file yang diubah. Automated tests tidak menggantikan uji browser dan uji dua perangkat dengan Firebase project aktif.

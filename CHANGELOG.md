@@ -1,3 +1,13 @@
+## v0.51.4 — Bomber Arena diarsipkan, home previews & Color Match transition fix
+
+- Mengarsipkan Bomber Arena dari katalog yang dapat dipilih, create/join flow, dan start session. Kode permainan tetap tersedia hanya untuk kompatibilitas sesi lama yang sudah aktif; room lama yang belum memulai menampilkan pemberitahuan arsip.
+- Mempertahankan Firebase Rules Bomber Arena untuk sesi lama; tidak ada perubahan Rules atau kebutuhan Publish ulang pada rilis ini.
+- Menambahkan preview visual pada home untuk Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop. Preview One Tap, Love Match, Color Match, IQ Duel, dan Photobooth tetap dipertahankan.
+- Memperbaiki Color Match: mutex `transitioning` sebelumnya dipakai tanpa deklarasi, sehingga timer preview dapat gagal sebelum memindahkan fase `preview` ke `guessing`. Mutex kini dideklarasikan; transaksi transisi diperiksa hasilnya dan state lokal host diperbarui setelah commit.
+- Mereset draft tebakan RGB pada awal ronde baru agar tebakan tidak membawa nilai ronde sebelumnya.
+- Cache-busting aset diperbarui ke v0.51.4. `npm test`: 261/261 tes lulus; file JavaScript yang berubah lolos pemeriksaan sintaks.
+- Pengujian visual di perangkat dan multiplayer Firebase langsung tetap diperlukan.
+
 ## v0.51.3 — Bomber Arena metadata permission fix
 
 - Fixes the `PERMISSION_DENIED` error when creating `bomberArena/meta` in the setup phase.

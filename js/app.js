@@ -1,5 +1,4 @@
-import { GAME_CATALOG } from './constants.js';
-import { canStartGame, getPlayerRole, isRoomExpired, normalizeRoomCode, roleLabel } from './room-utils.js';
+import { canStartGame, getPlayerRole, isRoomExpired, normalizeRoomCode, roleLabel, isSelectableGameId } from './room-utils.js';
 import { saveRoomCode, loadRoomCode, clearRoomCode, saveDisplayName, loadDisplayName } from './services/room-session.js';
 
 const appRoot = document.querySelector('#app');
@@ -9,7 +8,7 @@ const createForm = document.querySelector('#create-form');
 const joinForm = document.querySelector('#join-form');
 const dialogError = document.querySelector('#dialog-error');
 const toastRegion = document.querySelector('#toast-region');
-const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade', 'bomberarena']);
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade']);
 const needsExplicitLobby = gameId => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 const state = {
@@ -52,7 +51,7 @@ async function ensureBackend() {
       import('./firebase.js'),
       import('./services/auth-service.js'),
       import('./services/presence-service.js'),
-      import('./services/room-service.js?v=0.51.3')
+      import('./services/room-service.js?v=0.51.4')
     ]).then(([firebase, auth, presence, rooms]) => {
       if (!firebase.isFirebaseConfigured) {
         throw new Error('FIREBASE_NOT_CONFIGURED: Isi konfigurasi Web App project baru pada js/firebase.js sebelum membuat atau bergabung ke sesi.');
@@ -253,30 +252,30 @@ function renderLanding() {
     <section class="date-next-preview date-game-preview">
       <span class="date-kicker">MINI GAME PERTAMA</span>
       <div><h2>Gambar Bareng ✎</h2><p>Dapatkan instruksi yang sama, gambar dari dua tempat, dan lihat coretan satu sama lain secara langsung.</p></div>
+      <div class="landing-game-preview draw-home-preview" aria-hidden="true"><div class="lhp-top"><span>LIVE CANVAS</span><span>PLAYER 1 · 2</span></div><div class="draw-home-paper"><div class="draw-home-sheet pink"><i></i><b>P1</b></div><div class="draw-home-sheet lilac"><i></i><b>P2</b></div><span class="draw-home-sync">↔</span></div><div class="lhp-bottom"><i></i> COREtan LANGSUNG</div></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-draw-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-draw-join">Gabung sesi</button></div>
     </section>
     <section class="date-next-preview date-game-preview gp-landing-preview">
       <span class="date-kicker">MINI GAME KEDUA · BARU</span>
       <div><h2>Tebak Pasangan ♡</h2><p>Satu orang menjawab pertanyaan tentang dirinya, pasangannya menebak. Buka jawaban bersama dan lihat seberapa cocok tebakan kalian.</p></div>
+      <div class="landing-game-preview guess-home-preview" aria-hidden="true"><div class="lhp-top"><span>PERTANYAAN 04 / 20</span><span>♡ MATCH</span></div><div class="guess-home-question">Siapa yang paling sering memulai obrolan?</div><div class="guess-home-answers"><div><b>PLAYER 1</b><span>Jawaban pribadi</span><i>♡</i></div><div><b>PLAYER 2</b><span>Tebakan pasangan</span><i>?</i></div></div></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-guess-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-guess-join">Gabung sesi</button></div>
     </section>
     <section class="date-next-preview date-game-preview bs-landing-preview">
       <span class="date-kicker">MINI GAME KETIGA · BARU</span>
       <div><h2>Bomb Storm ☄</h2><p>Jadikan selfie sebagai karakter, hindari bom yang berjatuhan, dan kumpulkan hati untuk meraih skor tertinggi.</p></div>
+      <div class="landing-game-preview bomb-home-preview" aria-hidden="true"><div class="lhp-top"><span>BOMB STORM</span><span>SURVIVE</span></div><div class="bomb-home-sky"><i class="bomb-home-star s1">✦</i><i class="bomb-home-star s2">·</i><i class="bomb-home-fall f1">●</i><i class="bomb-home-fall f2">●</i><i class="bomb-home-heart h1">♥</i><i class="bomb-home-heart h2">♥</i><span class="bomb-home-player">🐱</span></div><div class="lhp-bottom"><i></i> HINDARI BOM · KUMPULKAN HATI</div></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-bomb-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-bomb-join">Gabung sesi</button></div>
     </section>
     <section class="date-next-preview date-game-preview bp-landing-preview">
       <span class="date-kicker">MINI GAME KEEMPAT · BARU</span>
       <div><h2>Balloon Pop 🎈</h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi jangan sampai menyentuh bom!</p></div>
+      <div class="landing-game-preview balloon-home-preview" aria-hidden="true"><div class="lhp-top"><span>BALLOON POP</span><span>+10 POINTS</span></div><div class="balloon-home-sky"><i class="balloon-orb a">♥</i><i class="balloon-orb b">✦</i><i class="balloon-orb c">●</i><i class="balloon-orb d">♥</i><i class="balloon-home-bomb">💣</i><span class="balloon-home-tap">TAP!</span></div><div class="lhp-bottom"><i></i> POP · SCORE · AVOID BOMBS</div></div>
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
     </section>
     <section class="arcade-landing-card">
       <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE SHARED LANE</span><h2>One Tap <span>✦</span></h2><p>Dua pemain berada di jalur terbang yang sama. Ketuk layar untuk mengepak, lewati pipa bersama, dan kumpulkan skor selama 60 detik.</p><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Buat Room <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join Room</button></div></div>
       <div class="arcade-preview-screen" aria-label="Pratinjau One Tap untuk Player 1 dan Player 2"><div class="arcade-preview-top"><span>ONE TAP</span><span>SHARED LANE · 60s</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>PLAYER 1</b><span>ONE LANE</span><b>PLAYER 2</b></div></div>
-    </section>
-    <section class="bomber-landing-card">
-      <div class="bomber-landing-copy"><span class="bomber-kicker">CLASSIC GRID BATTLE · 1 VS 1</span><h2>Bomber Arena <i>💣</i></h2><p>Pasang bom, hancurkan peti, cari power-up, dan jebak pasanganmu di arena labirin. Hati-hati—ledakanmu sendiri juga berbahaya.</p><div class="bomber-landing-tags"><span>Grid 13 × 11</span><span>3 nyawa</span><span>Duel real-time</span></div><div class="bomber-landing-actions"><button class="button button-primary" data-action="open-bomber-create">Buat arena <span>→</span></button><button class="button button-secondary" data-action="open-bomber-join">Gabung kode</button></div></div>
-      <div class="bomber-landing-preview" aria-hidden="true"><div class="bomber-preview-top"><span>BOMBER ARENA</span><span>1 VS 1</span></div><div class="bomber-preview-grid"><i>🧱</i><i>🟫</i><i>💣</i><i>🟫</i><i>🔥</i><i>🧱</i><i>🟫</i><i>💗</i><i>🟫</i><i>🧱</i><i>🟫</i><i>💣</i><i>🧱</i><i>💙</i><i>🟫</i><i>🔥</i><i>🟫</i><i>🧱</i></div><div class="bomber-preview-score"><b>PLAYER 1 · ♥♥♥</b><span>VS</span><b>♥♥♥ · PLAYER 2</b></div></div>
     </section>
     <section class="brain-games-section">
       <div class="brain-games-heading"><span class="date-kicker">AKTIVITAS BARU · MINI GAME BERDUA</span><h2>Tiga cara baru untuk saling mengenal</h2><p>Pilih aktivitas, undang pasangan dengan kode, atau mainkan latihan di satu perangkat.</p></div>
@@ -300,6 +299,10 @@ function renderWaitingRoom(room, current) {
   const guestJoined = Boolean(room.guest?.uid);
   const gameId = room.lobby?.selections?.host || 'photobooth';
   const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'One Tap', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  if (!isSelectableGameId(gameId)) {
+    appRoot.innerHTML = `<section class="date-waiting panel"><button class="button button-quiet" data-action="leave-room">← Keluar</button><span class="date-kicker">AKTIVITAS DIARSIPKAN</span><div class="date-waiting-icon">⏸</div><h1>${escapeHtml(activityName)} sedang dinonaktifkan</h1><p>Permainan ini sementara tidak tersedia untuk sesi baru. Implementasinya tetap disimpan, tetapi room ini tidak dapat memulainya.</p><p class="date-small-note">Keluar dari room ini, lalu buat sesi baru dengan permainan yang masih aktif.</p></section>`;
+    return;
+  }
   if (needsExplicitLobby(gameId)) {
     const ready = room.lobby?.ready || {};
     const membersJoined = Boolean(room.host?.uid && room.guest?.uid);
@@ -372,7 +375,7 @@ function renderActiveSession(room, current) {
     : isLoveMatch
       ? import('./games/love-match.js?v=0.48.0').then(module => ({ mount: module.mountLoveMatch }))
       : isColorMatch
-        ? import('./games/color-match.js?v=0.48.0').then(module => ({ mount: module.mountColorMatch }))
+        ? import('./games/color-match.js?v=0.51.4').then(module => ({ mount: module.mountColorMatch }))
         : isIQDuel
           ? import('./games/iq-duel.js?v=0.48.0').then(module => ({ mount: module.mountIQDuel }))
           : isElementalDuo
@@ -460,7 +463,7 @@ async function openSoloMiniGame(gameId) {
   const labels = { lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel' };
   const imports = {
     lovematch: () => import('./games/love-match.js?v=0.48.0').then(module => module.mountLoveMatch),
-    colormatch: () => import('./games/color-match.js?v=0.48.0').then(module => module.mountColorMatch),
+    colormatch: () => import('./games/color-match.js?v=0.51.4').then(module => module.mountColorMatch),
     iqduel: () => import('./games/iq-duel.js?v=0.48.0').then(module => module.mountIQDuel)
   };
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan ${labels[gameId] || 'mini game'}…</p></section>`;
@@ -577,8 +580,6 @@ async function runAction(action, element) {
   if (action === 'open-iq-solo') return openSoloMiniGame('iqduel');
   if (action === 'open-arcade-create') return openDialog('create', 'arcade');
   if (action === 'open-arcade-join') return openDialog('join', 'arcade');
-  if (action === 'open-bomber-create') return openDialog('create', 'bomberarena');
-  if (action === 'open-bomber-join') return openDialog('join', 'bomberarena');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

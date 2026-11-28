@@ -1,16 +1,18 @@
-# Mulai di sini — Diri. Playroom Date v0.51.3
+# Mulai di sini — Diri. Playroom Date v0.51.4
 
 ## Fokus rilis
-- Memperbaiki izin penulisan metadata awal Bomber Arena pada `roomGames/{roomCode}/{sessionId}/bomberArena/meta`.
-- Penulisan setup hanya diizinkan bagi host terautentikasi pada sesi Bomber Arena aktif dan room yang memiliki guest.
-- Transisi ke `playing` tetap memerlukan state kedua pemain dan presence online keduanya.
-- Firebase Rules pada versi ini berubah dan wajib dipublikasikan.
+- Bomber Arena diarsipkan untuk sesi baru; source lama tetap disimpan agar sesi aktif terdahulu masih dapat dimuat.
+- Preview home ditambahkan untuk Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop.
+- Color Match: memperbaiki transisi timer dari fase mengingat warna ke fase menebak yang terhenti akibat variabel mutex `transitioning` tidak dideklarasikan.
+- Draft RGB direset pada setiap ronde baru.
+- Firebase Rules tidak berubah.
 
 ## Instalasi
-1. Backup file website dan Rules lama.
-2. Ekstrak ZIP dan upload seluruh isi ke root repository GitHub Pages.
-3. Buka `firebase-database.rules.json`, salin seluruh JSON, tempel di Firebase Console → Realtime Database → Rules, lalu Publish.
-4. Reload kedua perangkat.
-5. Buat room baru, join dari HP kedua, pastikan keduanya Ready, kemudian mulai Bomber Arena.
+1. Backup repository GitHub Pages.
+2. Ekstrak ZIP dan upload seluruh isi ke root repository.
+3. Tidak perlu Publish ulang Firebase Rules.
+4. Hard refresh kedua perangkat setelah deployment.
+5. Buat room Color Match baru, lalu pastikan kedua pemain masuk ke fase menebak setelah preview warna berakhir.
 
-Tidak perlu mengubah Firebase config. Jangan gunakan room yang gagal sebelumnya karena menyimpan activeSession lama.
+## Pengujian
+`npm test`: **261/261 tes lulus**. Uji perangkat nyata tetap diperlukan.

@@ -175,16 +175,19 @@ test('Format timer Bomber Arena menjadi menit dan detik', () => {
   assert.equal(formatBomberTime(0), '0:00');
 });
 
-test('Bomber Arena terintegrasi dengan katalog, landing page, room lobby, dan loader', () => {
+test('Bomber Arena diarsipkan seperti Elemental Duo tetapi modul lama tetap tersedia untuk sesi aktif', () => {
   const constants = fs.readFileSync(new URL('../js/constants.js', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const roomService = fs.readFileSync(new URL('../js/services/room-service.js', import.meta.url), 'utf8');
-  assert.match(constants, /id: 'bomberarena',[\s\S]{0,260}state: 'active'/);
-  assert.match(app, /EXPLICIT_LOBBY_GAMES = new Set\([^\]]*'bomberarena'/);
-  assert.match(roomService, /EXPLICIT_LOBBY_GAMES = new Set\([^\]]*'bomberarena'/);
-  assert.match(app, /data-action="open-bomber-create"/);
-  assert.match(app, /data-action="open-bomber-join"/);
-  assert.match(app, /import\('\.\/games\/bomber-arena\.js\?v=0\.51\.3'\)/);
+  const roomUtils = fs.readFileSync(new URL('../js/room-utils.js', import.meta.url), 'utf8');
+  assert.match(constants, /id: 'bomberarena',[\s\S]{0,320}state: 'archived'/);
+  assert.doesNotMatch(app, /data-action="open-bomber-(?:create|join)"/);
+  assert.doesNotMatch(app, /<section class="bomber-landing-card">/);
+  assert.doesNotMatch(app, /EXPLICIT_LOBBY_GAMES = new Set\([^\]]*'bomberarena'/);
+  assert.doesNotMatch(roomService, /EXPLICIT_LOBBY_GAMES = new Set\([^\]]*'bomberarena'/);
+  assert.match(roomUtils, /export function isSelectableGameId/);
+  assert.match(roomUtils, /isSelectableGameId\(selected\)/);
+  assert.match(app, /import\('\.\/games\/bomber-arena\.js\?v=0\.51\.3'\)/, 'module tetap dapat memulihkan sesi lama yang sudah aktif');
   const game = fs.readFileSync(new URL('../js/games/bomber-arena.js', import.meta.url), 'utf8');
   assert.match(game, /bomber-arena-logic\.js\?v=0\.51\.3/);
 });
@@ -362,29 +365,23 @@ test('cache Bomber Arena dan versi proyek diperbarui untuk build polish', () => 
   const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(pkg.version, '0.51.3');
+  assert.equal(pkg.version, '0.51.4');
   assert.match(index, /bomber-arena\.css\?v=0\.51\.3/);
-  assert.match(index, /app\.js\?v=0\.51\.3/);
+  assert.match(index, /app\.js\?v=0\.51\.4/);
   assert.match(app, /bomber-arena\.js\?v=0\.51\.3/);
-  assert.match(app, /room-service\.js\?v=0\.51\.3/);
+  assert.match(app, /room-service\.js\?v=0\.51\.4/);
 });
 
 
-test('Bomber Arena mempertahankan status Ready sampai meta setup diizinkan Rules', () => {
+test('Bomber Arena tidak lagi dapat memulai sesi baru; modul lama hanya untuk sesi aktif terdahulu', async () => {
   const service = fs.readFileSync(new URL('../js/services/room-service.js', import.meta.url), 'utf8');
-  const game = fs.readFileSync(new URL('../js/games/bomber-arena.js', import.meta.url), 'utf8');
-  const rules = JSON.parse(fs.readFileSync(new URL('../firebase-database.rules.json', import.meta.url), 'utf8')).rules;
+  const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const start = service.slice(service.indexOf('export async function startSelectedGame'), service.indexOf('export async function returnToLobby'));
-  assert.match(start, /if \(gameId !== 'bomberarena'\)/);
   assert.match(start, /updates\['lobby\/ready\/host'\] = false/);
   assert.match(start, /updates\['lobby\/ready\/guest'\] = false/);
-  assert.match(game, /room\?\.lobby\?\.ready\?\.host !== true \|\| room\?\.lobby\?\.ready\?\.guest !== true/);
-  assert.match(game, /data-ba-action=\"retry\"/);
-  const metaWrite = rules.roomGames.$roomCode.$sessionId.bomberArena.meta['.write'];
-  assert.match(metaWrite, /!data\.exists\(\).*newData\.child\('phase'\)\.val\(\) === 'setup'/);
-  assert.match(metaWrite, /child\('guest'\)\.child\('uid'\)\.exists\(\)/);
-  assert.match(metaWrite, /presence.*host.*connected.*presence.*guest.*connected/);
-  assert.doesNotMatch(metaWrite, /lobby.*ready.*host.*true.*ready.*guest.*true/);
+  assert.doesNotMatch(start, /gameId !== 'bomberarena'/);
+  assert.match(app, /isBomberArena[\s\S]{0,160}bomber-arena\.js\?v=0\.51\.3/);
+  assert.doesNotMatch(app, /data-action=\"open-bomber-(?:create|join)/);
 });
 
 test('Rules metadata setup memakai activeSession sebagai bukti Ready/Presence dan tetap membatasi host', () => {

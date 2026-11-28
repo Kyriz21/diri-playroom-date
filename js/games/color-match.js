@@ -23,7 +23,8 @@ export function mountColorMatch(root, context) {
   let busy = false;
   let starting = false;
   let settingsBusy = false;
-  let advancing = false;
+  let transitioning = false;
+  let lastTransitionErrorAt = 0;
   let processingRound = ''; 
   let destroyed = false;
   let partnerPrivate = null;
@@ -122,6 +123,7 @@ export function mountColorMatch(root, context) {
     const settings = suppliedSettings || pub.settings || { mode: 'versus', difficulty: 'normal', clueRole: 'host' };
     const previousTargets = Object.values(pub.roundResults || {}).map(item => item.target).filter(Boolean);
     const target = makeDistinctColor(previousTargets);
+    draftGuess = { r: 128, g: 128, b: 128 };
     await set(ref(db, `${privateRoot}/${room.host.uid}/rounds/${round}/target`), target);
     await update(baseRef, {
       settings,
@@ -133,13 +135,31 @@ export function mountColorMatch(root, context) {
   }
 
   async function updatePreviewToGuessing() {
-    if (role !== 'host' || transitioning || pub.meta?.phase !== 'preview') return;
+    if (destroyed || role !== 'host' || transitioning || pub.meta?.phase !== 'preview') return;
+    const round = Number(pub.meta.round || 1);
     const elapsed = Date.now() - Number(pub.meta.startedAt || 0);
     if (elapsed < Number(pub.meta.previewMs || SHOW_MS.normal)) return;
     transitioning = true;
-    try { await runTransaction(ref(db, `${base}/meta`), current => current?.phase === 'preview' && current.round === pub.meta.round ? { ...current, phase: 'guessing', guessStartedAt: Date.now() } : undefined, { applyLocally: false }); }
-    catch (error) { toast(`Ronde belum bisa dilanjutkan: ${error.message}`, 'error'); }
-    finally { transitioning = false; }
+    try {
+      const result = await runTransaction(ref(db, `${base}/meta`), current =>
+        current?.phase === 'preview' && Number(current.round) === round
+          ? { ...current, phase: 'guessing', guessStartedAt: Date.now() }
+          : undefined,
+        { applyLocally: false }
+      );
+      if (result.committed && result.snapshot?.exists()) {
+        pub = { ...pub, meta: result.snapshot.val() };
+        render();
+      }
+    } catch (error) {
+      const now = Date.now();
+      if (now - lastTransitionErrorAt > 5000) {
+        lastTransitionErrorAt = now;
+        toast(`Ronde belum bisa dilanjutkan: ${error.message}`, 'error');
+      }
+    } finally {
+      transitioning = false;
+    }
   }
 
   function updatePreviewTimer() {
@@ -169,9 +189,22 @@ export function mountColorMatch(root, context) {
     const ready = mode === 'duet' ? pub.submissions?.guest === true : pub.submissions?.host === true && pub.submissions?.guest === true;
     if (!ready) return;
     transitioning = true;
-    try { await runTransaction(ref(db, `${base}/meta`), current => current?.phase === 'guessing' ? { ...current, phase: 'scoring' } : undefined, { applyLocally: false }); }
-    catch (error) { toast(`Rekap ronde belum bisa dihitung: ${error.message}`, 'error'); }
-    finally { transitioning = false; }
+    try {
+      const result = await runTransaction(ref(db, `${base}/meta`), current =>
+        current?.phase === 'guessing' ? { ...current, phase: 'scoring' } : undefined,
+        { applyLocally: false }
+      );
+      if (result.committed && result.snapshot?.exists()) {
+        pub = { ...pub, meta: result.snapshot.val() };
+        render();
+      }
+    } catch (error) {
+      const now = Date.now();
+      if (now - lastTransitionErrorAt > 5000) {
+        lastTransitionErrorAt = now;
+        toast(`Rekap ronde belum bisa dihitung: ${error.message}`, 'error');
+      }
+    } finally { transitioning = false; }
   }
 
   async function buildRemoteRoundResult() {

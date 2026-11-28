@@ -24,7 +24,7 @@ export const GAME_CATALOG = [
   { id: 'colormatch', number: '10', title: 'Color Match', subtitle: 'Uji ingatan warna', description: 'Ingat warna dan bangun kembali dengan slider RGB dalam mode Versus atau Duet.', icon: '◉', state: 'active' },
   { id: 'iqduel', number: '11', title: 'IQ Duel', subtitle: 'Adu cepat berpikir', description: 'Pola, logika, deret, analogi, dan hitung cepat. Skor dibuka di akhir.', icon: '✦', state: 'active' },
   { id: 'arcade', number: '12', title: 'One Tap', subtitle: 'Satu jalur · dua pemain', description: 'Terbang bersama pada satu jalur. Ketuk untuk melewati pipa dan kumpulkan skor masing-masing.', icon: '🪽', state: 'active' },
-  { id: 'bomberarena', number: '13', title: 'Bomber Arena', subtitle: 'Pasang bom, jebak lawan', description: 'Duel di arena grid. Hancurkan peti, ambil power-up, dan bertahan dari ledakan.', icon: '💣', state: 'active' }
+  { id: 'bomberarena', number: '13', title: 'Bomber Arena', subtitle: 'Dinonaktifkan sementara', description: 'Mode ini diarsipkan sementara. Implementasi tetap disimpan untuk pengembangan berikutnya.', icon: '💣', state: 'archived' }
 ];
 
 export const GAME_LABELS = Object.fromEntries(GAME_CATALOG.map(game => [game.id, game.title]));
