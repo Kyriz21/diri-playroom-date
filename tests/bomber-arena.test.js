@@ -184,7 +184,7 @@ test('Bomber Arena terintegrasi dengan katalog, landing page, room lobby, dan lo
   assert.match(roomService, /EXPLICIT_LOBBY_GAMES = new Set\([^\]]*'bomberarena'/);
   assert.match(app, /data-action="open-bomber-create"/);
   assert.match(app, /data-action="open-bomber-join"/);
-  assert.match(app, /import\('\.\/games\/bomber-arena\.js\?v=0\.50\.0'\)/);
+  assert.match(app, /import\('\.\/games\/bomber-arena\.js\?v=0\.51\.1'\)/);
   const game = fs.readFileSync(new URL('../js/games/bomber-arena.js', import.meta.url), 'utf8');
   assert.match(game, /bomber-arena-logic\.js\?v=0\.50\.0/);
 });
@@ -362,8 +362,31 @@ test('cache Bomber Arena dan versi proyek diperbarui untuk build polish', () => 
   const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(pkg.version, '0.51.0');
-  assert.match(index, /bomber-arena\.css\?v=0\.50\.0/);
-  assert.match(index, /app\.js\?v=0\.51\.0/);
-  assert.match(app, /bomber-arena\.js\?v=0\.50\.0/);
+  assert.equal(pkg.version, '0.51.1');
+  assert.match(index, /bomber-arena\.css\?v=0\.51\.1/);
+  assert.match(index, /app\.js\?v=0\.51\.1/);
+  assert.match(app, /bomber-arena\.js\?v=0\.51\.1/);
+  assert.match(app, /room-service\.js\?v=0\.51\.1/);
+});
+
+
+test('Bomber Arena mempertahankan status Ready sampai meta setup diizinkan Rules', () => {
+  const service = fs.readFileSync(new URL('../js/services/room-service.js', import.meta.url), 'utf8');
+  const game = fs.readFileSync(new URL('../js/games/bomber-arena.js', import.meta.url), 'utf8');
+  const rules = JSON.parse(fs.readFileSync(new URL('../firebase-database.rules.json', import.meta.url), 'utf8')).rules;
+  const start = service.slice(service.indexOf('export async function startSelectedGame'), service.indexOf('export async function returnToLobby'));
+  assert.match(start, /if \(gameId !== 'bomberarena'\)/);
+  assert.match(start, /updates\['lobby\/ready\/host'\] = false/);
+  assert.match(start, /updates\['lobby\/ready\/guest'\] = false/);
+  assert.match(game, /room\?\.lobby\?\.ready\?\.host !== true \|\| room\?\.lobby\?\.ready\?\.guest !== true/);
+  assert.match(game, /data-ba-action=\"retry\"/);
+  const metaWrite = rules.roomGames.$roomCode.$sessionId.bomberArena.meta['.write'];
+  assert.match(metaWrite, /lobby.*ready.*host.*true.*ready.*guest.*true/);
+});
+
+test('Bomber Arena menampilkan pemulihan jika bootstrap Firebase gagal', () => {
+  const game = fs.readFileSync(new URL('../js/games/bomber-arena.js', import.meta.url), 'utf8');
+  assert.match(game, /startupError = `Firebase menolak inisialisasi arena:/);
+  assert.match(game, /startupRecoveryRequired = true/);
+  assert.match(game, /data-ba-action=\"back\"/);
 });

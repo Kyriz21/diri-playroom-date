@@ -172,12 +172,18 @@ export async function startSelectedGame({ code, uid }) {
     sessionId: crypto.randomUUID(),
     startedAt: serverTimestamp()
   };
-  await update(roomRef(code), {
+  const updates = {
     'lobby/activeSession': session,
-    'lobby/ready/host': false,
-    'lobby/ready/guest': false,
     lastMeaningfulActivityAt: serverTimestamp()
-  });
+  };
+  // Bomber Arena's first meta write is authorized by Firebase Rules only when
+  // both lobby Ready flags are still true. Keep that proof until its setup is
+  // initialized; returnToLobby() resets the flags when the match ends.
+  if (gameId !== 'bomberarena') {
+    updates['lobby/ready/host'] = false;
+    updates['lobby/ready/guest'] = false;
+  }
+  await update(roomRef(code), updates);
   return session;
 }
 

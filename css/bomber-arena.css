@@ -40,3 +40,6 @@
 
 /* v0.50.0 — countdown lockout and invulnerability feedback */
 .bomber-controls button:disabled{opacity:.42;cursor:not-allowed;filter:saturate(.55);transform:none!important;box-shadow:none!important}
+
+/* v0.51.1 — visible Bomber Arena bootstrap recovery */
+.bomber-loading.has-error{border-color:#f0c9c9;background:linear-gradient(145deg,#fff,#fff8f7)}.bomber-loading.has-error>span{background:#fff0ed;box-shadow:0 8px 22px rgba(198,80,77,.1)}.bomber-loading.has-error>small{max-width:560px;color:#a85f62;font-size:11px;line-height:1.6}.bomber-loading-actions{display:flex;justify-content:center;gap:8px;margin-top:8px}.bomber-loading-actions .button{min-width:140px}

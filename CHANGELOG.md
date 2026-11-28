@@ -1,3 +1,11 @@
+## v0.51.1 — Bomber Arena room-start repair
+- Memperbaiki penyebab Bomber Arena macet pada layar menunggu: `startSelectedGame()` sebelumnya menghapus kedua status Ready, padahal Firebase Rules mensyaratkan keduanya tetap true saat host membuat meta awal arena.
+- Status Ready kini dipertahankan hanya untuk Bomber Arena selama bootstrap sesi. `returnToLobby()` tetap mereset status sesuai alur lobi.
+- Inisialisasi Bomber Arena menunggu kedua presence online dan memverifikasi bukti Ready sebelum menulis meta setup.
+- Menambahkan pesan error bootstrap yang terlihat, tombol Coba lagi untuk host, serta petunjuk kembali ke lobi untuk sesi lama yang status Ready-nya sudah telanjur terhapus.
+- Firebase Rules tidak diubah; tidak perlu Publish ulang jika Rules yang sama dari v0.50.0/v0.51.0 masih aktif.
+- Tambahan regression tests untuk relasi `startSelectedGame()` dan syarat meta Firebase Rules.
+
 ## v0.51.0 — One Tap shared lane
 - Mengganti nama tampilan game dari Arcade/Flappy Face menjadi **One Tap** pada katalog, landing page, form room, lobby, arena, HUD, dan hasil.
 - Landing One Tap hanya menampilkan dua tindakan: **Buat Room** dan **Join Room**. Pratinjau menggunakan label Player 1 dan Player 2.

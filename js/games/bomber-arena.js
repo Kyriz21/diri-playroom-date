@@ -59,6 +59,8 @@ export function mountBomberArena(root, context) {
   let hudNodes = {};
   let bannerNode = null;
   let lastNoticeAt = 0;
+  let startupError = '';
+  let startupRecoveryRequired = false;
   let inputWriteChain = Promise.resolve();
   let ownInputInitialized = false;
   let ownInputInitializing = false;
@@ -165,7 +167,20 @@ export function mountBomberArena(root, context) {
 
   function renderWaiting() {
     const screen = root.querySelector('[data-ba-screen]');
-    screen.innerHTML = `<section class="bomber-loading"><span>💣</span><strong>${data.meta?.phase === 'setup' ? 'Menyiapkan arena…' : 'Menunggu pemain…'}</strong><small>Grid 13 × 11 sedang disinkronkan untuk ${esc(names.host)} dan ${esc(names.guest)}.</small><div class="bomber-loading-players"><span>${isOnline('host') ? '●' : '○'} ${esc(names.host)}</span><span>${isOnline('guest') ? '●' : '○'} ${esc(names.guest)}</span></div></section>`;
+    if (!screen) return;
+    const bothOnline = isOnline('host') && isOnline('guest');
+    const headline = startupError
+      ? (startupRecoveryRequired ? 'Sesi perlu dimulai ulang' : 'Arena gagal disiapkan')
+      : data.meta?.phase === 'setup'
+        ? 'Menyiapkan arena…'
+        : bothOnline ? 'Menghubungkan arena…' : 'Menunggu pemain…';
+    const detail = startupError || (bothOnline
+      ? 'Kedua pemain sudah terhubung. Menyiapkan arena 13 × 11…'
+      : 'Arena akan dimulai setelah kedua perangkat terhubung.');
+    const actions = startupError
+      ? `<div class="bomber-loading-actions">${role === 'host' && startupRecoveryRequired ? '<button type="button" class="button button-primary" data-ba-action="back">Kembali ke lobi</button>' : ''}${role === 'host' && !startupRecoveryRequired ? '<button type="button" class="button button-primary" data-ba-action="retry">Coba lagi</button>' : ''}</div>`
+      : '';
+    screen.innerHTML = `<section class="bomber-loading ${startupError ? 'has-error' : ''}"><span>${startupError ? '⚠️' : '💣'}</span><strong>${headline}</strong><small>${esc(detail)}</small><div class="bomber-loading-players"><span>${isOnline('host') ? '●' : '○'} ${esc(names.host)}</span><span>${isOnline('guest') ? '●' : '○'} ${esc(names.guest)}</span></div>${actions}</section>`;
   }
 
   function updateHud() {
@@ -353,6 +368,21 @@ export function mountBomberArena(root, context) {
 
   async function initializeGame() {
     if (role !== 'host' || initializing || destroyed) return;
+    if (!isOnline('host') || !isOnline('guest')) {
+      renderWaiting();
+      return;
+    }
+    // The initial Bomber Arena meta write is guarded by Rules that verify both
+    // Ready flags. An already-active session from the older build has those
+    // flags cleared, so it must be returned to the lobby and started again.
+    if (room?.lobby?.ready?.host !== true || room?.lobby?.ready?.guest !== true) {
+      startupError = 'Status Siap kedua pemain tidak tersimpan untuk sesi ini. Host perlu kembali ke lobi, lalu kedua pemain menekan Siap dan memulai ulang.';
+      startupRecoveryRequired = true;
+      renderWaiting();
+      return;
+    }
+    startupError = '';
+    startupRecoveryRequired = false;
     initializing = true;
     try {
       const existing = await get(metaRef);
@@ -391,6 +421,9 @@ export function mountBomberArena(root, context) {
       await Promise.all(writes);
       await set(metaRef, { phase: 'playing', seed, startedAt, durationMs: BOMBER_DURATION_MS, createdAt, endedAt: 0, winner: '', reason: '' });
     } catch (error) {
+      startupError = `Firebase menolak inisialisasi arena: ${error.message}. Periksa koneksi dan Firebase Rules, lalu coba lagi.`;
+      startupRecoveryRequired = false;
+      renderWaiting();
       notify(`Arena belum bisa disiapkan: ${error.message}`, 'error');
     } finally {
       initializing = false;
@@ -501,6 +534,11 @@ export function mountBomberArena(root, context) {
 
   function onClick(event) {
     const action = event.target.closest('[data-ba-action]')?.dataset.baAction;
+    if (action === 'retry') {
+      startupError = '';
+      void initializeGame();
+      return;
+    }
     if (action === 'back') {
       if (data.meta?.phase === 'playing') {
         notify('Pertandingan sedang berlangsung. Selesaikan duel sebelum kembali ke lobi.', 'error');
