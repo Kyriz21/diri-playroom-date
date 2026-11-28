@@ -184,9 +184,9 @@ test('Bomber Arena terintegrasi dengan katalog, landing page, room lobby, dan lo
   assert.match(roomService, /EXPLICIT_LOBBY_GAMES = new Set\([^\]]*'bomberarena'/);
   assert.match(app, /data-action="open-bomber-create"/);
   assert.match(app, /data-action="open-bomber-join"/);
-  assert.match(app, /import\('\.\/games\/bomber-arena\.js\?v=0\.51\.2'\)/);
+  assert.match(app, /import\('\.\/games\/bomber-arena\.js\?v=0\.51\.3'\)/);
   const game = fs.readFileSync(new URL('../js/games/bomber-arena.js', import.meta.url), 'utf8');
-  assert.match(game, /bomber-arena-logic\.js\?v=0\.51\.2/);
+  assert.match(game, /bomber-arena-logic\.js\?v=0\.51\.3/);
 });
 
 test('Firebase Rules mengunci input pada pemain sendiri dan simulasi pada host', () => {
@@ -362,11 +362,11 @@ test('cache Bomber Arena dan versi proyek diperbarui untuk build polish', () => 
   const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(pkg.version, '0.51.2');
-  assert.match(index, /bomber-arena\.css\?v=0\.51\.2/);
-  assert.match(index, /app\.js\?v=0\.51\.2/);
-  assert.match(app, /bomber-arena\.js\?v=0\.51\.2/);
-  assert.match(app, /room-service\.js\?v=0\.51\.2/);
+  assert.equal(pkg.version, '0.51.3');
+  assert.match(index, /bomber-arena\.css\?v=0\.51\.3/);
+  assert.match(index, /app\.js\?v=0\.51\.3/);
+  assert.match(app, /bomber-arena\.js\?v=0\.51\.3/);
+  assert.match(app, /room-service\.js\?v=0\.51\.3/);
 });
 
 
@@ -381,7 +381,25 @@ test('Bomber Arena mempertahankan status Ready sampai meta setup diizinkan Rules
   assert.match(game, /room\?\.lobby\?\.ready\?\.host !== true \|\| room\?\.lobby\?\.ready\?\.guest !== true/);
   assert.match(game, /data-ba-action=\"retry\"/);
   const metaWrite = rules.roomGames.$roomCode.$sessionId.bomberArena.meta['.write'];
-  assert.match(metaWrite, /lobby.*ready.*host.*true.*ready.*guest.*true/);
+  assert.match(metaWrite, /!data\.exists\(\).*newData\.child\('phase'\)\.val\(\) === 'setup'/);
+  assert.match(metaWrite, /child\('guest'\)\.child\('uid'\)\.exists\(\)/);
+  assert.match(metaWrite, /presence.*host.*connected.*presence.*guest.*connected/);
+  assert.doesNotMatch(metaWrite, /lobby.*ready.*host.*true.*ready.*guest.*true/);
+});
+
+test('Rules metadata setup memakai activeSession sebagai bukti Ready/Presence dan tetap membatasi host', () => {
+  const rules = JSON.parse(fs.readFileSync(new URL('../firebase-database.rules.json', import.meta.url), 'utf8')).rules;
+  const metaWrite = rules.roomGames.$roomCode.$sessionId.bomberArena.meta['.write'];
+  const activeSessionWrite = rules.rooms.$roomCode.lobby.activeSession['.write'];
+  assert.match(metaWrite, /host.*uid.*auth\.uid/);
+  assert.match(metaWrite, /activeSession.*gameId.*bomberarena/);
+  assert.match(metaWrite, /activeSession.*sessionId.*\$sessionId/);
+  assert.match(metaWrite, /!data\.exists\(\).*phase.*setup/);
+  assert.match(metaWrite, /guest.*uid.*exists/);
+  const setupBranch = metaWrite.split('(!data.exists() &&')[1].split(' || ')[0];
+  assert.doesNotMatch(setupBranch, /presence|ready/);
+  assert.match(activeSessionWrite, /ready.*host.*true.*ready.*guest.*true/);
+  assert.match(activeSessionWrite, /presence.*host.*connected.*presence.*guest.*connected/);
 });
 
 test('Bomber Arena menampilkan pemulihan jika bootstrap Firebase gagal', () => {

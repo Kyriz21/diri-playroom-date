@@ -1,6 +1,7 @@
-# Build Verification — Diri. Playroom Date v0.51.2
+# Build Verification — Diri. Playroom Date v0.51.3
 
-- Automated tests: 257/257 passed.
-- Bomber Arena bootstrap writes are sequential and report the exact failed operation/path.
-- Firebase Rules JSON unchanged from v0.51.1; no global permission widening.
-- Browser and live two-device Firebase tests are not available in this local build environment.
+- Release: Bomber Arena Rules Fix
+- Firebase Rules JSON parses successfully.
+- JavaScript syntax and automated tests are executed during packaging.
+- Rules are least-privilege; no public read/write grant is introduced.
+- Firebase production project verification remains a manual two-device test after publishing Rules.

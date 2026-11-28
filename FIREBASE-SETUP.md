@@ -147,3 +147,10 @@ Bomber Arena v0.49.1 hanya memperbarui frontend, feedback gameplay, statistik re
 
 ## Bomber Arena v0.50.0
 Tidak ada perubahan Firebase Rules pada build v0.50.0. Jika Rules v0.49.0 sudah dipublikasikan, tidak perlu Publish ulang; variasi arena, power-up, perlindungan spawn, dan lockout input berjalan di frontend dengan jalur state yang sama.
+
+
+## Bomber Arena v0.51.3 — perbaikan izin metadata awal
+
+v0.51.3 mengubah ekspresi `.write` untuk `roomGames/{roomCode}/{sessionId}/bomberArena/meta`. Pembuatan fase `setup` kini mengandalkan bukti `lobby/activeSession` yang telah lolos pemeriksaan host, pilihan game, dua Ready, serta dua presence online pada saat sesi dibuat. Pemeriksaan Ready dan Presence yang sama tidak diulang pada penulisan metadata berikutnya. Host tetap menjadi satu-satunya penulis metadata; room harus masih aktif, session ID dan game ID harus cocok, serta guest harus terdaftar. Transisi `setup` → `playing` tetap mensyaratkan state host dan guest sudah ada serta kedua presence online.
+
+**Rules v0.51.3 wajib dipublikasikan** dari file `firebase-database.rules.json` di ZIP v0.51.3. Perubahan ini tidak dapat diperoleh hanya dengan mengunggah file website ke GitHub Pages. Backup Rules aktif terlebih dahulu. Jangan membuka akses `.read` atau `.write` secara global.

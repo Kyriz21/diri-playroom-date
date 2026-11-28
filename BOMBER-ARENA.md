@@ -82,3 +82,11 @@ Tes otomatis memeriksa aturan gerak, ledakan silang, penghentian oleh dinding/pe
 - Fungsi pemeriksaan jangkauan lantai digunakan untuk memvalidasi konektivitas dari kedua spawn.
 - Uji regresi: 1.000 seed memeriksa konektivitas dari kedua spawn dan 250 seed memeriksa simetri peti/power-up. Stress run 10.000 seed menemukan 0 arena terputus (jumlah peti 14–26).
 - Tidak ada perubahan Firebase Rules atau struktur data sesi.
+
+
+## Perbaikan bootstrap v0.51.3
+
+- Rules pembuatan `meta` fase `setup` tidak lagi mengulang pemeriksaan Ready/Presence yang sudah diperiksa saat host membuat `lobby/activeSession`.
+- Pembuatan metadata tetap hanya dapat dilakukan oleh host terautentikasi untuk room/session Bomber Arena aktif, pada room yang masih berlaku dan memiliki guest.
+- Transisi ke `playing` tetap memerlukan state kedua pemain dan kedua perangkat online.
+- Rules berubah pada v0.51.3 dan wajib dipublikasikan dari `firebase-database.rules.json` yang disertakan dalam build.

@@ -6,7 +6,7 @@ import {
   createBomberPlayer, bomberCellKey, parseBomberCellKey,
   canBomberMove, getBomberBlastCells, getBomberWarningPreviews, getActiveBomberExplosionCells, applyBomberPowerup,
   damageBomberPlayer, getBomberWinner, formatBomberTime
-} from './bomber-arena-logic.js?v=0.51.2';
+} from './bomber-arena-logic.js?v=0.51.3';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const ROLES = ['host', 'guest'];

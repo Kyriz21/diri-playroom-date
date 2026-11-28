@@ -1,3 +1,11 @@
+## v0.51.3 — Bomber Arena metadata permission fix
+
+- Fixes the `PERMISSION_DENIED` error when creating `bomberArena/meta` in the setup phase.
+- Removes duplicate Ready/Presence checks from metadata creation; `lobby/activeSession` creation already enforces both Ready flags and both devices connected.
+- Keeps the initial write restricted to the authenticated host, active Bomber Arena game/session, fresh room, and an existing guest.
+- Keeps both player states and both online presences as requirements for setup → playing.
+- Firebase Rules changed; publish `firebase-database.rules.json` from this release.
+
 ## v0.51.1 — Bomber Arena room-start repair
 - Memperbaiki penyebab Bomber Arena macet pada layar menunggu: `startSelectedGame()` sebelumnya menghapus kedua status Ready, padahal Firebase Rules mensyaratkan keduanya tetap true saat host membuat meta awal arena.
 - Status Ready kini dipertahankan hanya untuk Bomber Arena selama bootstrap sesi. `returnToLobby()` tetap mereset status sesuai alur lobi.
@@ -338,7 +346,7 @@
 - Tes otomatis, pemeriksaan sintaks JS, parsing Rules JSON, dan keseimbangan ekspresi Rules dijalankan; live playtest dua perangkat dengan Firebase aktif masih diperlukan.
 
 
-## v0.51.2 — Bomber Arena permission diagnostics
+## v0.51.3 — Bomber Arena permission diagnostics
 - Mengganti bootstrap paralel menjadi penulisan berurutan agar operasi Firebase yang ditolak dapat diidentifikasi secara spesifik.
 - Pesan error kini menyebut tahap dan path operasi (meta setup, state Player 1, state Player 2, input awal, verifikasi state, atau transisi ke playing).
 - Memverifikasi ulang state kedua pemain sebelum mengubah fase arena menjadi playing.

@@ -52,7 +52,7 @@ async function ensureBackend() {
       import('./firebase.js'),
       import('./services/auth-service.js'),
       import('./services/presence-service.js'),
-      import('./services/room-service.js?v=0.51.2')
+      import('./services/room-service.js?v=0.51.3')
     ]).then(([firebase, auth, presence, rooms]) => {
       if (!firebase.isFirebaseConfigured) {
         throw new Error('FIREBASE_NOT_CONFIGURED: Isi konfigurasi Web App project baru pada js/firebase.js sebelum membuat atau bergabung ke sesi.');
@@ -366,7 +366,7 @@ function renderActiveSession(room, current) {
   const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : isArcade ? 'One Tap' : isBomberArena ? 'Bomber Arena' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
   const modulePromise = isBomberArena
-    ? import('./games/bomber-arena.js?v=0.51.2').then(module => ({ mount: module.mountBomberArena }))
+    ? import('./games/bomber-arena.js?v=0.51.3').then(module => ({ mount: module.mountBomberArena }))
     : isArcade
       ? import('./games/arcade.js?v=0.51.0').then(module => ({ mount: module.mountArcade }))
     : isLoveMatch
