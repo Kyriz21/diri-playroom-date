@@ -140,12 +140,20 @@ test('IQ Duel menghitung jawaban benar, salah, dan kosong tanpa membocorkan sebe
   assert.equal(result.details[3].selected, null);
 });
 
-test('Tiga mini game terdaftar dan memiliki mode room serta solo di landing', () => {
+test('tiga mini game brain terdaftar aktif dan hanya menyediakan Buat sesi serta Gabung sesi', () => {
   const constants = read('../js/constants.js');
   const app = read('../js/app.js');
   const rules = JSON.parse(read('../firebase-database.rules.json')).rules;
   for (const id of ['lovematch', 'colormatch', 'iqduel']) assert.match(constants, new RegExp(`id: '${id}'.*state: 'active'`));
-  for (const action of ['open-love-create', 'open-love-join', 'open-love-solo', 'open-color-create', 'open-color-join', 'open-color-solo', 'open-iq-create', 'open-iq-join', 'open-iq-solo']) assert.ok(app.includes(`data-action="${action}"`), action);
+  for (const [id, prefix] of [['lovematch', 'love'], ['colormatch', 'color'], ['iqduel', 'iq']]) {
+    const cardStart = app.indexOf(`data-game-card="${id}"`);
+    assert.notEqual(cardStart, -1, `${id} landing card exists`);
+    const card = app.slice(cardStart, app.indexOf('</article>', cardStart));
+    assert.match(card, new RegExp(`data-action="open-${prefix}-create"`));
+    assert.match(card, new RegExp(`data-action="open-${prefix}-join"`));
+    assert.equal((card.match(/data-action=/g) || []).length, 2, `${id} has exactly two actions`);
+  }
+  assert.doesNotMatch(app, /open-(?:love|color|iq)-solo|openSoloMiniGame|Main di HP ini/);
   const selection = rules.rooms.$roomCode.lobby.selections.$role['.validate'];
   const active = rules.rooms.$roomCode.lobby.activeSession['.validate'];
   const readyWrite = rules.rooms.$roomCode.lobby.ready.$role['.write'];
@@ -158,6 +166,29 @@ test('Tiga mini game terdaftar dan memiliki mode room serta solo di landing', ()
     assert.match(selection, new RegExp(id));
     assert.match(active, new RegExp(id));
   }
+});
+
+
+test('semua kartu mini game memakai layout katalog konsisten dan hanya memiliki dua aksi room', () => {
+  const app = read('../js/app.js');
+  const css = read('../css/game-catalog.css');
+  const ids = ['drawtogether', 'guesspartner', 'bombstorm', 'balloonpop', 'arcade', 'lovematch', 'colormatch', 'iqduel'];
+  const prefixes = ['draw', 'guess', 'bomb', 'balloon', 'arcade', 'love', 'color', 'iq'];
+  for (let index = 0; index < ids.length; index += 1) {
+    const cardStart = app.indexOf(`data-game-card="${ids[index]}"`);
+    assert.notEqual(cardStart, -1, `${ids[index]} has a home card`);
+    const card = app.slice(cardStart, app.indexOf('</article>', cardStart));
+    assert.match(card, /class="game-catalog-index"/);
+    assert.match(card, /class="game-catalog-copy"/);
+    assert.match(card, /class="game-catalog-preview"/);
+    assert.match(card, /class="game-catalog-actions"/);
+    assert.equal((card.match(/data-action=/g) || []).length, 2, `${ids[index]} must have exactly two actions`);
+    assert.match(card, new RegExp(`data-action="open-${prefixes[index]}-(?:create|create)"`));
+    assert.match(card, new RegExp(`data-action="open-${prefixes[index]}-join"`));
+  }
+  assert.match(css, /grid-template-areas: "index copy preview actions"/);
+  assert.match(css, /@media \(max-width: 620px\)/);
+  assert.doesNotMatch(app, /open-(?:love|color|iq)-solo|openSoloMiniGame|Main di HP ini/);
 });
 
 test('Firebase Rules membatasi pembacaan jawaban privat ke sesi aktif dan fase hasil yang sesuai', () => {

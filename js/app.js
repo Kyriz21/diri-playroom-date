@@ -98,9 +98,9 @@ function openDialog(mode, gameId = 'photobooth') {
   const createMode = mode === 'create';
   const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'One Tap', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
-  dialogTitle.textContent = gameId === 'arcade' ? (createMode ? 'Buat Room One Tap' : 'Join Room One Tap') : (createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`);
-  createForm.querySelector('button[type="submit"]').innerHTML = gameId === 'arcade' ? 'Buat Room <span>♡</span>' : `Buat sesi ${activityName} <span>♡</span>`;
-  joinForm.querySelector('button[type="submit"]').innerHTML = gameId === 'arcade' ? 'Join Room <span>→</span>' : `Gabung ${activityName} <span>→</span>`;
+  dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
+  createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
+  joinForm.querySelector('button[type="submit"]').innerHTML = `Gabung ${activityName} <span>→</span>`;
   createForm.hidden = !createMode;
   joinForm.hidden = createMode;
   const savedName = loadDisplayName();
@@ -249,48 +249,62 @@ function renderLanding() {
         <div class="date-visual-note"><span>✧</span> simpan yang sederhana</div>
       </div>
     </section>
-    <section class="date-next-preview date-game-preview">
-      <span class="date-kicker">MINI GAME PERTAMA</span>
-      <div><h2>Gambar Bareng ✎</h2><p>Dapatkan instruksi yang sama, gambar dari dua tempat, dan lihat coretan satu sama lain secara langsung.</p></div>
-      <div class="landing-game-preview draw-home-preview" aria-hidden="true"><div class="lhp-top"><span>LIVE CANVAS</span><span>PLAYER 1 · 2</span></div><div class="draw-home-paper"><div class="draw-home-sheet pink"><i></i><b>P1</b></div><div class="draw-home-sheet lilac"><i></i><b>P2</b></div><span class="draw-home-sync">↔</span></div><div class="lhp-bottom"><i></i> COREtan LANGSUNG</div></div>
-      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-draw-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-draw-join">Gabung sesi</button></div>
-    </section>
-    <section class="date-next-preview date-game-preview gp-landing-preview">
-      <span class="date-kicker">MINI GAME KEDUA · BARU</span>
-      <div><h2>Tebak Pasangan ♡</h2><p>Satu orang menjawab pertanyaan tentang dirinya, pasangannya menebak. Buka jawaban bersama dan lihat seberapa cocok tebakan kalian.</p></div>
-      <div class="landing-game-preview guess-home-preview" aria-hidden="true"><div class="lhp-top"><span>PERTANYAAN 04 / 20</span><span>♡ MATCH</span></div><div class="guess-home-question">Siapa yang paling sering memulai obrolan?</div><div class="guess-home-answers"><div><b>PLAYER 1</b><span>Jawaban pribadi</span><i>♡</i></div><div><b>PLAYER 2</b><span>Tebakan pasangan</span><i>?</i></div></div></div>
-      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-guess-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-guess-join">Gabung sesi</button></div>
-    </section>
-    <section class="date-next-preview date-game-preview bs-landing-preview">
-      <span class="date-kicker">MINI GAME KETIGA · BARU</span>
-      <div><h2>Bomb Storm ☄</h2><p>Jadikan selfie sebagai karakter, hindari bom yang berjatuhan, dan kumpulkan hati untuk meraih skor tertinggi.</p></div>
-      <div class="landing-game-preview bomb-home-preview" aria-hidden="true"><div class="lhp-top"><span>BOMB STORM</span><span>SURVIVE</span></div><div class="bomb-home-sky"><i class="bomb-home-star s1">✦</i><i class="bomb-home-star s2">·</i><i class="bomb-home-fall f1">●</i><i class="bomb-home-fall f2">●</i><i class="bomb-home-heart h1">♥</i><i class="bomb-home-heart h2">♥</i><span class="bomb-home-player">🐱</span></div><div class="lhp-bottom"><i></i> HINDARI BOM · KUMPULKAN HATI</div></div>
-      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-bomb-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-bomb-join">Gabung sesi</button></div>
-    </section>
-    <section class="date-next-preview date-game-preview bp-landing-preview">
-      <span class="date-kicker">MINI GAME KEEMPAT · BARU</span>
-      <div><h2>Balloon Pop 🎈</h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi jangan sampai menyentuh bom!</p></div>
-      <div class="landing-game-preview balloon-home-preview" aria-hidden="true"><div class="lhp-top"><span>BALLOON POP</span><span>+10 POINTS</span></div><div class="balloon-home-sky"><i class="balloon-orb a">♥</i><i class="balloon-orb b">✦</i><i class="balloon-orb c">●</i><i class="balloon-orb d">♥</i><i class="balloon-home-bomb">💣</i><span class="balloon-home-tap">TAP!</span></div><div class="lhp-bottom"><i></i> POP · SCORE · AVOID BOMBS</div></div>
-      <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
-    </section>
-    <section class="arcade-landing-card">
-      <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE SHARED LANE</span><h2>One Tap <span>✦</span></h2><p>Dua pemain berada di jalur terbang yang sama. Ketuk layar untuk mengepak, lewati pipa bersama, dan kumpulkan skor selama 60 detik.</p><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Buat Room <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join Room</button></div></div>
-      <div class="arcade-preview-screen" aria-label="Pratinjau One Tap untuk Player 1 dan Player 2"><div class="arcade-preview-top"><span>ONE TAP</span><span>SHARED LANE · 60s</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>PLAYER 1</b><span>ONE LANE</span><b>PLAYER 2</b></div></div>
-    </section>
-    <section class="brain-games-section">
-      <div class="brain-games-heading"><span class="date-kicker">AKTIVITAS BARU · MINI GAME BERDUA</span><h2>Tiga cara baru untuk saling mengenal</h2><p>Pilih aktivitas, undang pasangan dengan kode, atau mainkan latihan di satu perangkat.</p></div>
-      <article class="brain-game-card brain-love-card">
-        <div class="brain-game-copy"><span class="brain-game-eyebrow">PERSONALITY MATCH</span><h2>Love Match <i>♡</i></h2><p>Pilih dari 80 pertanyaan kepribadian; 32 soal dipilih acak untuk tiap sesi. Jawaban tetap pribadi sampai keduanya selesai, lalu lihat profil dan kecocokan lengkap.</p><div class="brain-game-tags"><span>80 bank soal</span><span>32 soal per sesi</span><span>Profil 4 dimensi</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-love-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-love-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-love-solo">Main di HP ini</button></div></div>
-        <div class="brain-game-preview love-preview" aria-hidden="true"><div class="brain-progress-top"><span>01 / 32</span><i></i></div><div class="love-preview-question">Akhir pekan idealmu lebih seperti…</div><div class="love-preview-answers"><span>Waktu tenang berdua</span><span>Menjelajah tempat baru</span></div><div class="love-preview-match"><b>♡</b><span>Private answers · shared reveal</span><b>♡</b></div></div>
-      </article>
-      <article class="brain-game-card brain-color-card">
-        <div class="brain-game-copy"><span class="brain-game-eyebrow">MEMORY CHALLENGE</span><h2>Color Match <i>◉</i></h2><p>Amati satu warna selama beberapa detik, lalu bangun kembali dari ingatan lewat slider merah, hijau, dan biru.</p><div class="brain-game-tags"><span>Versus atau Duet</span><span>3 kesulitan</span><span>Tanpa kamera</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-color-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-color-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-color-solo">Main di HP ini</button></div></div>
-        <div class="brain-game-preview color-preview" aria-hidden="true"><div class="color-preview-top"><span>ROUND 1 OF 5</span><span>00:03</span></div><div class="color-preview-swatch"></div><div class="color-preview-sliders"><i></i><i></i><i></i></div><div class="color-preview-caption">REMEMBER THE COLOR</div></div>
-      </article>
-      <article class="brain-game-card brain-iq-card">
-        <div class="brain-game-copy"><span class="brain-game-eyebrow">LOGIC CHALLENGE</span><h2>IQ Duel <i>✦</i></h2><p>Hadapi soal pola, matriks, deret angka, logika, analogi, dan hitung cepat. Jawaban benar dibuka setelah ronde terakhir.</p><div class="brain-game-tags"><span>100 bank soal</span><span>12 atau 20 ronde</span><span>Ulasan akhir</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-iq-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-iq-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-iq-solo">Main di HP ini</button></div></div>
-        <div class="brain-game-preview iq-preview" aria-hidden="true"><div class="iq-preview-top"><span>QUESTION 1 OF 12</span><span>30s</span></div><p>Which tile completes the grid?</p><div class="iq-preview-grid"><span>•</span><span>••</span><span>•••</span><span>••</span><span>•••</span><span>••••</span><span>•••</span><span>••••</span><span>?</span></div><div class="iq-preview-options"><i>••</i><i>•••</i><i>••••</i><i>•••••</i></div></div>
-      </article>
+    <section class="game-catalog-section" aria-labelledby="game-catalog-title">
+      <div class="game-catalog-heading">
+        <span class="date-kicker">MINI GAME BERDUA</span>
+        <h2 id="game-catalog-title">Pilih permainan kalian</h2>
+        <p>Semua permainan dimainkan bersama melalui satu sesi. Buat sesi baru atau gabung menggunakan kode pasangan.</p>
+      </div>
+      <div class="game-catalog-list">
+        <article class="game-catalog-card" data-game-card="drawtogether">
+          <div class="game-catalog-index"><span>MINI GAME 01</span></div>
+          <div class="game-catalog-copy"><h2>Gambar Bareng <i>✎</i></h2><p>Dapatkan instruksi yang sama, gambar dari dua tempat, dan lihat coretan satu sama lain secara langsung.</p></div>
+          <div class="game-catalog-preview"><div class="landing-game-preview draw-home-preview" aria-hidden="true"><div class="lhp-top"><span>LIVE CANVAS</span><span>PLAYER 1 · 2</span></div><div class="draw-home-paper"><div class="draw-home-sheet pink"><i></i><b>P1</b></div><div class="draw-home-sheet lilac"><i></i><b>P2</b></div><span class="draw-home-sync">↔</span></div><div class="lhp-bottom"><i></i> CORETAN LANGSUNG</div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-draw-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-draw-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="guesspartner">
+          <div class="game-catalog-index"><span>MINI GAME 02</span></div>
+          <div class="game-catalog-copy"><h2>Tebak Pasangan <i>♡</i></h2><p>Satu orang menjawab pertanyaan tentang dirinya, pasangannya menebak. Buka jawaban bersama dan lihat kecocokan kalian.</p></div>
+          <div class="game-catalog-preview"><div class="landing-game-preview guess-home-preview" aria-hidden="true"><div class="lhp-top"><span>PERTANYAAN 04 / 20</span><span>♡ MATCH</span></div><div class="guess-home-question">Siapa yang paling sering memulai obrolan?</div><div class="guess-home-answers"><div><b>PLAYER 1</b><span>Jawaban pribadi</span><i>♡</i></div><div><b>PLAYER 2</b><span>Tebakan pasangan</span><i>?</i></div></div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-guess-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-guess-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="bombstorm">
+          <div class="game-catalog-index"><span>MINI GAME 03</span></div>
+          <div class="game-catalog-copy"><h2>Bomb Storm <i>☄</i></h2><p>Jadikan selfie sebagai karakter, hindari bom yang berjatuhan, dan kumpulkan hati untuk meraih skor tertinggi.</p></div>
+          <div class="game-catalog-preview"><div class="landing-game-preview bomb-home-preview" aria-hidden="true"><div class="lhp-top"><span>BOMB STORM</span><span>SURVIVE</span></div><div class="bomb-home-sky"><i class="bomb-home-star s1">✦</i><i class="bomb-home-star s2">·</i><i class="bomb-home-fall f1">●</i><i class="bomb-home-fall f2">●</i><i class="bomb-home-heart h1">♥</i><i class="bomb-home-heart h2">♥</i><span class="bomb-home-player">🐱</span></div><div class="lhp-bottom"><i></i> HINDARI BOM · KUMPULKAN HATI</div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-bomb-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-bomb-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="balloonpop">
+          <div class="game-catalog-index"><span>MINI GAME 04</span></div>
+          <div class="game-catalog-copy"><h2>Balloon Pop <i>🎈</i></h2><p>Pecahkan balon sebanyak mungkin, kumpulkan balon hati dan emas, tetapi hindari bom.</p></div>
+          <div class="game-catalog-preview"><div class="landing-game-preview balloon-home-preview" aria-hidden="true"><div class="lhp-top"><span>BALLOON POP</span><span>+10 POINTS</span></div><div class="balloon-home-sky"><i class="balloon-orb a">♥</i><i class="balloon-orb b">✦</i><i class="balloon-orb c">●</i><i class="balloon-orb d">♥</i><i class="balloon-home-bomb">💣</i><span class="balloon-home-tap">TAP!</span></div><div class="lhp-bottom"><i></i> POP · SCORE · AVOID BOMBS</div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="arcade">
+          <div class="game-catalog-index"><span>MINI GAME 05</span></div>
+          <div class="game-catalog-copy"><h2>One Tap <i>✦</i></h2><p>Dua pemain berada di satu jalur terbang. Ketuk layar untuk mengepak, lewati pipa bersama, dan kumpulkan skor selama 60 detik.</p></div>
+          <div class="game-catalog-preview"><div class="arcade-preview-screen" aria-label="Pratinjau One Tap untuk Player 1 dan Player 2"><div class="arcade-preview-top"><span>ONE TAP</span><span>SHARED LANE · 60s</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>PLAYER 1</b><span>ONE LANE</span><b>PLAYER 2</b></div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-arcade-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-arcade-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="lovematch">
+          <div class="game-catalog-index"><span>MINI GAME 06</span></div>
+          <div class="game-catalog-copy"><h2>Love Match <i>♡</i></h2><p>Pilih dari 80 pertanyaan kepribadian; 32 soal dipilih acak. Jawaban tetap pribadi sampai keduanya selesai, lalu lihat profil dan kecocokan kalian.</p></div>
+          <div class="game-catalog-preview"><div class="brain-game-preview love-preview" aria-hidden="true"><div class="brain-progress-top"><span>01 / 32</span><i></i></div><div class="love-preview-question">Akhir pekan idealmu lebih seperti…</div><div class="love-preview-answers"><span>Waktu tenang berdua</span><span>Menjelajah tempat baru</span></div><div class="love-preview-match"><b>♡</b><span>PRIVATE ANSWERS · SHARED REVEAL</span><b>♡</b></div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-love-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-love-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="colormatch">
+          <div class="game-catalog-index"><span>MINI GAME 07</span></div>
+          <div class="game-catalog-copy"><h2>Color Match <i>◉</i></h2><p>Amati satu warna selama beberapa detik, lalu bangun kembali dari ingatan lewat slider merah, hijau, dan biru.</p></div>
+          <div class="game-catalog-preview"><div class="brain-game-preview color-preview" aria-hidden="true"><div class="color-preview-top"><span>ROUND 1 OF 5</span><span>00:03</span></div><div class="color-preview-swatch"></div><div class="color-preview-sliders"><i></i><i></i><i></i></div><div class="color-preview-caption">REMEMBER THE COLOR</div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-color-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-color-join">Gabung sesi</button></div>
+        </article>
+        <article class="game-catalog-card" data-game-card="iqduel">
+          <div class="game-catalog-index"><span>MINI GAME 08</span></div>
+          <div class="game-catalog-copy"><h2>IQ Duel <i>✦</i></h2><p>Hadapi soal pola, matriks, deret angka, logika, analogi, dan hitung cepat. Jawaban benar dibuka setelah ronde terakhir.</p></div>
+          <div class="game-catalog-preview"><div class="brain-game-preview iq-preview" aria-hidden="true"><div class="iq-preview-top"><span>QUESTION 1 OF 12</span><span>30s</span></div><p>Which tile completes the grid?</p><div class="iq-preview-grid"><span>•</span><span>••</span><span>•••</span><span>••</span><span>•••</span><span>••••</span><span>•••</span><span>••••</span><span>?</span></div><div class="iq-preview-options"><i>••</i><i>•••</i><i>••••</i><i>•••••</i></div></div></div>
+          <div class="game-catalog-actions"><button class="button button-primary button-small" data-action="open-iq-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-iq-join">Gabung sesi</button></div>
+        </article>
+      </div>
     </section>`;
 }
 
@@ -457,33 +471,6 @@ async function openSoloPhotobooth() {
   }
 }
 
-async function openSoloMiniGame(gameId) {
-  closeDialog();
-  disposeMountedGame();
-  const labels = { lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel' };
-  const imports = {
-    lovematch: () => import('./games/love-match.js?v=0.48.0').then(module => module.mountLoveMatch),
-    colormatch: () => import('./games/color-match.js?v=0.51.4').then(module => module.mountColorMatch),
-    iqduel: () => import('./games/iq-duel.js?v=0.48.0').then(module => module.mountIQDuel)
-  };
-  appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan ${labels[gameId] || 'mini game'}…</p></section>`;
-  try {
-    const mount = await imports[gameId]();
-    const instance = mount(appRoot, {
-      standalone: true,
-      mode: 'solo',
-      role: 'host',
-      player: { uid: 'local-player' },
-      session: { sessionId: `solo-${Date.now()}`, startedAt: Date.now() },
-      toast: showToast,
-      onBack: () => { disposeMountedGame(); renderLanding(); }
-    });
-    state.mountedGame = { key: `solo-${gameId}`, destroy: instance?.destroy };
-  } catch (error) {
-    appRoot.innerHTML = `<section class="panel date-waiting"><h1>Mini game belum bisa dibuka</h1><p>${escapeHtml(error.message)}</p><button class="button button-secondary" data-action="go-home">Kembali</button></section>`;
-  }
-}
-
 async function handleCreateSubmit(event) {
   event.preventDefault();
   if (state.isBusy) return;
@@ -571,13 +558,10 @@ async function runAction(action, element) {
   if (action === 'open-elemental-join') return openDialog('join', 'elementalduo');
   if (action === 'open-love-create') return openDialog('create', 'lovematch');
   if (action === 'open-love-join') return openDialog('join', 'lovematch');
-  if (action === 'open-love-solo') return openSoloMiniGame('lovematch');
   if (action === 'open-color-create') return openDialog('create', 'colormatch');
   if (action === 'open-color-join') return openDialog('join', 'colormatch');
-  if (action === 'open-color-solo') return openSoloMiniGame('colormatch');
   if (action === 'open-iq-create') return openDialog('create', 'iqduel');
   if (action === 'open-iq-join') return openDialog('join', 'iqduel');
-  if (action === 'open-iq-solo') return openSoloMiniGame('iqduel');
   if (action === 'open-arcade-create') return openDialog('create', 'arcade');
   if (action === 'open-arcade-join') return openDialog('join', 'arcade');
   if (action === 'open-solo') return openSoloPhotobooth();

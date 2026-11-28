@@ -1,3 +1,13 @@
+## v0.51.5 — Unified game catalog & two-player-only entry
+
+- Menyatukan delapan kartu mini-game aktif (Gambar Bareng, Tebak Pasangan, Bomb Storm, Balloon Pop, One Tap, Love Match, Color Match, dan IQ Duel) ke dalam satu pola visual: nomor game, judul/deskripsi, preview dengan ukuran konsisten, lalu tombol aksi.
+- Menghapus aksi **Main di HP ini** untuk Love Match, Color Match, dan IQ Duel, termasuk helper standalone mini-game dan handler-nya. Seluruh mini-game sekarang hanya menyediakan **Buat sesi** dan **Gabung sesi**.
+- Menyamakan label One Tap menjadi **Buat sesi** dan **Gabung sesi**, termasuk judul serta tombol submit dialog.
+- Membuat aturan layout responsif bersama: empat kolom pada desktop, dua kolom pada tablet, dan susunan vertikal pada mobile. Semua preview memakai tinggi kartu yang sama sambil mempertahankan ilustrasi khas setiap game.
+- Photobooth tetap memiliki fitur **Foto sendiri** karena itu mode foto terpisah, bukan mode solo mini-game.
+- Firebase Rules dan struktur data tidak berubah. Tidak perlu Publish ulang Rules.
+- `npm test`: 262/262 tes lulus; seluruh JavaScript lolos pemeriksaan sintaks. Pengujian visual browser/perangkat dan multiplayer Firebase tetap perlu dilakukan setelah deployment.
+
 ## v0.51.4 — Bomber Arena diarsipkan, home previews & Color Match transition fix
 
 - Mengarsipkan Bomber Arena dari katalog yang dapat dipilih, create/join flow, dan start session. Kode permainan tetap tersedia hanya untuk kompatibilitas sesi lama yang sudah aktif; room lama yang belum memulai menampilkan pemberitahuan arsip.

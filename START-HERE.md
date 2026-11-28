@@ -1,10 +1,10 @@
-# Mulai di sini — Diri. Playroom Date v0.51.4
+# Mulai di sini — Diri. Playroom Date v0.51.5
 
 ## Fokus rilis
-- Bomber Arena diarsipkan untuk sesi baru; source lama tetap disimpan agar sesi aktif terdahulu masih dapat dimuat.
-- Preview home ditambahkan untuk Gambar Bareng, Tebak Pasangan, Bomb Storm, dan Balloon Pop.
-- Color Match: memperbaiki transisi timer dari fase mengingat warna ke fase menebak yang terhenti akibat variabel mutex `transitioning` tidak dideklarasikan.
-- Draft RGB direset pada setiap ronde baru.
+- Delapan mini-game aktif menggunakan kartu katalog dengan layout dan preview yang seragam.
+- Mini-game hanya dapat dimulai melalui **Buat sesi** atau **Gabung sesi**; opsi solo mini-game sudah dihapus.
+- One Tap memakai terminologi sesi yang sama dengan game lain.
+- Photobooth tetap memiliki **Foto sendiri** sebagai alur foto mandiri.
 - Firebase Rules tidak berubah.
 
 ## Instalasi
@@ -12,7 +12,7 @@
 2. Ekstrak ZIP dan upload seluruh isi ke root repository.
 3. Tidak perlu Publish ulang Firebase Rules.
 4. Hard refresh kedua perangkat setelah deployment.
-5. Buat room Color Match baru, lalu pastikan kedua pemain masuk ke fase menebak setelah preview warna berakhir.
+5. Periksa homepage pada desktop dan HP: seluruh mini-game memiliki preview dan hanya tombol Buat sesi serta Gabung sesi.
 
 ## Pengujian
-`npm test`: **261/261 tes lulus**. Uji perangkat nyata tetap diperlukan.
+`npm test`: **262/262 tes lulus**. Uji perangkat nyata tetap diperlukan.
