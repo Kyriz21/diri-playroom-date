@@ -1,5 +1,5 @@
 import { db, ref, get, set, onValue, runTransaction } from '../firebase.js';
-import { IQ_QUESTIONS, seededShuffle, scoreIqAnswers } from './brain-game-logic.js';
+import { IQ_QUESTIONS, selectIQQuestions, createRandomSeed, scoreIqAnswers } from './brain-game-logic.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 const ROUND_SECONDS = 30;
@@ -32,7 +32,7 @@ export function mountIQDuel(root, context) {
   }
 
   function setupPanel() {
-    if (standalone) return `<section class="bm-panel iq-setup"><span class="bm-tag">BRAIN DUEL · SOLO PRACTICE</span><h2>Uji logika dan kecepatanmu</h2><p>Pilih jumlah soal. Setiap soal punya batas waktu 30 detik. Jawaban benar dan pembahasan baru dibuka di hasil akhir.</p><label>Jumlah ronde<select data-iq-local-rounds><option value="12">12 ronde · cepat</option><option value="20">20 ronde · lengkap</option></select></label><button class="button button-primary" data-iq-action="local-start">Mulai IQ Duel →</button></section>`;
+    if (standalone) return `<section class="bm-panel iq-setup"><span class="bm-tag">BRAIN DUEL · SOLO PRACTICE</span><h2>Uji logika dan kecepatanmu</h2><p>Bank 100 soal dipilih acak dan seimbang dari lima kategori. Setiap soal punya batas waktu 30 detik. Jawaban benar dan pembahasan baru dibuka di hasil akhir.</p><label>Jumlah ronde<select data-iq-local-rounds><option value="12">12 ronde · cepat</option><option value="20">20 ronde · lengkap</option></select></label><button class="button button-primary" data-iq-action="local-start">Mulai IQ Duel →</button></section>`;
     const rounds = Number(pub.settings?.rounds || 12);
     return `<section class="bm-panel iq-setup"><span class="bm-tag">HEAD-TO-HEAD</span><h2>Siapa yang paling cepat berpikir?</h2><p>Kalian mendapat soal yang sama. Kunci jawaban sebelum waktu habis. Tidak ada jawaban benar yang dibuka sampai semua ronde selesai.</p><label>Jumlah ronde<select data-iq-setting="rounds" ${role !== 'host' ? 'disabled' : ''}><option value="12" ${rounds === 12 ? 'selected' : ''}>12 ronde · cepat</option><option value="20" ${rounds === 20 ? 'selected' : ''}>20 ronde · lengkap</option></select></label><div class="iq-prestart-note">${role === 'host' ? 'Pengaturan sudah siap. Mulai saat kalian berdua sudah berada di ruang permainan.' : 'Pembuat sesi sedang memilih jumlah ronde.'}</div><div class="bm-result-actions">${role === 'host' ? `<button class="button button-primary" data-iq-action="start">Mulai ${rounds} ronde →</button>` : '<span class="bm-muted">Menunggu pembuat sesi memulai.</span>'}</div></section>`;
   }
@@ -44,12 +44,27 @@ export function mountIQDuel(root, context) {
     return `<section class="bm-panel iq-question-panel"><div class="bm-topline"><div><span class="bm-tag">${esc(question.category)}</span><strong>PERTANYAAN ${index + 1} DARI ${rounds}</strong></div><span class="iq-timer">${timeLeft}s</span></div><div class="bm-progress"><i style="width:${((index + 1) / rounds) * 100}%"></i></div><h2>${esc(question.prompt)}</h2>${matrix}<div class="iq-options">${question.options.map((option, optionIndex) => `<button class="iq-option ${selected === optionIndex ? 'is-selected' : ''}" data-iq-option="${optionIndex}" ${locked ? 'disabled' : ''}><span>${String.fromCharCode(65 + optionIndex)}</span>${esc(option)}</button>`).join('')}</div><div class="bm-question-footer"><span>${locked ? 'Jawaban terkunci · menunggu pasangan' : 'Pilih satu jawaban'}</span><button class="button button-primary" data-iq-action="${standalone ? 'local-submit' : 'submit'}" ${selected === null || selected === undefined || locked ? 'disabled' : ''}>Kunci jawaban</button></div><div class="iq-lock-row"><span>${esc(names.host)} · ${standalone ? 'Kamu' : submissionStatus.host ? 'Terkunci ✓' : 'Berpikir…'}</span><span>${esc(names.guest)} · ${standalone ? 'Latihan' : submissionStatus.guest ? 'Terkunci ✓' : 'Berpikir…'}</span></div></section>`;
   }
 
+  function categoryBreakdown(score) {
+    const categories = ['POLA', 'DERET', 'LOGIKA', 'HITUNG CEPAT', 'ANALOGI'];
+    return `<div class="iq-category-grid">${categories.map(category => {
+      const items = (score.details || []).filter(item => item.category === category);
+      const correct = items.filter(item => item.isCorrect).length;
+      const percent = items.length ? Math.round(correct / items.length * 100) : 0;
+      return `<article><span>${esc(category)}</span><strong>${correct}/${items.length}</strong><i><b style="width:${percent}%"></b></i><small>${percent}% tepat</small></article>`;
+    }).join('')}</div>`;
+  }
+
+  function answerLabel(item, key) {
+    const selected = item[key];
+    return Number.isInteger(selected) && item.options[selected] !== undefined ? item.options[selected] : 'Tidak menjawab';
+  }
+
   function resultPanel(result) {
     if (!result) return `<section class="bm-panel bm-center-panel"><h2>Menghitung hasil…</h2><p>Menyiapkan jawaban dan pembahasan kalian.</p></section>`;
     const localResult = standalone;
     const rows = localResult ? ['host'] : ['host', 'guest'];
     const winner = localResult ? 'Latihan selesai!' : result.scores.host.correct === result.scores.guest.correct ? 'Hasil seri!' : result.scores.host.correct > result.scores.guest.correct ? `${names.host} menang!` : `${names.guest} menang!`;
-    return `<section class="bm-panel iq-result-panel"><span class="bm-tag">HASIL AKHIR</span><h2>${localResult ? 'Latihan selesai!' : winner}</h2><p>${localResult ? 'Ini hasil latihanmu. Coba ulangi untuk meningkatkan skor.' : 'Semua jawaban sekarang dibuka, lengkap dengan pembahasannya.'}</p><div class="iq-score-grid">${rows.map(r => `<article class="${r === 'host' ? 'is-pink' : 'is-blue'}"><small>${esc(names[r])}</small><strong>${result.scores[r].correct}/${result.scores[r].total}</strong><span>${result.scores[r].percentage}% benar</span></article>`).join('')}</div><div class="iq-review-list">${result.questions.map((item, i) => `<article><header><strong>${i + 1}. ${esc(item.prompt)}</strong><span class="${item.hostCorrect ? 'is-correct' : 'is-wrong'}">${localResult ? (item.hostCorrect ? 'Benar' : 'Belum tepat') : `${item.hostCorrect ? '✓' : '×'} ${esc(names.host)} · ${item.guestCorrect ? '✓' : '×'} ${esc(names.guest)}`}</span></header><p>Jawaban: <b>${esc(item.options[item.answer])}</b></p><small>${esc(item.explanation)}</small></article>`).join('')}</div><div class="bm-result-actions"><button class="button button-primary" data-iq-action="replay">${localResult ? 'Latihan lagi' : 'Kembali ke lobi'}</button><button class="button button-quiet" data-iq-action="back">Kembali</button></div></section>`;
+    return `<section class="bm-panel iq-result-panel"><span class="bm-tag">REKAPAN IQ DUEL</span><h2>${winner}</h2><p>${localResult ? 'Berikut ringkasan performa latihanmu.' : 'Semua jawaban sudah dibuka. Bandingkan pilihan, skor, dan pembahasan kalian.'} Hasil ini adalah permainan penalaran untuk hiburan, bukan pengukuran IQ klinis.</p><div class="iq-score-grid">${rows.map(r => `<article class="${r === 'host' ? 'is-pink' : 'is-blue'}"><small>${esc(names[r])}</small><strong>${result.scores[r].correct}/${result.scores[r].total}</strong><span>${result.scores[r].percentage}% benar</span></article>`).join('')}</div><section class="iq-category-review"><h3>Ringkasan per kategori</h3><div class="iq-category-player-grid">${rows.map(r => `<article><h4>${esc(names[r])}</h4>${categoryBreakdown(result.scores[r])}</article>`).join('')}</div></section><section class="iq-question-review"><h3>Ulasan setiap soal</h3><div class="iq-review-list">${result.questions.map((item, i) => `<article><header><strong>${i + 1}. ${esc(item.prompt)}</strong><span class="iq-category-tag">${esc(item.category)}</span></header>${item.visualGrid?.length ? `<div class="iq-review-matrix">${item.visualGrid.map(cell => `<span>${esc(cell)}</span>`).join('')}</div>` : item.visual?.length ? `<div class="iq-review-visual">${item.visual.map(cell => `<span>${esc(cell)}</span>`).join('')}</div>` : ''}<div class="iq-answer-comparison">${rows.map(r => { const correct = r === 'host' ? item.hostCorrect : item.guestCorrect; const chosen = r === 'host' ? item.hostAnswer : item.guestAnswer; return `<div><small>${esc(names[r])} · ${correct ? 'Benar' : 'Belum tepat'}</small><b class="${correct ? 'is-correct' : 'is-wrong'}">${esc(answerLabel(item, r === 'host' ? 'hostAnswer' : 'guestAnswer'))}</b></div>`; }).join('')}</div><p class="iq-correct-answer">Jawaban benar: <b>${esc(item.options[item.answer])}</b></p><small class="iq-explanation">${esc(item.explanation)}</small></article>`).join('')}</div></section><div class="bm-result-actions"><button class="button button-primary" data-iq-action="replay">${localResult ? 'Latihan lagi' : 'Kembali ke lobi'}</button><button class="button button-quiet" data-iq-action="back">Kembali</button></div></section>`;
   }
 
   function render() {
@@ -79,7 +94,7 @@ export function mountIQDuel(root, context) {
   async function startRemote() {
     if (role !== 'host' || pub.meta?.phase === 'playing' || pub.meta?.phase === 'result') return;
     const rounds = Number(pub.settings?.rounds) === 20 ? 20 : 12;
-    const selected = seededShuffle(IQ_QUESTIONS, Number(session.startedAt || Date.now())).slice(0, rounds);
+    const selected = selectIQQuestions(createRandomSeed(), rounds);
     await set(baseRef, { settings: { rounds }, questionIds: selected.map(q => q.id), meta: { phase: 'playing', questionIndex: 0, startedAt: Date.now(), durationSeconds: ROUND_SECONDS }, submissions: {} });
   }
 
@@ -133,6 +148,8 @@ export function mountIQDuel(root, context) {
       const guestScore = scoreIqAnswers(qSet, guestAnswers);
       const questions = qSet.map((q, i) => ({
         ...q,
+        hostAnswer: hostScore.details[i]?.selected ?? null,
+        guestAnswer: guestScore.details[i]?.selected ?? null,
         hostCorrect: hostScore.details[i]?.isCorrect === true,
         guestCorrect: guestScore.details[i]?.isCorrect === true
       }));
@@ -161,7 +178,7 @@ export function mountIQDuel(root, context) {
 
   function localStart() {
     local.rounds = Number(root.querySelector('[data-iq-local-rounds]').value) === 20 ? 20 : 12;
-    local.questionSet = seededShuffle(IQ_QUESTIONS, Date.now()).slice(0, local.rounds);
+    local.questionSet = selectIQQuestions(createRandomSeed(), local.rounds);
     local.answers = {};
     local.index = 0;
     local.selected = null;
@@ -177,7 +194,7 @@ export function mountIQDuel(root, context) {
     if (!timeout && local.selected === null) return;
     if (local.index >= local.rounds - 1) {
       const score = scoreIqAnswers(local.questionSet, local.answers);
-      local.results = { scores: { host: score, guest: { correct: 0, total: score.total, percentage: 0 } }, questions: local.questionSet.map((q, i) => ({ ...q, hostCorrect: score.details[i]?.isCorrect === true, guestCorrect: false })) };
+      local.results = { scores: { host: score, guest: { correct: 0, total: score.total, percentage: 0, details: [] } }, questions: local.questionSet.map((q, i) => ({ ...q, hostAnswer: score.details[i]?.selected ?? null, guestAnswer: null, hostCorrect: score.details[i]?.isCorrect === true, guestCorrect: false })) };
       local.phase = 'result';
     } else {
       local.index += 1;

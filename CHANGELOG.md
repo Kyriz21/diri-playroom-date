@@ -1,4 +1,45 @@
-# Changelog
+## v0.50.0 — Bomber Arena map variety, fair items & spawn safety
+- Menambahkan tiga profil arena deterministik: Lapangan Terbuka, Persimpangan, dan Benteng Tengah. Semua profil mempertahankan simetri rotasi 180° serta pemeriksaan konektivitas sebelum peti ditempatkan.
+- Distribusi power-up dibatasi 2–4 pasangan peti per arena; kedua sisi pasangan selalu menyimpan tipe item yang sama.
+- Kedua pemain mendapat perlindungan awal selama 1.600 ms setelah countdown. Indikator cincin perlindungan dibedakan dari shield yang dimiliki.
+- Kontrol arah dan tombol bom terkunci selama countdown; input tidak dapat mengantre bom sebelum pertandingan aktif.
+- Gerakan berhenti saat jendela browser kehilangan fokus untuk mencegah karakter terus berjalan setelah pemain berpindah tab/aplikasi.
+- Firebase Rules, struktur sesi, dan otoritas simulasi host tidak berubah.
+- Automated test, stress test generator, pemeriksaan sintaks JavaScript, dan parsing Firebase Rules dijalankan; playtest browser/two-device tetap diperlukan.
+
+## v0.49.2 — Bomber Arena fair-map repair
+- Arena crate placement is mirrored 180° for equivalent player routes and power-up opportunities.
+- Generator rejects crate placements that isolate walkable floors or hide a crate without an approachable adjacent tile.
+- 1,000 seeds are checked for full connectivity from both spawns; 250 seeds are checked for exact mirrored block and item placement.
+- Firebase Rules unchanged.
+
+# Changelog — Diri. Playroom Date
+
+## v0.49.1 — Bomber Arena Gameplay Polish
+- Menambahkan telegraph kotak merah berkedip pada jalur ledakan ketika fuse memasuki 850 ms terakhir, serta ring fuse pada bom.
+- Memperbaiki damage ketika pemain baru masuk ke tile api yang masih aktif; api aktif kini tetap berbahaya sampai durasinya berakhir.
+- Memperjelas tampilan power-up dengan warna berdasarkan efek dan menambahkan legenda di bawah arena.
+- Mengubah D-pad mobile menjadi susunan 3×3 klasik yang lebih mudah dikenali dan disentuh.
+- HUD menampilkan kapasitas bom aktif; kartu hasil menampilkan jumlah bom dipasang, peti dihancurkan, power-up dikumpulkan, dan hit yang mengurangi nyawa.
+- Mencegah tombol Kembali keluar dari duel yang sedang berjalan tanpa menyelesaikan pertandingan.
+- Firebase Rules tidak berubah dari v0.49.0; tidak perlu Publish ulang bila Rules v0.49.0 sudah aktif.
+- `npm test`: **250/250 tes lulus**. Seluruh file JavaScript lolos `node --check`; Firebase Rules JSON valid dan 152 ekspresi `.read`, `.write`, `.validate` seimbang.
+- Playtest browser dan dua perangkat dengan Firebase project aktif masih diperlukan.
+
+## v0.49.0 — Bomber Arena 1 vs 1
+
+- Menambahkan Bomber Arena sebagai mini-game kelima: duel dua pemain pada grid 13 × 11, maksimum tiga menit, tiga nyawa per pemain.
+- Menambahkan gerak grid empat arah, kontrol D-pad/touch dan keyboard, tombol pemasangan bom, fuse 2,2 detik, ledakan silang, penghentian ledakan oleh dinding/peti, dan chain reaction.
+- Menambahkan peti yang dapat dihancurkan serta empat power-up: Bomb Up, Fire Up, Speed Up, dan Shield.
+- Menambahkan perhitungan damage, invulnerability singkat, skor, eliminasi, tie-break sisa nyawa/skor saat waktu habis, serta kartu rekap.
+- Mengintegrasikan Bomber Arena ke katalog, landing page, create/join, explicit player lobby, presence, Ready, session loader, dan Firebase Rules.
+- Simulasi dibuat host-authoritative: guest hanya mengirim input miliknya; host menghitung gerakan, collision, bom, ledakan, power-up, nyawa, skor, dan hasil.
+- Batas kesegaran input memakai waktu penerimaan lokal di host agar perbedaan jam HP tidak membuat gerakan berhenti.
+- Memperbaiki satu tanda kurung tutup berlebih yang masih terbawa pada `privateRooms/$roomCode/$gameId/$sessionId/$uid/.read`; tes kini memeriksa semua ekspresi Firebase Rules di seluruh file.
+- Memperbaiki render peti hancur pada perangkat guest, menahan simulasi selama countdown, menggunakan state Firebase sebagai fallback untuk kartu hasil host, dan memulihkan setup bila proses host terputus.
+- Menambahkan `BOMBER-ARENA.md` dan tes logika, peta 1.000 seed, integrasi room, Firebase Rules, serta regresi countdown/state.
+- `npm test`: **245/245 tes lulus**. Seluruh JavaScript lolos `node --check`; Firebase Rules JSON valid dan ekspresi `.read`, `.write`, `.validate` diperiksa keseimbangan tanda kurung.
+- Tidak ada dependensi npm baru. Playtest langsung dua perangkat dengan Firebase project aktif tetap diperlukan.
 
 ## v0.45.0 — LDR Mini Games
 
@@ -267,3 +308,13 @@
 - Firebase Rules menambahkan allowlist Arcade, syarat presence untuk Ready/Start, akses node Arcade berdasarkan membership dan sessionId, serta validasi role untuk profil dan skor pemain. Firebase Rules harus dipublikasikan ulang dari build ini.
 - Perbaikan tambahan: timer dibatasi maksimal durasi ronde saat countdown belum dimulai; HUD menampilkan sisa nyawa setiap pemain.
 - `npm test`: **231/231 lulus**. Pemeriksaan sintaks seluruh JavaScript, parsing JSON Firebase Rules, dan keseimbangan tanda kurung ekspresi Rules lulus. Playtest browser serta dua perangkat dengan Firebase aktif belum dilakukan.
+
+
+## v0.48.0 — Expanded Brain Banks & Flappy Face
+- Love Match bank ditambah menjadi 80 pertanyaan (20 per dimensi); tiap sesi memilih 32 soal secara acak dan seimbang. Rekap menampilkan deskripsi lengkap seluruh 16 profil tipe, jawaban kedua pemain, ringkasan kecocokan, dan ekspor JSON/CSV.
+- IQ Duel bank ditambah menjadi 100 soal dengan lima kategori seimbang; tiap sesi memilih 12 atau 20 soal. Kartu akhir kini memuat ringkasan per kategori, pilihan jawaban kedua pemain, kunci jawaban, dan pembahasan.
+- Color Match memperbaiki penulisan target/tebakan RGB pada Firebase Rules agar tidak lagi dipaksa memakai bentuk data Guess Partner; target warna diacak dan dijaga agar tidak terlalu mirip dalam satu sesi. Alur mulai host memeriksa pengaturan terbaru dan kedua peserta.
+- Arcade dirombak menjadi satu permainan Flappy Face selama 60 detik. Kontrol hanya tap/klik atau tombol LOMPAT (desktop: Space/↑/W), gravitasi, pipa berpasangan, tiga nyawa, skor gerbang, dan satu kartu rekap; 11 mini-game tambahan dan kontrol arah/aksi dihapus.
+- Firebase Rules memperketat validasi `gatesPassed`, transisi hasil Flappy setelah 60 detik atau kedua pemain kehabisan nyawa, serta memastikan host dan guest online saat host memulai.
+- Cache import mini-game diperbarui ke v0.48.0; tidak ada dependensi npm baru.
+- Tes otomatis, pemeriksaan sintaks JS, parsing Rules JSON, dan keseimbangan ekspresi Rules dijalankan; live playtest dua perangkat dengan Firebase aktif masih diperlukan.

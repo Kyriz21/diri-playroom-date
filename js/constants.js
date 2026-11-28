@@ -23,7 +23,8 @@ export const GAME_CATALOG = [
   { id: 'lovematch', number: '09', title: 'Love Match', subtitle: 'Seberapa selaras kalian?', description: 'Jawab tes kepribadian singkat secara privat, lalu buka kecocokan bersama.', icon: '♡', state: 'active' },
   { id: 'colormatch', number: '10', title: 'Color Match', subtitle: 'Uji ingatan warna', description: 'Ingat warna dan bangun kembali dengan slider RGB dalam mode Versus atau Duet.', icon: '◉', state: 'active' },
   { id: 'iqduel', number: '11', title: 'IQ Duel', subtitle: 'Adu cepat berpikir', description: 'Pola, logika, deret, analogi, dan hitung cepat. Skor dibuka di akhir.', icon: '✦', state: 'active' },
-  { id: 'arcade', number: '12', title: 'Arcade', subtitle: 'Dua pemain, satu arena', description: 'Speedrun 12 mini-game arcade. Jadikan wajahmu karakter dan adu skor di arena bersama.', icon: '🕹', state: 'active' }
+  { id: 'arcade', number: '12', title: 'Arcade', subtitle: 'Flappy Face · dua pemain', description: 'Jadikan wajahmu karakter terbang. Ketuk untuk mengepak, lewati pipa, dan adu skor.', icon: '🕹', state: 'active' },
+  { id: 'bomberarena', number: '13', title: 'Bomber Arena', subtitle: 'Pasang bom, jebak lawan', description: 'Duel di arena grid. Hancurkan peti, ambil power-up, dan bertahan dari ledakan.', icon: '💣', state: 'active' }
 ];
 
 export const GAME_LABELS = Object.fromEntries(GAME_CATALOG.map(game => [game.id, game.title]));

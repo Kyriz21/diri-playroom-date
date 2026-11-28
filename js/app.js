@@ -9,7 +9,7 @@ const createForm = document.querySelector('#create-form');
 const joinForm = document.querySelector('#join-form');
 const dialogError = document.querySelector('#dialog-error');
 const toastRegion = document.querySelector('#toast-region');
-const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade']);
+const EXPLICIT_LOBBY_GAMES = new Set(['lovematch', 'colormatch', 'iqduel', 'arcade', 'bomberarena']);
 const needsExplicitLobby = gameId => EXPLICIT_LOBBY_GAMES.has(gameId);
 
 const state = {
@@ -97,7 +97,7 @@ function openDialog(mode, gameId = 'photobooth') {
   setDialogError('');
   state.pendingGameId = gameId;
   const createMode = mode === 'create';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   dialog.querySelector('.eyebrow').textContent = `${activityName.toUpperCase()} BERDUA`;
   dialogTitle.textContent = createMode ? `Buat sesi ${activityName}` : `Gabung ${activityName}`;
   createForm.querySelector('button[type="submit"]').innerHTML = `Buat sesi ${activityName} <span>♡</span>`;
@@ -271,21 +271,25 @@ function renderLanding() {
       <div class="date-game-actions"><button class="button button-primary button-small" data-action="open-balloon-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-balloon-join">Gabung sesi</button></div>
     </section>
     <section class="arcade-landing-card">
-      <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE CLOCK</span><h2>Arcade <span>✦</span></h2><p>Jadikan wajah kalian karakter berkaki mi, lalu speedrun dua belas mini-game dalam satu arena bersama. Bergerak, melompat, menangkap bonus, dan adu skor dari dua perangkat.</p><div class="arcade-landing-tags"><span>12 mini games</span><span>Foto wajah sendiri</span><span>Shared arena</span></div><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Insert coin <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join with a code</button></div></div>
-      <div class="arcade-preview-screen" aria-label="Pratinjau arena arcade dua pemain"><div class="arcade-preview-top"><span>FLAPPY FACE</span><span>GAME 1 / 12</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>${escapeHtml(loadDisplayName() || 'Mia')} · 04</b><span>VS</span><b>04 · Leo</b></div></div>
+      <div class="arcade-landing-copy"><span class="arcade-landing-kicker">TWO PLAYERS · ONE CLOCK</span><h2>Arcade <span>✦</span></h2><p>Jadikan wajah kalian karakter terbang. Ketuk layar atau tekan tombol untuk mengepak, lewati celah pipa, dan adu skor selama 60 detik.</p><div class="arcade-landing-tags"><span>Flappy Face</span><span>Foto wajah sendiri</span><span>Shared arena</span></div><div class="arcade-landing-actions"><button class="button button-primary" data-action="open-arcade-create">Insert coin <span>→</span></button><button class="button button-secondary" data-action="open-arcade-join">Join with a code</button></div></div>
+      <div class="arcade-preview-screen" aria-label="Pratinjau arena arcade dua pemain"><div class="arcade-preview-top"><span>FLAPPY FACE</span><span>FLAP DUEL · 60s</span></div><div class="arcade-preview-arena"><i class="arcade-preview-stars"></i><i class="arcade-preview-pipe p1"></i><i class="arcade-preview-pipe p2"></i><i class="arcade-preview-pipe p3"></i><i class="arcade-preview-pipe bottom p1"></i><i class="arcade-preview-pipe bottom p2"></i><i class="arcade-preview-pipe bottom p3"></i><i class="arcade-preview-floor"></i><span class="arcade-preview-character host">🐱</span><span class="arcade-preview-character guest">🐰</span><span class="arcade-preview-heart h1">♥</span><span class="arcade-preview-heart h2">♥</span><span class="arcade-preview-coin">✦</span></div><div class="arcade-preview-score"><b>${escapeHtml(loadDisplayName() || 'Mia')} · 04</b><span>VS</span><b>04 · Leo</b></div></div>
+    </section>
+    <section class="bomber-landing-card">
+      <div class="bomber-landing-copy"><span class="bomber-kicker">CLASSIC GRID BATTLE · 1 VS 1</span><h2>Bomber Arena <i>💣</i></h2><p>Pasang bom, hancurkan peti, cari power-up, dan jebak pasanganmu di arena labirin. Hati-hati—ledakanmu sendiri juga berbahaya.</p><div class="bomber-landing-tags"><span>Grid 13 × 11</span><span>3 nyawa</span><span>Duel real-time</span></div><div class="bomber-landing-actions"><button class="button button-primary" data-action="open-bomber-create">Buat arena <span>→</span></button><button class="button button-secondary" data-action="open-bomber-join">Gabung kode</button></div></div>
+      <div class="bomber-landing-preview" aria-hidden="true"><div class="bomber-preview-top"><span>BOMBER ARENA</span><span>1 VS 1</span></div><div class="bomber-preview-grid"><i>🧱</i><i>🟫</i><i>💣</i><i>🟫</i><i>🔥</i><i>🧱</i><i>🟫</i><i>💗</i><i>🟫</i><i>🧱</i><i>🟫</i><i>💣</i><i>🧱</i><i>💙</i><i>🟫</i><i>🔥</i><i>🟫</i><i>🧱</i></div><div class="bomber-preview-score"><b>PLAYER 1 · ♥♥♥</b><span>VS</span><b>♥♥♥ · PLAYER 2</b></div></div>
     </section>
     <section class="brain-games-section">
       <div class="brain-games-heading"><span class="date-kicker">AKTIVITAS BARU · MINI GAME BERDUA</span><h2>Tiga cara baru untuk saling mengenal</h2><p>Pilih aktivitas, undang pasangan dengan kode, atau mainkan latihan di satu perangkat.</p></div>
       <article class="brain-game-card brain-love-card">
-        <div class="brain-game-copy"><span class="brain-game-eyebrow">PERSONALITY MATCH</span><h2>Love Match <i>♡</i></h2><p>Tes kepribadian 20 pertanyaan. Jawaban kalian tetap pribadi sampai keduanya selesai, lalu buka kecocokan dan profil bersama.</p><div class="brain-game-tags"><span>20 pertanyaan</span><span>Skor kecocokan</span><span>Profil 4 dimensi</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-love-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-love-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-love-solo">Main di HP ini</button></div></div>
-        <div class="brain-game-preview love-preview" aria-hidden="true"><div class="brain-progress-top"><span>01 / 20</span><i></i></div><div class="love-preview-question">Akhir pekan idealmu lebih seperti…</div><div class="love-preview-answers"><span>Waktu tenang berdua</span><span>Menjelajah tempat baru</span></div><div class="love-preview-match"><b>♡</b><span>Private answers · shared reveal</span><b>♡</b></div></div>
+        <div class="brain-game-copy"><span class="brain-game-eyebrow">PERSONALITY MATCH</span><h2>Love Match <i>♡</i></h2><p>Pilih dari 80 pertanyaan kepribadian; 32 soal dipilih acak untuk tiap sesi. Jawaban tetap pribadi sampai keduanya selesai, lalu lihat profil dan kecocokan lengkap.</p><div class="brain-game-tags"><span>80 bank soal</span><span>32 soal per sesi</span><span>Profil 4 dimensi</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-love-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-love-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-love-solo">Main di HP ini</button></div></div>
+        <div class="brain-game-preview love-preview" aria-hidden="true"><div class="brain-progress-top"><span>01 / 32</span><i></i></div><div class="love-preview-question">Akhir pekan idealmu lebih seperti…</div><div class="love-preview-answers"><span>Waktu tenang berdua</span><span>Menjelajah tempat baru</span></div><div class="love-preview-match"><b>♡</b><span>Private answers · shared reveal</span><b>♡</b></div></div>
       </article>
       <article class="brain-game-card brain-color-card">
         <div class="brain-game-copy"><span class="brain-game-eyebrow">MEMORY CHALLENGE</span><h2>Color Match <i>◉</i></h2><p>Amati satu warna selama beberapa detik, lalu bangun kembali dari ingatan lewat slider merah, hijau, dan biru.</p><div class="brain-game-tags"><span>Versus atau Duet</span><span>3 kesulitan</span><span>Tanpa kamera</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-color-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-color-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-color-solo">Main di HP ini</button></div></div>
         <div class="brain-game-preview color-preview" aria-hidden="true"><div class="color-preview-top"><span>ROUND 1 OF 5</span><span>00:03</span></div><div class="color-preview-swatch"></div><div class="color-preview-sliders"><i></i><i></i><i></i></div><div class="color-preview-caption">REMEMBER THE COLOR</div></div>
       </article>
       <article class="brain-game-card brain-iq-card">
-        <div class="brain-game-copy"><span class="brain-game-eyebrow">LOGIC CHALLENGE</span><h2>IQ Duel <i>✦</i></h2><p>Hadapi soal pola, matriks, deret angka, logika, analogi, dan hitung cepat. Jawaban benar dibuka setelah ronde terakhir.</p><div class="brain-game-tags"><span>12 atau 20 ronde</span><span>30 detik per soal</span><span>Skor akhir</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-iq-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-iq-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-iq-solo">Main di HP ini</button></div></div>
+        <div class="brain-game-copy"><span class="brain-game-eyebrow">LOGIC CHALLENGE</span><h2>IQ Duel <i>✦</i></h2><p>Hadapi soal pola, matriks, deret angka, logika, analogi, dan hitung cepat. Jawaban benar dibuka setelah ronde terakhir.</p><div class="brain-game-tags"><span>100 bank soal</span><span>12 atau 20 ronde</span><span>Ulasan akhir</span></div><div class="brain-game-actions"><button class="button button-primary button-small" data-action="open-iq-create">Buat sesi</button><button class="button button-secondary button-small" data-action="open-iq-join">Gabung kode</button><button class="button button-quiet button-small" data-action="open-iq-solo">Main di HP ini</button></div></div>
         <div class="brain-game-preview iq-preview" aria-hidden="true"><div class="iq-preview-top"><span>QUESTION 1 OF 12</span><span>30s</span></div><p>Which tile completes the grid?</p><div class="iq-preview-grid"><span>•</span><span>••</span><span>•••</span><span>••</span><span>•••</span><span>••••</span><span>•••</span><span>••••</span><span>?</span></div><div class="iq-preview-options"><i>••</i><i>•••</i><i>••••</i><i>•••••</i></div></div>
       </article>
     </section>`;
@@ -295,7 +299,7 @@ function renderWaitingRoom(room, current) {
   const roleText = roleLabel(current.role);
   const guestJoined = Boolean(room.guest?.uid);
   const gameId = room.lobby?.selections?.host || 'photobooth';
-  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
+  const activityName = ({ drawtogether: 'Gambar Bareng', guesspartner: 'Tebak Pasangan', bombstorm: 'Bomb Storm', balloonpop: 'Balloon Pop', elementalduo: 'Elemental Duo', lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel', arcade: 'Arcade', bomberarena: 'Bomber Arena', photobooth: 'Photobooth' })[gameId] || 'Photobooth';
   if (needsExplicitLobby(gameId)) {
     const ready = room.lobby?.ready || {};
     const membersJoined = Boolean(room.host?.uid && room.guest?.uid);
@@ -357,16 +361,19 @@ function renderActiveSession(room, current) {
   const isColorMatch = session.gameId === 'colormatch';
   const isIQDuel = session.gameId === 'iqduel';
   const isArcade = session.gameId === 'arcade';
-  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : isArcade ? 'Arcade' : 'Photobooth';
+  const isBomberArena = session.gameId === 'bomberarena';
+  const activityName = isDrawTogether ? 'Gambar Bareng' : isGuessPartner ? 'Tebak Pasangan' : isBombStorm ? 'Bomb Storm' : isBalloonPop ? 'Balloon Pop' : isElementalDuo ? 'Elemental Duo' : isLoveMatch ? 'Love Match' : isColorMatch ? 'Color Match' : isIQDuel ? 'IQ Duel' : isArcade ? 'Arcade' : isBomberArena ? 'Bomber Arena' : 'Photobooth';
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Membuka ${activityName}…</p></section>`;
-  const modulePromise = isArcade
-    ? import('./games/arcade.js?v=0.47.0').then(module => ({ mount: module.mountArcade }))
+  const modulePromise = isBomberArena
+    ? import('./games/bomber-arena.js?v=0.50.0').then(module => ({ mount: module.mountBomberArena }))
+    : isArcade
+      ? import('./games/arcade.js?v=0.48.0').then(module => ({ mount: module.mountArcade }))
     : isLoveMatch
-      ? import('./games/love-match.js?v=0.46.0').then(module => ({ mount: module.mountLoveMatch }))
+      ? import('./games/love-match.js?v=0.48.0').then(module => ({ mount: module.mountLoveMatch }))
       : isColorMatch
-        ? import('./games/color-match.js?v=0.46.0').then(module => ({ mount: module.mountColorMatch }))
+        ? import('./games/color-match.js?v=0.48.0').then(module => ({ mount: module.mountColorMatch }))
         : isIQDuel
-          ? import('./games/iq-duel.js?v=0.46.0').then(module => ({ mount: module.mountIQDuel }))
+          ? import('./games/iq-duel.js?v=0.48.0').then(module => ({ mount: module.mountIQDuel }))
           : isElementalDuo
           ? import('./games/elemental-duo.js?v=0.44.0').then(module => ({ mount: module.mountElementalDuo }))
           : isBalloonPop
@@ -451,9 +458,9 @@ async function openSoloMiniGame(gameId) {
   disposeMountedGame();
   const labels = { lovematch: 'Love Match', colormatch: 'Color Match', iqduel: 'IQ Duel' };
   const imports = {
-    lovematch: () => import('./games/love-match.js?v=0.46.0').then(module => module.mountLoveMatch),
-    colormatch: () => import('./games/color-match.js?v=0.46.0').then(module => module.mountColorMatch),
-    iqduel: () => import('./games/iq-duel.js?v=0.46.0').then(module => module.mountIQDuel)
+    lovematch: () => import('./games/love-match.js?v=0.48.0').then(module => module.mountLoveMatch),
+    colormatch: () => import('./games/color-match.js?v=0.48.0').then(module => module.mountColorMatch),
+    iqduel: () => import('./games/iq-duel.js?v=0.48.0').then(module => module.mountIQDuel)
   };
   appRoot.innerHTML = `<section class="loading-state"><span class="loading-heart">♡</span><p>Menyiapkan ${labels[gameId] || 'mini game'}…</p></section>`;
   try {
@@ -569,6 +576,8 @@ async function runAction(action, element) {
   if (action === 'open-iq-solo') return openSoloMiniGame('iqduel');
   if (action === 'open-arcade-create') return openDialog('create', 'arcade');
   if (action === 'open-arcade-join') return openDialog('join', 'arcade');
+  if (action === 'open-bomber-create') return openDialog('create', 'bomberarena');
+  if (action === 'open-bomber-join') return openDialog('join', 'bomberarena');
   if (action === 'open-solo') return openSoloPhotobooth();
   if (action === 'close-dialog') return closeDialog();
   if (action === 'go-home') {

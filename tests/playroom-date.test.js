@@ -73,10 +73,10 @@ test('Foto Sendiri requires four camera captures before opening the editor', asy
 });
 
 
-test('Love Match, Color Match, IQ Duel, and Arcade use a shared explicit player lobby before starting', async () => {
+test('Love Match, Color Match, IQ Duel, Arcade, and Bomber Arena use a shared explicit player lobby before starting', async () => {
   const app = await readFile(new URL('js/app.js', root), 'utf8');
   const rooms = await readFile(new URL('js/services/room-service.js', root), 'utf8');
-  assert.match(app, /EXPLICIT_LOBBY_GAMES = new Set\(\['lovematch', 'colormatch', 'iqduel', 'arcade'\]\)/);
+  assert.match(app, /EXPLICIT_LOBBY_GAMES = new Set\(\['lovematch', 'colormatch', 'iqduel', 'arcade', 'bomberarena'\]\)/);
   assert.match(app, /data-action="toggle-room-ready"/);
   assert.match(app, /data-action="start-room-game"/);
   assert.match(app, /room\.presence\?\.host\?\.connected === true/);

@@ -130,3 +130,20 @@ Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.46.0. Rule
 
 ## v0.47.0 — Arcade Rules
 Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.47.0. Rules ini menambahkan `arcade` ke pilihan game dan activeSession, mewajibkan kedua pemain terhubung sebelum Ready/Start, serta membatasi read/write node Arcade berdasarkan anggota room, gameId, sessionId, UID role, dan TTL room. Validasi karakter/foto dan skor per ronde juga ditambahkan. Jangan menempelkan potongan aturan saja. Setelah Publish, uji dua UID nyata untuk membuat room, bergabung, Ready, menyimpan avatar, memulai 12 ronde, dan membaca rekap. Rules JSON telah divalidasi secara lokal; belum dipublikasikan ke Firebase project.
+
+
+## Firebase Rules v0.48.0 — Brain Games & Flappy Face
+Publikasikan ulang seluruh `firebase-database.rules.json` dari ZIP v0.48.0. Perubahan mencakup validasi path privat RGB Color Match, akses hasil Love Match/Color Match/IQ Duel berdasarkan session dan phase, allowlist Arcade, validasi `gatesPassed`, transisi Arcade setup→playing yang memerlukan kedua player Ready dan online, serta transisi playing→result setelah 60 detik atau kedua pemain kehabisan nyawa. File JSON dan tanda kurung ekspresi Rules diperiksa secara lokal; Rules belum dipublikasikan atau diuji pada Firebase project aktif.
+
+## Firebase Rules v0.49.0 — Bomber Arena
+
+Publikasikan seluruh `firebase-database.rules.json` dari ZIP v0.49.0. Rules menambahkan allowlist `bomberarena`, syarat kedua pemain online dan Ready, serta path `roomGames/{roomCode}/{sessionId}/bomberArena`. Input ditulis hanya oleh UID peran yang sesuai; host menjadi satu-satunya penulis state simulasi, bom, ledakan, peti hancur, power-up, dan fase hasil. JSON diparse dan seluruh ekspresi `.read`, `.write`, `.validate` di seluruh file diperiksa keseimbangan tanda kurung secara lokal. Build ini juga menghapus satu tanda kurung tutup berlebih yang sebelumnya masih ada pada aturan `privateRooms/$roomCode/$gameId/$sessionId/$uid/.read`. Rules belum dipublikasikan atau diuji di Firebase Emulator/project aktif.
+
+
+## Firebase Rules v0.49.1 — tidak ada perubahan
+
+Bomber Arena v0.49.1 hanya memperbarui frontend, feedback gameplay, statistik rekap, dan CSS kontrol. Tidak ada perubahan pada `firebase-database.rules.json`; Rules v0.49.0 tetap kompatibel. Jangan mengganti atau memublikasikan Rules ulang bila versi v0.49.0 sudah aktif.
+
+
+## Bomber Arena v0.50.0
+Tidak ada perubahan Firebase Rules pada build v0.50.0. Jika Rules v0.49.0 sudah dipublikasikan, tidak perlu Publish ulang; variasi arena, power-up, perlindungan spawn, dan lockout input berjalan di frontend dengan jalur state yang sama.

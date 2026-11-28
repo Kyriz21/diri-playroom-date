@@ -2,7 +2,7 @@ import { db, ref, get, set, update, onValue, runTransaction } from '../firebase.
 import { createAvatarCamera } from '../services/avatar-camera.js';
 import { createArcadeFeedback } from '../services/arcade-feedback.js';
 import {
-  ARCADE_STAGES, ARCADE_AVATARS, ARCADE_STAGE_DURATION_MS, ARCADE_INTERMISSION_MS,
+  ARCADE_STAGES, ARCADE_AVATARS, ARCADE_STAGE_DURATION_MS,
   createArcadePlayer, createArcadeEntities, getArcadeEntityPosition,
   stepArcadePlayer, getArcadeRemaining, getArcadeWinner, getArcadeLane
 } from './arcade-logic.js';
@@ -50,54 +50,53 @@ export function mountArcade(root, context) {
   const basePath = `roomGames/${code}/${session.sessionId}/arcade`;
   const baseRef = ref(db, basePath);
   const metaRef = ref(db, `${basePath}/meta`);
-  const playersRef = ref(db, `${basePath}/players`);
   const playerRef = ref(db, `${basePath}/players/${role}`);
+  const presenceRef = ref(db, `rooms/${code}/presence`);
   let feedback = null;
   let avatarCamera = null;
   let unsubscribeGame = null;
+  let unsubscribePresence = null;
   let unsubscribeOffset = null;
   let serverOffset = 0;
   let data = {};
+  let presence = room.presence || {};
   let destroyed = false;
   let initializing = false;
   let avatarBusy = false;
   let readyBusy = false;
   let starting = false;
   let transitionBusy = false;
-  let lastAdvancedIndex = -1;
-  let lastCommittedStage = -1;
   let lastPhase = '';
-  let lastRenderedStage = -1;
   let rafId = 0;
   let lastFrame = 0;
   let lastWriteAt = 0;
   let lastNotifyAt = 0;
-  let input = { left: false, right: false, up: false, down: false, jump: false, jumpPressed: false, actionPressed: false };
+  let input = { jump: false, jumpPressed: false };
   let localSim = null;
   let localStageIndex = -1;
   let entitiesByRole = { host: [], guest: [] };
   let avatarImages = { host: null, guest: null };
   let avatarSources = { host: '', guest: '' };
   let canvas = null;
+  let canvasTapHandler = null;
   let ctx = null;
   let stageNode = null;
   let timerNode = null;
   let scoreNodes = {};
   let livesNodes = {};
   let bannerNode = null;
-  let summaryNode = null;
-  let destroyedReason = '';
 
   const nowServer = () => Date.now() + serverOffset;
   const notify = (message, type = 'default', options) => feedback ? feedback.show(message, type, options) : globalToast(message, type);
   const ownPlayer = () => data.players?.[role] || {};
   const partnerPlayer = () => data.players?.[opponentRole] || {};
+  const bothOnline = () => presence?.host?.connected === true && presence?.guest?.connected === true;
 
   function buildShell() {
     root.innerHTML = `
       <section class="arcade-shell">
         <header class="arcade-header">
-          <div><span class="arcade-kicker">DIRI. · TWO PLAYERS, ONE CLOCK</span><h1>Arcade <span>✦</span></h1><p>Dua karakter, satu arena, dua belas tantangan singkat.</p></div>
+          <div><span class="arcade-kicker">DIRI. · TWO PLAYERS, ONE CLOCK</span><h1>Arcade <span>✦</span></h1><p>Dua karakter, satu tantangan Flappy Face. Ketuk untuk mengepak dan lewati pipa.</p></div>
           <div class="arcade-header-actions"><span class="arcade-room-code">${esc(code)}</span><button class="button button-quiet button-small" data-ar-action="back">Kembali</button></div>
         </header>
         <div data-ar-screen></div>
@@ -117,19 +116,19 @@ export function mountArcade(root, context) {
     const partner = partnerPlayer();
     const mineAvatar = safeAvatar(mine.avatar || 'character:cat');
     const partnerAvatar = safeAvatar(partner.avatar || (opponentRole === 'host' ? 'character:alien' : 'character:bear'));
-    const bothReady = data.players?.host?.ready === true && data.players?.guest?.ready === true;
+    const bothReady = bothOnline() && data.players?.host?.ready === true && data.players?.guest?.ready === true;
     const screen = root.querySelector('[data-ar-screen]');
     screen.innerHTML = `
       <section class="arcade-setup-card">
-        <div class="arcade-setup-intro"><span class="arcade-eyebrow">INSERT COIN · 12 MINI GAMES</span><h2>Siapkan wajah jagoanmu</h2><p>Pakai foto kamera, pilih dari galeri, atau gunakan karakter lucu. Foto dikompres dan hanya dibagikan di sesi ini.</p></div>
+        <div class="arcade-setup-intro"><span class="arcade-eyebrow">INSERT COIN · FLAPPY FACE</span><h2>Siapkan wajah jagoanmu</h2><p>Pakai foto kamera, pilih dari galeri, atau gunakan karakter lucu. Lalu tap layar atau tombol LOMPAT untuk mengepak melewati pipa.</p></div>
         <div class="arcade-avatar-pair">
           <article class="arcade-avatar-card is-pink"><div data-ar-avatar="mine">${avatarMarkup(mineAvatar, names[role], true)}</div><strong>${esc(names[role])}</strong><small>Karakter kamu</small><span class="arcade-player-status ${mine.ready ? 'is-ready' : ''}" data-ar-ready="${role}">${mine.ready ? 'Siap bermain ✓' : 'Belum siap'}</span></article>
           <div class="arcade-versus">VS</div>
           <article class="arcade-avatar-card is-blue"><div data-ar-avatar="partner">${avatarMarkup(partnerAvatar, names[opponentRole])}</div><strong>${esc(names[opponentRole])}</strong><small>Karakter pasangan</small><span class="arcade-player-status ${partner.ready ? 'is-ready' : ''}" data-ar-ready="${opponentRole}">${partner.ready ? 'Siap bermain ✓' : 'Menyiapkan karakter…'}</span></article>
         </div>
         <div class="arcade-avatar-picker"><div class="arcade-picker-heading"><strong>Pilih karakter</strong><span>Atau ganti dengan foto wajahmu</span></div><div class="arcade-avatar-options">${ARCADE_AVATARS.map(item => `<button type="button" class="arcade-avatar-option ${mineAvatar === `character:${item.id}` ? 'is-selected' : ''}" data-ar-avatar-choice="${item.id}" aria-label="Pilih ${item.name}" title="${item.name}">${item.emoji}</button>`).join('')}</div><div class="arcade-photo-actions"><button class="button button-secondary button-small" data-ar-action="camera">📷 Ambil foto</button><button class="button button-secondary button-small" data-ar-action="gallery">🖼 Pilih dari galeri</button><input type="file" accept="image/*" data-ar-gallery hidden></div></div>
-        <div class="arcade-howto-grid"><div><b>← →</b><span>Gerakkan karakter</span></div><div><b>SPACE / ↑</b><span>Lompat atau terbang</span></div><div><b>ENTER / TAP</b><span>Aksi, pop, dan ritme</span></div></div>
-        <div class="arcade-coin-row"><div><span class="arcade-coin-icon">🕹️</span><div><strong>${bothReady ? 'Dua pemain siap!' : 'Menunggu dua koin…'}</strong><small>${bothReady ? 'Pembuat sesi dapat memasukkan koin untuk memulai.' : 'Kalian berdua harus memilih karakter dan menyatakan siap.'}</small></div></div><div class="arcade-coin-actions"><button class="button button-secondary" data-ar-action="ready" ${mine.ready || avatarBusy || readyBusy ? 'disabled' : ''}>${mine.ready ? 'Kamu siap ✓' : readyBusy ? 'Menyimpan…' : 'Saya siap'}</button>${role === 'host' ? `<button class="button button-primary arcade-insert-button" data-ar-action="insert-coin" ${bothReady && !starting ? '' : 'disabled'}>${starting ? 'Menyiapkan…' : 'Insert coin →'}</button>` : `<span class="arcade-waiting-note">${bothReady ? 'Menunggu host memasukkan koin…' : 'Tunggu pasangan siap.'}</span>`}</div></div>
+        <div class="arcade-howto-grid"><div><b>TAP / KLIK</b><span>Kepakkan sayap</span></div><div><b>SPACE / ↑</b><span>Flap di keyboard</span></div><div><b>♥ × 3</b><span>Tiga kesempatan</span></div></div>
+        <div class="arcade-coin-row"><div><span class="arcade-coin-icon">🕹️</span><div><strong>${bothReady ? 'Dua pemain siap!' : 'Menunggu dua pemain…'}</strong><small>${bothReady ? 'Host dapat memasukkan koin untuk memulai satu tantangan 60 detik.' : 'Kalian berdua harus memilih karakter dan menyatakan siap.'}</small></div></div><div class="arcade-coin-actions"><button class="button button-secondary" data-ar-action="ready" ${mine.ready || avatarBusy || readyBusy || !bothOnline() ? 'disabled' : ''}>${mine.ready ? 'Kamu siap ✓' : readyBusy ? 'Menyimpan…' : 'Saya siap'}</button>${role === 'host' ? `<button class="button button-primary arcade-insert-button" data-ar-action="insert-coin" ${bothReady && !starting ? '' : 'disabled'}>${starting ? 'Menyiapkan…' : 'Insert coin →'}</button>` : `<span class="arcade-waiting-note">${bothReady ? 'Menunggu host memasukkan koin…' : 'Tunggu pasangan siap.'}</span>`}</div></div>
         <p class="arcade-privacy-note">Kamera hanya aktif setelah kamu menekan Ambil foto. Kamu juga bisa bermain tanpa foto.</p>
       </section>`;
   }
@@ -139,14 +138,13 @@ export function mountArcade(root, context) {
     screen.innerHTML = `
       <section class="arcade-game-card">
         <div class="arcade-game-hud">
-          <div class="arcade-hud-player is-pink"><span class="arcade-hud-avatar" data-ar-mini-avatar="host">${avatarEmoji(data.players?.host?.avatar)}</span><div><strong>${esc(names.host)}</strong><small><b data-ar-score="host">0</b> PTS · <span data-ar-lives="host">♥♥♥</span></small></div></div>
-          <div class="arcade-stage-hud"><span data-ar-stage-count>GAME 01 / 12</span><strong data-ar-stage-name>FLAPPY FACE</strong><div class="arcade-stage-progress"><i data-ar-stage-progress></i></div><b data-ar-timer>12.0</b></div>
-          <div class="arcade-hud-player is-blue"><div><strong>${esc(names.guest)}</strong><small><b data-ar-score="guest">0</b> PTS · <span data-ar-lives="guest">♥♥♥</span></small></div><span class="arcade-hud-avatar" data-ar-mini-avatar="guest">${avatarEmoji(data.players?.guest?.avatar)}</span></div>
+          <div class="arcade-hud-player is-pink"><span class="arcade-hud-avatar" data-ar-mini-avatar="host">${avatarEmoji(data.players?.host?.avatar)}</span><div><strong>${esc(names.host)}</strong><small><b data-ar-score="host">0</b> GATE · <span data-ar-lives="host">♥♥♥</span></small></div></div>
+          <div class="arcade-stage-hud"><span data-ar-stage-count>DUEL · 60 DETIK</span><strong data-ar-stage-name>FLAPPY FACE</strong><div class="arcade-stage-progress"><i data-ar-stage-progress></i></div><b data-ar-timer>60.0</b></div>
+          <div class="arcade-hud-player is-blue"><div><strong>${esc(names.guest)}</strong><small><b data-ar-score="guest">0</b> GATE · <span data-ar-lives="guest">♥♥♥</span></small></div><span class="arcade-hud-avatar" data-ar-mini-avatar="guest">${avatarEmoji(data.players?.guest?.avatar)}</span></div>
         </div>
-        <div class="arcade-arena-wrap"><canvas class="arcade-arena" data-ar-canvas width="960" height="540" aria-label="Arena arcade dua pemain"></canvas><div class="arcade-arena-banner" data-ar-banner hidden></div></div>
-        <div class="arcade-round-strip" data-ar-round-strip>${ARCADE_STAGES.map((stage, index) => `<span class="${index === 0 ? 'is-current' : ''}" data-ar-round-dot="${index}" title="${esc(stage.name)}">${String(index + 1).padStart(2, '0')}</span>`).join('')}</div>
-        <div class="arcade-controls"><div class="arcade-control-label"><strong>Kontrol ${esc(names[role])}</strong><span>Keyboard atau sentuh</span></div><div class="arcade-control-pad"><button data-ar-input="left" aria-label="Kiri">←<small>KIRI</small></button><button data-ar-input="right" aria-label="Kanan">→<small>KANAN</small></button><button class="is-jump" data-ar-input="up" aria-label="Lompat atau naik">↟<small>NAIK</small></button><button data-ar-input="down" aria-label="Turun">↓<small>TURUN</small></button><button class="is-action" data-ar-input="action" aria-label="Aksi">✦<small>AKSI</small></button></div></div>
-        <p class="arcade-control-note">Desktop: A/D atau ←/→ bergerak, ↑/W naik atau lompat, ↓/S turun, Spasi lompat, Enter aksi. HP: tahan tombol kontrol.</p>
+        <div class="arcade-arena-wrap"><canvas class="arcade-arena" data-ar-canvas width="960" height="540" aria-label="Arena Flappy Face dua pemain. Ketuk untuk mengepak."></canvas><div class="arcade-arena-banner" data-ar-banner hidden></div></div>
+        <div class="arcade-controls"><div class="arcade-control-label"><strong>Kontrol ${esc(names[role])}</strong><span>Tap arena atau tekan tombol</span></div><div class="arcade-control-pad"><button class="is-jump arcade-flap-button" data-ar-input="jump" aria-label="Lompat atau kepak">↟<small>LOMPAT</small></button></div></div>
+        <p class="arcade-control-note">HP: tap di arena atau tombol LOMPAT. Desktop: klik arena, Spasi, atau tombol ↑. Lepas tombol untuk turun kembali.</p>
       </section>`;
     canvas = root.querySelector('[data-ar-canvas]');
     ctx = canvas?.getContext('2d');
@@ -154,6 +152,12 @@ export function mountArcade(root, context) {
     timerNode = root.querySelector('[data-ar-timer]');
     bannerNode = root.querySelector('[data-ar-banner]');
     for (const playerRole of ['host', 'guest']) { scoreNodes[playerRole] = root.querySelector(`[data-ar-score="${playerRole}"]`); livesNodes[playerRole] = root.querySelector(`[data-ar-lives="${playerRole}"]`); }
+    canvasTapHandler = event => {
+      if (data.meta?.phase !== 'playing' || event.target.closest('[data-ar-input]')) return;
+      event.preventDefault();
+      input.jumpPressed = true;
+    };
+    canvas?.addEventListener('pointerdown', canvasTapHandler);
     resizeCanvas();
     updateAvatarCache();
     updateStageHud();
@@ -163,18 +167,17 @@ export function mountArcade(root, context) {
     const screen = root.querySelector('[data-ar-screen]');
     const players = data.players || {};
     const winner = getArcadeWinner(players);
-    const scoresFor = playerRole => players[playerRole]?.scores || {};
-    const stageRows = ARCADE_STAGES.map((stage, index) => {
-      const hostScore = Number(scoresFor('host')[index] ?? (index === 11 ? players.host?.stageScore : 0) ?? 0);
-      const guestScore = Number(scoresFor('guest')[index] ?? (index === 11 ? players.guest?.stageScore : 0) ?? 0);
-      const high = Math.max(1, hostScore, guestScore);
-      return `<div class="arcade-result-stage"><span>${String(index + 1).padStart(2, '0')}</span><b>${stage.icon} ${esc(stage.name)}</b><i><em style="width:${Math.round(hostScore / high * 100)}%"></em></i><strong>${hostScore} : ${guestScore}</strong></div>`;
-    }).join('');
+    const winnerLabel = winner.winner === 'draw' ? 'Skor imbang!' : `${esc(names[winner.winner])} menang!`;
+    const playerCard = playerRole => {
+      const score = Number(players[playerRole]?.score || 0);
+      const gates = Number(players[playerRole]?.gatesPassed || 0);
+      const lives = Math.max(0, Number(players[playerRole]?.lives ?? 0));
+      return `<article class="${playerRole === 'host' ? 'is-pink' : 'is-blue'}"><span>${esc(names[playerRole])}</span><strong>${score}</strong><small>${gates} pipa terlewati · ${lives}/3 nyawa tersisa</small></article>`;
+    };
     screen.innerHTML = `
-      <section class="arcade-result-card"><div class="arcade-result-top"><span class="arcade-eyebrow">12 GAMES · ONE SHARED ARENA</span><div class="arcade-result-trophy">${winner.winner === 'draw' ? '🤝' : '🏆'}</div><h2>${winner.winner === 'draw' ? 'Skor imbang!' : `${esc(names[winner.winner])} menang!`}</h2><p>${winner.hostScore.toLocaleString('id-ID')} poin untuk ${esc(names.host)} · ${winner.guestScore.toLocaleString('id-ID')} poin untuk ${esc(names.guest)}</p></div>
-        <div class="arcade-result-score-pair"><article class="is-pink"><span>PEMAIN 1 · ${esc(names.host)}</span><strong>${winner.hostScore.toLocaleString('id-ID')}</strong><small>POIN</small></article><article class="is-blue"><span>PEMAIN 2 · ${esc(names.guest)}</span><strong>${winner.guestScore.toLocaleString('id-ID')}</strong><small>POIN</small></article></div>
-        <div class="arcade-result-list"><div class="arcade-result-list-head"><strong>Rekap setiap mini-game</strong><span>Skor masing-masing pemain</span></div>${stageRows}</div>
-        <div class="arcade-result-actions"><button class="button button-primary" data-ar-action="back-to-lobby" ${role === 'host' ? '' : 'disabled'}>Kembali ke lobi</button><span>${role === 'host' ? 'Kamu bisa memilih Arcade lagi atau permainan lain.' : 'Menunggu pembuat sesi kembali ke lobi…'}</span></div>
+      <section class="arcade-result-card"><div class="arcade-result-top"><span class="arcade-eyebrow">FLAPPY FACE · HASIL AKHIR</span><div class="arcade-result-trophy">${winner.winner === 'draw' ? '🤝' : '🏆'}</div><h2>${winnerLabel}</h2><p>Satu ronde Flappy Face selesai. Skor dihitung dari jumlah pipa yang berhasil dilewati.</p></div>
+        <div class="arcade-result-score-pair">${playerCard('host')}${playerCard('guest')}</div>
+        <div class="arcade-result-actions"><button class="button button-primary" data-ar-action="back-to-lobby" ${role === 'host' ? '' : 'disabled'}>Kembali ke lobi</button><span>${role === 'host' ? 'Kamu bisa memilih tantangan lagi atau permainan lain.' : 'Menunggu pembuat sesi kembali ke lobi…'}</span></div>
       </section>`;
   }
 
@@ -194,14 +197,14 @@ export function mountArcade(root, context) {
     if (partnerReady) { partnerReady.textContent = partner.ready ? 'Siap bermain ✓' : 'Belum siap'; partnerReady.classList.toggle('is-ready', partner.ready === true); }
     root.querySelectorAll('[data-ar-avatar-choice]').forEach(button => button.classList.toggle('is-selected', mineAvatar === `character:${button.dataset.arAvatarChoice}`));
     const readyButton = root.querySelector('[data-ar-action="ready"]');
-    if (readyButton) { readyButton.disabled = Boolean(mine.ready || avatarBusy || readyBusy); readyButton.textContent = mine.ready ? 'Kamu siap ✓' : readyBusy ? 'Menyimpan…' : 'Saya siap'; }
-    const bothReady = data.players?.host?.ready === true && data.players?.guest?.ready === true;
+    if (readyButton) { readyButton.disabled = Boolean(mine.ready || avatarBusy || readyBusy || !bothOnline()); readyButton.textContent = mine.ready ? 'Kamu siap ✓' : readyBusy ? 'Menyimpan…' : 'Saya siap'; }
+    const bothReady = bothOnline() && data.players?.host?.ready === true && data.players?.guest?.ready === true;
     const insertButton = root.querySelector('[data-ar-action="insert-coin"]');
     if (insertButton) insertButton.disabled = !bothReady || starting;
     const coinText = root.querySelector('.arcade-coin-row strong');
     const coinNote = root.querySelector('.arcade-coin-row small');
-    if (coinText) coinText.textContent = bothReady ? 'Dua pemain siap!' : 'Menunggu dua koin…';
-    if (coinNote) coinNote.textContent = bothReady ? 'Pembuat sesi dapat memasukkan koin untuk memulai.' : 'Kalian berdua harus memilih karakter dan menyatakan siap.';
+    if (coinText) coinText.textContent = bothReady ? 'Dua pemain online dan siap!' : bothOnline() ? 'Menunggu kedua pemain siap…' : 'Menunggu dua perangkat online…';
+    if (coinNote) coinNote.textContent = bothReady ? 'Pembuat sesi dapat memasukkan koin untuk memulai.' : 'Pastikan kedua perangkat online, lalu pilih karakter dan nyatakan siap.';
   }
 
   function updateAvatarCache() {
@@ -219,16 +222,9 @@ export function mountArcade(root, context) {
 
   function updateStageHud() {
     if (!stageNode || !data.meta || data.meta.phase !== 'playing') return;
-    const index = Math.max(0, Math.min(ARCADE_STAGES.length - 1, Number(data.meta.stageIndex || 0)));
-    const stage = ARCADE_STAGES[index];
-    stageNode.textContent = `${stage.icon} ${stage.name.toUpperCase()}`;
+    stageNode.textContent = 'FLAPPY FACE';
     const count = root.querySelector('[data-ar-stage-count]');
-    if (count) count.textContent = `GAME ${String(index + 1).padStart(2, '0')} / 12`;
-    root.querySelectorAll('[data-ar-round-dot]').forEach(node => {
-      const dot = Number(node.dataset.arRoundDot);
-      node.classList.toggle('is-done', dot < index);
-      node.classList.toggle('is-current', dot === index);
-    });
+    if (count) count.textContent = 'DUEL · 60 DETIK';
   }
 
   function drawBackground(context) {
@@ -251,9 +247,9 @@ export function mountArcade(root, context) {
       context.beginPath(); context.moveTo(width / 2 + i * 23, 350); context.lineTo(width / 2 + i * 78, height); context.stroke();
     }
     context.restore();
-    context.fillStyle = 'rgba(9,10,24,.54)'; context.fillRect(0, 438, width, 102);
-    context.fillStyle = 'rgba(95,222,238,.38)'; context.fillRect(0, 436, width / 2, 2);
-    context.fillStyle = 'rgba(244,126,188,.38)'; context.fillRect(width / 2, 436, width / 2, 2);
+    context.fillStyle = 'rgba(9,10,24,.68)'; context.fillRect(0, 500, width, 40);
+    context.fillStyle = 'rgba(95,222,238,.55)'; context.fillRect(0, 497, width / 2, 3);
+    context.fillStyle = 'rgba(244,126,188,.55)'; context.fillRect(width / 2, 497, width / 2, 3);
     context.setLineDash([7, 9]); context.strokeStyle = 'rgba(255,255,255,.12)'; context.beginPath(); context.moveTo(width / 2, 0); context.lineTo(width / 2, height); context.stroke(); context.setLineDash([]);
     for (const [x, tint] of [[12, '#9b85ef'], [936, '#f3c28e']]) {
       context.save(); context.shadowColor = tint; context.shadowBlur = 18; context.strokeStyle = tint; context.lineWidth = 5;
@@ -262,30 +258,42 @@ export function mountArcade(root, context) {
   }
 
   function drawEntity(context, entity, position, stage) {
-    if (!position) return;
-    const x = position.x * 960; const y = position.y * 540;
+    if (!position || entity.kind !== 'gate') return;
+    const x = position.x * 960;
+    const gapTop = (position.gapY - position.gapSize / 2) * 540;
+    const gapBottom = (position.gapY + position.gapSize / 2) * 540;
+    const pipeWidth = 48;
+    const floorY = 500;
+    const drawPipe = (top, bottom, isTop) => {
+      const height = Math.max(0, bottom - top);
+      if (height <= 0) return;
+      const gradient = context.createLinearGradient(x - pipeWidth / 2, 0, x + pipeWidth / 2, 0);
+      gradient.addColorStop(0, '#2d9d83');
+      gradient.addColorStop(0.42, '#8bf4cf');
+      gradient.addColorStop(1, '#267d71');
+      context.save();
+      context.shadowColor = '#64f4ca'; context.shadowBlur = 16;
+      context.fillStyle = gradient;
+      context.fillRect(x - pipeWidth / 2, top, pipeWidth, height);
+      context.strokeStyle = 'rgba(225,255,245,.85)'; context.lineWidth = 2;
+      context.strokeRect(x - pipeWidth / 2, top, pipeWidth, height);
+      const lipHeight = 13;
+      const lipY = isTop ? bottom - lipHeight : top;
+      context.fillStyle = '#a4ffdf';
+      context.fillRect(x - pipeWidth / 2 - 6, lipY, pipeWidth + 12, lipHeight);
+      context.strokeStyle = '#d9fff2'; context.strokeRect(x - pipeWidth / 2 - 6, lipY, pipeWidth + 12, lipHeight);
+      context.restore();
+    };
     context.save();
-    if (['gate', 'block', 'crate', 'laser'].includes(entity.kind)) {
-      context.shadowColor = entity.kind === 'laser' ? '#ff62bf' : '#77f0cb'; context.shadowBlur = 17;
-      context.fillStyle = entity.kind === 'laser' ? '#ff69bc' : entity.kind === 'crate' ? '#e7a66e' : '#61d9b9';
-      const w = entity.kind === 'gate' ? 35 : entity.kind === 'laser' ? 72 : 38;
-      const h = entity.kind === 'gate' ? 78 : entity.kind === 'laser' ? 12 : 32;
-      context.beginPath(); context.roundRect(x - w / 2, y - h / 2, w, h, 8); context.fill();
-      context.strokeStyle = 'rgba(255,255,255,.72)'; context.lineWidth = 2; context.stroke();
-    } else {
-      const glyphs = { heart: '♥', coin: '●', star: '✦', bubble: '○', bomb: '✹', meteor: '☄', cloud: '☁' };
-      const colors = { heart: '#ff8ac2', coin: '#ffd66e', star: '#fff0a8', bubble: '#86e8fb', bomb: '#ff7c7c', meteor: '#ff9c79', cloud: '#b9c9f7' };
-      context.shadowColor = colors[entity.kind] || '#fff'; context.shadowBlur = 17;
-      context.fillStyle = colors[entity.kind] || '#fff'; context.font = `${entity.kind === 'bubble' ? 42 : 32}px system-ui`; context.textAlign = 'center'; context.textBaseline = 'middle';
-      context.fillText(glyphs[entity.kind] || '✦', x, y);
-    }
+    drawPipe(0, gapTop, true);
+    drawPipe(gapBottom, floorY, false);
     context.restore();
   }
 
   function drawPlayer(context, playerRole, playerState, now) {
     if (!playerState) return;
     const x = Number(playerState.x ?? (playerRole === 'host' ? .24 : .76)) * 960;
-    const y = Number(playerState.y ?? .82) * 540;
+    const y = Number(playerState.y ?? .5) * 540;
     const image = avatarImages[playerRole];
     const tint = playerRole === 'host' ? '#ff82bd' : '#72d7ff';
     const bob = Math.sin(now / 120 + (playerRole === 'host' ? 0 : 1)) * 2;
@@ -308,12 +316,12 @@ export function mountArcade(root, context) {
     const width = canvas.width; const height = canvas.height;
     ctx.setTransform(width / 960, 0, 0, height / 540, 0, 0);
     drawBackground(ctx);
-    const stageIndex = Math.max(0, Math.min(11, Number(data.meta.stageIndex || 0)));
-    const stage = ARCADE_STAGES[stageIndex];
-    const elapsed = Math.max(0, nowServer() - Number(data.meta.stageStartedAt || nowServer()));
+    const stage = ARCADE_STAGES[0];
+    const elapsed = Math.max(0, nowServer() - Number(data.meta.startedAt || nowServer()));
     for (const playerRole of ['host', 'guest']) {
-      const playerEntities = entitiesByRole[playerRole];
-      for (const entity of playerEntities) drawEntity(ctx, entity, getArcadeEntityPosition(entity, elapsed, stage), stage);
+      for (const entity of entitiesByRole[playerRole]) {
+        drawEntity(ctx, entity, getArcadeEntityPosition(entity, elapsed), stage);
+      }
     }
     drawPlayer(ctx, 'host', role === 'host' && localSim ? localSim : data.players?.host, now);
     drawPlayer(ctx, 'guest', role === 'guest' && localSim ? localSim : data.players?.guest, now);
@@ -329,17 +337,17 @@ export function mountArcade(root, context) {
 
   function updateHud(now) {
     if (data.meta?.phase !== 'playing') return;
-    const index = Number(data.meta.stageIndex || 0);
-    const stageStartedAt = Number(data.meta.stageStartedAt || now);
-    const remaining = getArcadeRemaining(stageStartedAt, ARCADE_STAGE_DURATION_MS, now);
+    const startedAt = Number(data.meta.startedAt || now);
+    const remaining = getArcadeRemaining(startedAt, ARCADE_STAGE_DURATION_MS, now);
     if (timerNode) timerNode.textContent = (remaining / 1000).toFixed(1);
     const progress = root.querySelector('[data-ar-stage-progress]');
     if (progress) progress.style.width = `${Math.max(0, Math.min(100, (1 - remaining / ARCADE_STAGE_DURATION_MS) * 100))}%`;
     for (const playerRole of ['host', 'guest']) {
+      const playerState = playerRole === role && localSim ? localSim : data.players?.[playerRole];
       const node = scoreNodes[playerRole];
-      if (node) node.textContent = String(playerRole === role && localSim ? localSim.score : Number(data.players?.[playerRole]?.score || 0));
+      if (node) node.textContent = String(Number(playerState?.gatesPassed ?? playerState?.score ?? 0));
       const lives = livesNodes[playerRole];
-      const lifeCount = Math.max(0, Math.min(3, Number(playerRole === role && localSim ? localSim.lives : data.players?.[playerRole]?.lives ?? 3)));
+      const lifeCount = Math.max(0, Math.min(3, Number(playerState?.lives ?? 3)));
       if (lives) { lives.textContent = '♥'.repeat(lifeCount) + '♡'.repeat(3 - lifeCount); lives.setAttribute('aria-label', `${lifeCount} nyawa tersisa`); }
     }
   }
@@ -366,7 +374,7 @@ export function mountArcade(root, context) {
     }
     const initial = {
       name: names[role], avatar: `character:${role === 'host' ? 'cat' : 'rabbit'}`, ready: false,
-      x: role === 'host' ? 0.24 : 0.76, y: 0.82, score: 0, stageScore: 0, lives: 3,
+      x: role === 'host' ? 0.24 : 0.76, y: 0.5, score: 0, stageScore: 0, lives: 3, gatesPassed: 0,
       scores: {}, updatedAt: nowServer()
     };
     await set(playerRef, initial);
@@ -393,6 +401,7 @@ export function mountArcade(root, context) {
 
   async function setReady() {
     if (readyBusy || ownPlayer().ready || data.meta?.phase !== 'setup') return;
+    if (!bothOnline()) { notify('Kedua perangkat harus online sebelum menyatakan siap.', 'error'); return; }
     readyBusy = true; updateSetupUI();
     try { await writeOwn({ ready: true }); notify('Kamu siap. Menunggu pasangan…', 'success'); }
     catch (error) { notify(`Status siap belum tersimpan: ${error.message}`, 'error'); }
@@ -400,64 +409,67 @@ export function mountArcade(root, context) {
   }
 
   async function startArcade() {
-    if (role !== 'host' || starting || data.meta?.phase !== 'setup' || data.players?.host?.ready !== true || data.players?.guest?.ready !== true) return;
+    if (role !== 'host' || starting || data.meta?.phase !== 'setup' || !bothOnline() || data.players?.host?.ready !== true || data.players?.guest?.ready !== true) {
+      if (role === 'host' && data.meta?.phase === 'setup' && !bothOnline()) notify('Kedua perangkat harus tetap online untuk memulai.', 'error');
+      return;
+    }
     starting = true; updateSetupUI();
     try {
       await runTransaction(metaRef, current => {
         if (!current || current.phase !== 'setup' || data.players?.host?.ready !== true || data.players?.guest?.ready !== true) return;
-        return { ...current, phase: 'playing', stageIndex: 0, stageStartedAt: nowServer() + 2500, startedAt: nowServer() };
+        const startAt = nowServer() + 2500;
+        return { ...current, phase: 'playing', stageIndex: 0, stageStartedAt: startAt, startedAt: startAt, endedAt: 0 };
       }, { applyLocally: false });
     } catch (error) { notify(`Arcade belum bisa dimulai: ${error.message}`, 'error'); }
     finally { starting = false; updateSetupUI(); }
   }
 
-  function resetStage(index) {
+  function resetStage(index = 0) {
     localStageIndex = index;
     const stored = ownPlayer();
     localSim = createArcadePlayer(role, {
-      score: Number(stored.score || 0), stageScore: 0, lives: Number(stored.lives ?? 3),
-      x: role === 'host' ? 0.24 : 0.76, y: 0.82,
-      avatar: safeAvatar(stored.avatar), consumed: [], invulnerableUntil: 0, lastBeat: -1
+      score: 0,
+      stageScore: 0,
+      lives: 3,
+      gatesPassed: 0,
+      x: role === 'host' ? 0.24 : 0.76,
+      y: 0.5,
+      avatar: safeAvatar(stored.avatar),
+      consumed: [],
+      passed: [],
+      invulnerableUntil: 0
     });
     entitiesByRole = {
-      host: createArcadeEntities(Number(data.meta?.seed || 1), index, 'host'),
-      guest: createArcadeEntities(Number(data.meta?.seed || 1), index, 'guest')
+      host: createArcadeEntities(Number(data.meta?.seed || 1), 0, 'host'),
+      guest: createArcadeEntities(Number(data.meta?.seed || 1), 0, 'guest')
     };
-    lastCommittedStage = index - 1;
+    void writeOwn({ x: localSim.x, y: localSim.y, score: 0, stageScore: 0, lives: 3, gatesPassed: 0 });
     updateStageHud();
   }
 
-  async function commitStage(index) {
-    if (index < 0 || index >= ARCADE_STAGES.length || lastCommittedStage >= index) return;
-    lastCommittedStage = index;
-    if (!localSim) return;
-    const score = Number(localSim.stageScore || 0);
-    try { await update(playerRef, { [`scores/${index}`]: score, score: Number(localSim.score || 0), stageScore: score, updatedAt: nowServer() }); }
-    catch (error) { notify(`Skor game ${index + 1} belum tersimpan: ${error.message}`, 'error'); }
-  }
-
-  async function advanceStageIfNeeded(now) {
+  async function finishArcadeIfNeeded(now) {
     if (role !== 'host' || transitionBusy || data.meta?.phase !== 'playing') return;
-    const index = Number(data.meta.stageIndex || 0);
-    const startedAt = Number(data.meta.stageStartedAt || 0);
-    if (!startedAt || now < startedAt + ARCADE_STAGE_DURATION_MS) return;
+    const startedAt = Number(data.meta.startedAt || 0);
+    const timedOut = startedAt > 0 && now >= startedAt + ARCADE_STAGE_DURATION_MS;
+    const bothOut = Number(data.players?.host?.lives ?? 3) <= 0 && Number(data.players?.guest?.lives ?? 3) <= 0;
+    if (!timedOut && !bothOut) return;
     transitionBusy = true;
     try {
       await runTransaction(metaRef, current => {
-        if (!current || current.phase !== 'playing' || Number(current.stageIndex) !== index || nowServer() < Number(current.stageStartedAt) + ARCADE_STAGE_DURATION_MS + 650) return;
-        if (index >= ARCADE_STAGES.length - 1) return { ...current, phase: 'result', endedAt: nowServer() };
-        return { ...current, stageIndex: index + 1, stageStartedAt: nowServer() + ARCADE_INTERMISSION_MS };
+        if (!current || current.phase !== 'playing') return;
+        const expired = nowServer() >= Number(current.startedAt || 0) + ARCADE_STAGE_DURATION_MS;
+        const noLives = Number(data.players?.host?.lives ?? 3) <= 0 && Number(data.players?.guest?.lives ?? 3) <= 0;
+        if (!expired && !noLives) return;
+        return { ...current, phase: 'result', endedAt: nowServer() };
       }, { applyLocally: false });
-    } catch (error) { const t = Date.now(); if (t - lastNotifyAt > 5000) { lastNotifyAt = t; notify(`Ronde berikutnya belum bisa dimulai: ${error.message}`, 'error'); } }
-    finally { transitionBusy = false; }
+    } catch (error) {
+      const t = Date.now();
+      if (t - lastNotifyAt > 5000) { lastNotifyAt = t; notify(`Hasil Flappy Face belum bisa disimpan: ${error.message}`, 'error'); }
+    } finally { transitionBusy = false; }
   }
 
   function handleStageChange() {
-    const index = Number(data.meta?.stageIndex ?? 0);
-    if (index !== localStageIndex) {
-      if (localStageIndex >= 0) void commitStage(localStageIndex);
-      resetStage(index);
-    }
+    if (localStageIndex !== 0) resetStage(0);
   }
 
   function tick(timestamp) {
@@ -467,38 +479,30 @@ export function mountArcade(root, context) {
     const now = nowServer();
     if (data.meta?.phase === 'playing') {
       handleStageChange();
-      const index = Number(data.meta.stageIndex || 0);
-      const startedAt = Number(data.meta.stageStartedAt || now);
+      const startedAt = Number(data.meta.startedAt || now);
       const elapsed = now - startedAt;
-      if (elapsed >= 0 && elapsed < ARCADE_STAGE_DURATION_MS && localSim) {
-        const stage = ARCADE_STAGES[index];
-        const result = stepArcadePlayer({ player: localSim, role, stage, input, dt, elapsedMs: elapsed, entities: entitiesByRole[role], now });
+      if (elapsed >= 0 && elapsed < ARCADE_STAGE_DURATION_MS && localSim && localSim.lives > 0) {
+        const result = stepArcadePlayer({ player: localSim, role, stage: ARCADE_STAGES[0], input, dt, elapsedMs: elapsed, entities: entitiesByRole[role], now });
         localSim = result.player;
-        if (result.events.some(event => event.kind === 'hit')) notify('Awas! Karaktermu terkena rintangan.', 'error', { duration: 1000 });
-        if (result.events.some(event => event.kind === 'collect')) notify('Bonus didapat! ✦', 'success', { duration: 800 });
-        if (result.events.some(event => event.kind === 'perfect')) notify('Perfect timing! +15', 'success', { duration: 900 });
-        if (result.events.some(event => event.kind === 'good')) notify('Good timing! +7', 'success', { duration: 900 });
-        if (result.events.length || timestamp - lastWriteAt > 130) {
+        if (result.events.some(event => event.kind === 'hit')) notify('Ups! Kena pipa atau batas arena. Satu nyawa berkurang.', 'error', { duration: 1100 });
+        if (result.events.some(event => event.kind === 'passed')) notify('Pipa terlewati! +10', 'success', { duration: 650 });
+        if (result.events.length || timestamp - lastWriteAt > 120) {
           lastWriteAt = timestamp;
-          void writeOwn({ x: localSim.x, y: localSim.y, score: localSim.score, stageScore: localSim.stageScore, lives: localSim.lives }).catch(error => {
+          void writeOwn({ x: localSim.x, y: localSim.y, score: localSim.score, stageScore: localSim.stageScore, lives: localSim.lives, gatesPassed: localSim.gatesPassed }).catch(error => {
             if (Date.now() - lastNotifyAt > 5000) { lastNotifyAt = Date.now(); notify(`Sinkronisasi terputus: ${error.message}`, 'error'); }
           });
         }
-        if (elapsed >= ARCADE_STAGE_DURATION_MS - 80) void commitStage(index);
       }
-      void advanceStageIfNeeded(now);
+      void finishArcadeIfNeeded(now);
       updateHud(now);
       drawArena(timestamp);
       input.jumpPressed = false;
-      input.actionPressed = false;
     }
     rafId = requestAnimationFrame(tick);
   }
 
   function renderResultOnce() {
-    if (data.meta?.phase !== 'result') return;
-    if (localStageIndex >= 0 && lastCommittedStage < ARCADE_STAGES.length - 1) void commitStage(ARCADE_STAGES.length - 1);
-    if (lastPhase !== 'result') renderResult();
+    if (data.meta?.phase === 'result') renderResult();
   }
 
   function renderFromData() {
@@ -515,27 +519,16 @@ export function mountArcade(root, context) {
       } else if (phase === 'result') renderResultOnce();
     } else if (phase === 'setup') updateSetupUI();
     else if (phase === 'playing') {
-      if (Number(data.meta?.stageIndex ?? 0) !== lastRenderedStage) {
-        lastRenderedStage = Number(data.meta.stageIndex ?? 0);
-        updateStageHud();
-        if (bannerNode) {
-          const stage = ARCADE_STAGES[lastRenderedStage];
-          bannerNode.textContent = `${stage.name} — ${stage.hint}`;
-          bannerNode.hidden = false;
-          window.setTimeout(() => { if (bannerNode) bannerNode.hidden = true; }, 2400);
-        }
-      }
+      updateStageHud();
+      if (localStageIndex !== 0 && Number(data.meta.startedAt || 0) > 0) handleStageChange();
       updateAvatarCache();
     }
   }
 
   function setControl(key, active) {
-    if (key === 'jump' || key === 'up') {
-      if (active && !input[key]) input.jumpPressed = true;
-      input[key] = active;
-    } else if (key === 'action') {
-      if (active) input.actionPressed = true;
-    } else if (key in input) input[key] = active;
+    if (key !== 'jump') return;
+    if (active && !input.jump) input.jumpPressed = true;
+    input.jump = active;
   }
 
   function clickHandler(event) {
@@ -553,36 +546,38 @@ export function mountArcade(root, context) {
   }
 
   function pointerDown(event) {
-    const button = event.target.closest('[data-ar-input]');
+    const button = event.target.closest('[data-ar-input="jump"]');
     if (!button) return;
     event.preventDefault();
     button.setPointerCapture?.(event.pointerId);
-    setControl(button.dataset.arInput, true);
+    setControl('jump', true);
     button.classList.add('is-pressed');
   }
   function pointerUp(event) {
-    const button = event.target.closest('[data-ar-input]');
+    const button = event.target.closest('[data-ar-input="jump"]');
     if (!button) return;
-    setControl(button.dataset.arInput, false);
+    setControl('jump', false);
     button.classList.remove('is-pressed');
   }
   function keyDown(event) {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
-    const map = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', Space: 'jump', Enter: 'action', KeyE: 'action', ArrowDown: 'down', KeyS: 'down' };
-    const control = map[event.code];
-    if (!control) return;
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.repeat) return;
+    if (!['ArrowUp', 'KeyW', 'Space'].includes(event.code)) return;
     event.preventDefault();
-    setControl(control, true);
+    setControl('jump', true);
   }
   function keyUp(event) {
-    const map = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', Space: 'jump', Enter: 'action', KeyE: 'action', ArrowDown: 'down', KeyS: 'down' };
-    const control = map[event.code]; if (control) setControl(control, false);
+    if (!['ArrowUp', 'KeyW', 'Space'].includes(event.code)) return;
+    setControl('jump', false);
   }
 
   async function initialize() {
     if (role === 'host') await seedMeta();
     await ensureOwnPlayer();
     unsubscribeOffset = onValue(ref(db, '.info/serverTimeOffset'), snapshot => { serverOffset = Number(snapshot.val() || 0); });
+    unsubscribePresence = onValue(presenceRef, snapshot => {
+      presence = snapshot.val() || {};
+      if (data.meta?.phase === 'setup') updateSetupUI();
+    }, error => notify(`Status koneksi pemain tidak dapat dibaca: ${error.message}`, 'error'));
     unsubscribeGame = onValue(baseRef, snapshot => {
       data = snapshot.val() || {};
       if (!data.meta && role === 'host') void seedMeta().catch(error => notify(`Sesi Arcade belum siap: ${error.message}`, 'error'));
@@ -612,8 +607,9 @@ export function mountArcade(root, context) {
     destroy() {
       destroyed = true;
       cancelAnimationFrame(rafId);
-      unsubscribeGame?.(); unsubscribeOffset?.();
+      unsubscribeGame?.(); unsubscribePresence?.(); unsubscribeOffset?.();
       avatarCamera?.destroy(); feedback?.destroy();
+      if (canvas && canvasTapHandler) canvas.removeEventListener('pointerdown', canvasTapHandler);
       root.removeEventListener('click', clickHandler);
       root.removeEventListener('pointerdown', pointerDown);
       root.removeEventListener('pointerup', pointerUp);
@@ -621,7 +617,7 @@ export function mountArcade(root, context) {
       document.removeEventListener('keydown', keyDown);
       document.removeEventListener('keyup', keyUp);
       window.removeEventListener('resize', resizeCanvas);
-      input = { left: false, right: false, up: false, down: false, jump: false, jumpPressed: false, actionPressed: false };
+      input = { jump: false, jumpPressed: false };
     }
   };
 }

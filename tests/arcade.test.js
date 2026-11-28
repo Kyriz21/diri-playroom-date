@@ -3,127 +3,119 @@ import assert from 'node:assert/strict';
 import {
   ARCADE_STAGES, ARCADE_STAGE_DURATION_MS, ARCADE_AVATARS,
   arcadeHash, createArcadeEntities, createArcadePlayer, getArcadeLane,
-  getArcadeEntityPosition, arcadeBeatAt, stepArcadePlayer, getArcadeRemaining, getArcadeWinner
+  getArcadeEntityPosition, stepArcadePlayer, getArcadeRemaining, getArcadeWinner
 } from '../js/games/arcade-logic.js';
 
-test('Arcade campaign exposes twelve uniquely named mini-games', () => {
-  assert.equal(ARCADE_STAGES.length, 12);
-  assert.equal(new Set(ARCADE_STAGES.map(stage => stage.id)).size, 12);
-  assert.equal(new Set(ARCADE_STAGES.map(stage => stage.name)).size, 12);
-  assert.equal(ARCADE_STAGE_DURATION_MS, 12000);
-  assert.ok(ARCADE_STAGES.every(stage => stage.name && stage.hint && stage.type));
+test('Arcade hanya memiliki satu permainan Flappy Face selama 60 detik', () => {
+  assert.equal(ARCADE_STAGES.length, 1);
+  assert.equal(ARCADE_STAGES[0].id, 'flappy-face');
+  assert.equal(ARCADE_STAGES[0].type, 'flappy');
+  assert.equal(ARCADE_STAGE_DURATION_MS, 60000);
+  assert.match(ARCADE_STAGES[0].hint, /Ketuk arena atau tombol LOMPAT/);
 });
 
-test('Arcade character catalog provides twelve safe fallback characters', () => {
+test('Arcade menyediakan dua belas avatar cadangan yang aman', () => {
   assert.equal(ARCADE_AVATARS.length, 12);
   assert.equal(new Set(ARCADE_AVATARS.map(item => item.id)).size, 12);
   assert.ok(ARCADE_AVATARS.every(item => item.emoji && item.name));
 });
 
-test('seeded arcade entities are deterministic and remain in their player half', () => {
-  for (let index = 0; index < ARCADE_STAGES.length; index += 1) {
-    const hostA = createArcadeEntities(12345, index, 'host');
-    const hostB = createArcadeEntities(12345, index, 'host');
-    const guest = createArcadeEntities(12345, index, 'guest');
-    assert.deepEqual(hostA, hostB);
-    if (ARCADE_STAGES[index].type === 'rhythm') {
-      assert.deepEqual(hostA, []);
-      continue;
-    }
-    assert.ok(hostA.length > 0);
-    assert.ok(hostA.every(entity => entity.x >= 0.05 && entity.x <= 0.46));
-    assert.ok(guest.every(entity => entity.x >= 0.54 && entity.x <= 0.95));
+test('gerbang pipa dibuat deterministik, berpasangan, dan berada pada setengah arena masing-masing', () => {
+  const hostA = createArcadeEntities(12345, 0, 'host');
+  const hostB = createArcadeEntities(12345, 0, 'host');
+  const guest = createArcadeEntities(12345, 0, 'guest');
+  assert.deepEqual(hostA, hostB);
+  assert.equal(hostA.length, 22);
+  assert.equal(guest.length, 22);
+  assert.ok(hostA.every(entity => entity.kind === 'gate' && entity.gapSize >= 0.29));
+  assert.ok(guest.every(entity => entity.kind === 'gate'));
+  for (let index = 0; index < hostA.length; index += 1) {
+    assert.equal(hostA[index].gapY, guest[index].gapY, 'pasangan pipa harus punya celah vertikal yang sama');
+    assert.ok(hostA[index].startX > 0.5);
+    assert.ok(guest[index].startX < 0.5);
   }
 });
 
-test('arcade hash is stable and changes across stages and objects', () => {
-  assert.equal(arcadeHash(9, 2, 4), arcadeHash(9, 2, 4));
-  assert.notEqual(arcadeHash(9, 2, 4), arcadeHash(9, 3, 4));
-  assert.notEqual(arcadeHash(9, 2, 4), arcadeHash(9, 2, 5));
+test('hash arena stabil dan berubah jika seed atau nomor pipa berbeda', () => {
+  assert.equal(arcadeHash(9, 0, 4), arcadeHash(9, 0, 4));
+  assert.notEqual(arcadeHash(9, 0, 4), arcadeHash(10, 0, 4));
+  assert.notEqual(arcadeHash(9, 0, 4), arcadeHash(9, 0, 5));
 });
 
-test('host and guest start in opposite halves and movement is clamped to lane', () => {
+test('kedua pemain mulai di sisi arena yang berlawanan dengan posisi tetap', () => {
   const host = createArcadePlayer('host');
   const guest = createArcadePlayer('guest');
   assert.equal(host.x, 0.24);
   assert.equal(guest.x, 0.76);
-  assert.ok(host.x < 0.5 && guest.x > 0.5);
-  const hostLane = getArcadeLane('host');
-  const stage = ARCADE_STAGES[1];
-  const moved = stepArcadePlayer({ player: host, role: 'host', stage, input: { left: true }, dt: 1, now: 1000 }).player;
-  assert.ok(moved.x >= hostLane.min + 0.025);
-  assert.ok(moved.x <= hostLane.max - 0.025);
+  assert.equal(host.y, 0.5);
+  assert.equal(guest.y, 0.5);
+  assert.equal(host.lives, 3);
+  assert.equal(guest.lives, 3);
+  assert.ok(getArcadeLane('host').direction < 0);
+  assert.ok(getArcadeLane('guest').direction > 0);
 });
 
-test('jump and rocket controls change vertical position in their respective games', () => {
+test('tap atau tombol lompat memberi flap ke atas, gravitasi menarik karakter ke bawah', () => {
   const player = createArcadePlayer('host');
-  const hopped = stepArcadePlayer({ player, role: 'host', stage: ARCADE_STAGES[0], input: { jumpPressed: true }, dt: 1 / 60, now: 1000 }).player;
+  const hopped = stepArcadePlayer({ player, role: 'host', input: { jumpPressed: true }, dt: 1 / 60, now: 1000 }).player;
   assert.ok(hopped.y < player.y);
-  const rocket = stepArcadePlayer({ player, role: 'host', stage: ARCADE_STAGES[8], input: { jump: true }, dt: 0.2, now: 1000 }).player;
-  assert.ok(rocket.y < player.y);
+  const falling = stepArcadePlayer({ player: hopped, role: 'host', input: {}, dt: 0.6, now: 1600 }).player;
+  assert.ok(falling.y > hopped.y);
 });
 
-test('moving arcade objects have predictable active positions', () => {
-  const entity = { id: 'test', kind: 'heart', x: 0.2, baseY: 0.3, spawnAt: 500, lifeMs: 2000, phase: 0, value: 10 };
-  assert.equal(getArcadeEntityPosition(entity, 200, ARCADE_STAGES[1]), null);
-  const first = getArcadeEntityPosition(entity, 700, ARCADE_STAGES[1]);
-  const later = getArcadeEntityPosition(entity, 1200, ARCADE_STAGES[1]);
+test('posisi pipa bergerak melintasi jalur dan berhenti di luar arena setelah masa aktif', () => {
+  const entity = createArcadeEntities(99, 0, 'host')[0];
+  assert.equal(getArcadeEntityPosition(entity, entity.spawnAt - 1), null);
+  const first = getArcadeEntityPosition(entity, entity.spawnAt + 500);
+  const later = getArcadeEntityPosition(entity, entity.spawnAt + 1500);
   assert.ok(first && later);
-  assert.ok(later.y > first.y);
-  assert.equal(getArcadeEntityPosition(entity, 2600, ARCADE_STAGES[1]), null);
+  assert.ok(later.x < first.x);
+  assert.equal(later.gapY, entity.gapY);
+  assert.equal(getArcadeEntityPosition(entity, entity.spawnAt + entity.lifeMs + 1), null);
 });
 
-test('catch games collect bonuses and hazards consume one life with temporary invulnerability', () => {
-  const stage = ARCADE_STAGES[1];
+test('berhasil melewati celah pipa menambah skor sepuluh poin satu kali', () => {
   const player = createArcadePlayer('host');
-  const heart = { id: 'heart-1', kind: 'heart', x: player.x, baseY: player.y, spawnAt: 0, lifeMs: 1000, phase: 0, value: 10 };
-  const collected = stepArcadePlayer({ player, role: 'host', stage, entities: [heart], elapsedMs: 820, dt: 0, now: 1000 });
-  assert.equal(collected.player.score, 10);
-  assert.equal(collected.player.stageScore, 10);
-  assert.ok(collected.player.consumed.includes('heart-1'));
+  const gate = {
+    id: 'safe-gate', kind: 'gate', startX: 0.24, direction: -1, distance: 0.1,
+    gapY: 0.5, gapSize: 0.6, spawnAt: 0, lifeMs: 1000, value: 10
+  };
+  const crossed = stepArcadePlayer({ player, role: 'host', entities: [gate], elapsedMs: 900, dt: 0, now: 1000 });
+  assert.equal(crossed.player.score, 10);
+  assert.equal(crossed.player.gatesPassed, 1);
+  const again = stepArcadePlayer({ player: crossed.player, role: 'host', entities: [gate], elapsedMs: 950, dt: 0, now: 1050 });
+  assert.equal(again.player.score, 10);
+  assert.equal(again.player.gatesPassed, 1);
+});
 
-  const bomb = { ...heart, id: 'bomb-1', kind: 'bomb', value: 0 };
-  const hit = stepArcadePlayer({ player, role: 'host', stage, entities: [bomb], elapsedMs: 820, dt: 0, now: 1000 });
+test('menabrak pipa di luar celah mengurangi satu nyawa dan memberi invulnerability singkat', () => {
+  const player = createArcadePlayer('host', { y: 0.2 });
+  const gate = {
+    id: 'hit-gate', kind: 'gate', startX: 0.24, direction: -1, distance: 0.01,
+    gapY: 0.5, gapSize: 0.2, spawnAt: 0, lifeMs: 1000, value: 10
+  };
+  const hit = stepArcadePlayer({ player, role: 'host', entities: [gate], elapsedMs: 10, dt: 0, now: 1000 });
   assert.equal(hit.player.lives, 2);
-  const protectedHit = stepArcadePlayer({ player: hit.player, role: 'host', stage, entities: [{ ...bomb, id: 'bomb-2', spawnAt: 80 }], elapsedMs: 900, dt: 0, now: 1200 });
+  assert.ok(hit.player.invulnerableUntil > 1000);
+  const protectedHit = stepArcadePlayer({ player: hit.player, role: 'host', entities: [{ ...gate, id: 'second-hit' }], elapsedMs: 20, dt: 0, now: 1200 });
   assert.equal(protectedHit.player.lives, 2);
 });
 
-test('Bubble Pop requires an action press instead of automatic contact', () => {
-  const stage = ARCADE_STAGES[5];
-  const player = createArcadePlayer('host', { x: 0.2, y: 0.4 });
-  const bubble = { id: 'bubble-1', kind: 'bubble', x: 0.2, baseY: 0.4, spawnAt: 0, lifeMs: 3000, phase: 0, value: 12 };
-  const waiting = stepArcadePlayer({ player, role: 'host', stage, entities: [bubble], elapsedMs: 820, dt: 0, now: 1000 });
-  assert.equal(waiting.player.score, 0);
-  const popped = stepArcadePlayer({ player, role: 'host', stage, entities: [bubble], input: { actionPressed: true }, elapsedMs: 820, dt: 0, now: 1000 });
-  assert.equal(popped.player.score, 12);
+test('menyentuh batas atas atau lantai mengurangi nyawa, tanpa menurunkan nyawa di bawah nol', () => {
+  const player = createArcadePlayer('guest', { y: 0.99 });
+  const hit = stepArcadePlayer({ player, role: 'guest', dt: 0, now: 1000 });
+  assert.equal(hit.player.lives, 2);
+  assert.equal(hit.player.y, 0.5);
+  const dead = stepArcadePlayer({ player: createArcadePlayer('guest', { lives: 0 }), role: 'guest', input: { jumpPressed: true }, dt: 1, now: 3000 });
+  assert.equal(dead.player.lives, 0);
 });
 
-test('Bubble Pop supports vertical navigation with up and down controls', () => {
-  const stage = ARCADE_STAGES[5];
-  const player = createArcadePlayer('host', { y: 0.5 });
-  const raised = stepArcadePlayer({ player, role: 'host', stage, input: { up: true }, dt: 0.2, now: 1000 }).player;
-  assert.ok(raised.y < player.y);
-  const lowered = stepArcadePlayer({ player: raised, role: 'host', stage, input: { down: true }, dt: 0.2, now: 1200 }).player;
-  assert.ok(lowered.y > raised.y);
-});
-
-test('Rhythm Tap awards perfect and good timing only once per beat', () => {
-  const stage = ARCADE_STAGES[10];
-  const player = createArcadePlayer('host');
-  assert.equal(arcadeBeatAt(650).delta, 0);
-  const perfect = stepArcadePlayer({ player, role: 'host', stage, input: { actionPressed: true }, elapsedMs: 650, dt: 0, now: 1000 });
-  assert.equal(perfect.player.score, 15);
-  const repeated = stepArcadePlayer({ player: perfect.player, role: 'host', stage, input: { actionPressed: true }, elapsedMs: 660, dt: 0, now: 1010 });
-  assert.equal(repeated.player.score, 15);
-  const good = stepArcadePlayer({ player, role: 'host', stage, input: { actionPressed: true }, elapsedMs: 900, dt: 0, now: 1300 });
-  assert.equal(good.player.score, 7);
-});
-
-test('Arcade stage timer clamps and score recap finds the winner', () => {
-  assert.equal(getArcadeRemaining(1000, 12000, 500), 12000);
-  assert.equal(getArcadeRemaining(1000, 12000, 1000), 12000);
-  assert.equal(getArcadeRemaining(1000, 12000, 13500), 0);
-  assert.deepEqual(getArcadeWinner({ host: { score: 90 }, guest: { score: 80 } }), { hostScore: 90, guestScore: 80, winner: 'host' });
+test('timer 60 detik dibatasi dan rekap memilih pemenang berdasarkan jumlah gerbang', () => {
+  assert.equal(getArcadeRemaining(1000, 60000, 500), 60000);
+  assert.equal(getArcadeRemaining(1000, 60000, 1000), 60000);
+  assert.equal(getArcadeRemaining(1000, 60000, 61500), 0);
+  assert.deepEqual(getArcadeWinner({ host: { score: 90, gatesPassed: 9 }, guest: { score: 80, gatesPassed: 8 } }), {
+    hostScore: 90, guestScore: 80, hostGates: 9, guestGates: 8, winner: 'host'
+  });
   assert.equal(getArcadeWinner({ host: { score: 50 }, guest: { score: 50 } }).winner, 'draw');
 });

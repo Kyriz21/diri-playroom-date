@@ -8,48 +8,62 @@ import {
   colorAccuracy,
   colorHex,
   makeColor,
+  makeDistinctColor,
+  createRandomSeed,
+  selectLoveQuestions,
   IQ_QUESTIONS,
+  selectIQQuestions,
   seededShuffle,
   scoreIqAnswers
 } from '../js/games/brain-game-logic.js';
 
 const read = path => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 
- test('Love Match berisi 20 pertanyaan dengan lima pertanyaan pada tiap dimensi', () => {
-  assert.equal(LOVE_QUESTIONS.length, 20);
+test('Love Match memiliki 80 pertanyaan seimbang dan memilih bank acak 32 soal per sesi', () => {
+  assert.equal(LOVE_QUESTIONS.length, 80);
   for (const axis of ['I/E', 'S/N', 'T/F', 'J/P']) {
-    assert.equal(LOVE_QUESTIONS.filter(question => question.axis === axis).length, 5, `${axis} harus memiliki lima pertanyaan`);
+    assert.equal(LOVE_QUESTIONS.filter(question => question.axis === axis).length, 20, `${axis} harus memiliki 20 pertanyaan`);
   }
   for (const question of LOVE_QUESTIONS) {
     assert.ok(question.prompt && question.a && question.b);
     assert.notEqual(question.a, question.b);
   }
+  const first = selectLoveQuestions(1001, 8);
+  const second = selectLoveQuestions(2002, 8);
+  assert.equal(first.length, 32);
+  assert.equal(new Set(first.map(q => q.id)).size, 32);
+  for (const axis of ['I/E', 'S/N', 'T/F', 'J/P']) assert.equal(first.filter(q => q.axis === axis).length, 8);
+  assert.notDeepEqual(first.map(q => q.id), second.map(q => q.id));
 });
 
-test('Love Match memetakan jawaban A tenang ke I dan jawaban B sosial ke E', () => {
-  const profile = loveProfile(Array(20).fill('A'));
-  assert.equal(profile.code, 'ISTJ');
-  const extroverted = loveProfile(Array(20).fill('B'));
+test('Love Match memetakan A ke I/S/T/J dan B ke E/N/F/P pada bank soal terpilih', () => {
+  const questions = selectLoveQuestions(20261128, 8);
+  const introverted = loveProfile(Array(questions.length).fill('A'), questions);
+  assert.equal(introverted.code, 'ISTJ');
+  const extroverted = loveProfile(Array(questions.length).fill('B'), questions);
   assert.equal(extroverted.code, 'ENFP');
+  assert.ok(introverted.description && introverted.strengths && introverted.communication && introverted.relationship && introverted.growth);
 });
 
-test('Love Match menghitung kecocokan sempurna dan nol secara konsisten', () => {
-  const same = Array(20).fill('A');
-  const perfect = calculateLoveMatch(same, [...same]);
+test('Love Match menghitung kecocokan sempurna dan nol secara konsisten pada 32 soal', () => {
+  const questions = selectLoveQuestions(20261128, 8);
+  const same = Array(questions.length).fill('A');
+  const perfect = calculateLoveMatch(same, [...same], questions);
   assert.equal(perfect.score, 100);
-  assert.equal(perfect.matched, 20);
+  assert.equal(perfect.matched, questions.length);
   assert.ok(Object.values(perfect.axes).every(value => value === 100));
 
-  const opposite = calculateLoveMatch(same, Array(20).fill('B'));
+  const opposite = calculateLoveMatch(same, Array(questions.length).fill('B'), questions);
   assert.equal(opposite.score, 0);
   assert.equal(opposite.matched, 0);
   assert.ok(Object.values(opposite.axes).every(value => value === 0));
 });
 
 test('Love Match menerima bentuk objek Firebase dengan indeks jawaban numerik', () => {
-  const answers = Object.fromEntries(Array.from({ length: 20 }, (_, index) => [index, 'A']));
-  assert.equal(loveProfile(answers).code, 'ISTJ');
-  assert.equal(calculateLoveMatch(answers, answers).score, 100);
+  const questions = selectLoveQuestions(77, 8);
+  const answers = Object.fromEntries(Array.from({ length: questions.length }, (_, index) => [index, 'A']));
+  assert.equal(loveProfile(answers, questions).code, 'ISTJ');
+  assert.equal(calculateLoveMatch(answers, answers, questions).score, 100);
 });
 
 test('Color Match menghasilkan warna dalam batas aman dan mengubahnya ke hex', () => {
@@ -59,6 +73,9 @@ test('Color Match menghasilkan warna dalam batas aman dan mengubahnya ke hex', (
   }
   assert.match(colorHex({ r: 255, g: 0, b: 16 }), /^#[0-9a-f]{6}$/);
   assert.equal(colorHex({ r: 255, g: 0, b: 16 }), '#ff0010');
+  const previous = [{ r: 100, g: 100, b: 100 }];
+  const distinct = makeDistinctColor(previous, () => 0.9);
+  assert.ok(['r','g','b'].some(key => Math.abs(distinct[key] - previous[0][key]) >= 24));
 });
 
 test('Color Match memberi akurasi 100 untuk warna yang sama dan menurunkan skor sesuai selisih', () => {
@@ -69,14 +86,14 @@ test('Color Match memberi akurasi 100 untuk warna yang sama dan menurunkan skor 
 });
 
 test('IQ Duel memiliki bank soal yang cukup dan semua jawaban berada dalam pilihan', () => {
-  assert.ok(IQ_QUESTIONS.length >= 20);
+  assert.equal(IQ_QUESTIONS.length, 100);
   assert.ok(new Set(IQ_QUESTIONS.map(question => question.id)).size === IQ_QUESTIONS.length);
   for (const question of IQ_QUESTIONS) {
     assert.equal(question.options.length, 4, `${question.id} harus memiliki empat opsi`);
     assert.ok(Number.isInteger(question.answer) && question.answer >= 0 && question.answer < question.options.length, `${question.id} punya indeks jawaban valid`);
     assert.ok(question.prompt && question.explanation);
   }
-  assert.equal(IQ_QUESTIONS.filter(question => question.visualGrid?.length === 9).length, 2, 'dua soal harus memakai matriks 3×3');
+  assert.equal(IQ_QUESTIONS.filter(question => question.visualGrid?.length === 9).length, 5, 'lima soal memakai matriks 3×3');
 });
 
 test('IQ Duel seeded shuffle konsisten, tidak menghilangkan soal, dan dapat dipakai memilih 12 atau 20 ronde', () => {
@@ -86,6 +103,14 @@ test('IQ Duel seeded shuffle konsisten, tidak menghilangkan soal, dan dapat dipa
   assert.equal(new Set(first.map(question => question.id)).size, IQ_QUESTIONS.length);
   assert.equal(first.slice(0, 12).length, 12);
   assert.equal(first.slice(0, 20).length, 20);
+  for (const count of [12, 20]) {
+    const selected = selectIQQuestions(20261128, count);
+    assert.equal(selected.length, count);
+    const byFamily = selected.reduce((map, q) => { const key = q.category.split(' · ')[0]; map[key] = (map[key] || 0) + 1; return map; }, {});
+    assert.ok(Object.keys(byFamily).length === 5);
+    assert.ok(Math.max(...Object.values(byFamily)) - Math.min(...Object.values(byFamily)) <= 1);
+  }
+  assert.notDeepEqual(selectIQQuestions(11, 20).map(q => q.id), selectIQQuestions(22, 20).map(q => q.id));
 });
 
 test('IQ Duel menghitung jawaban benar, salah, dan kosong tanpa membocorkan sebelum hasil', () => {
@@ -127,6 +152,10 @@ test('Firebase Rules membatasi pembacaan jawaban privat ke sesi aktif dan fase h
   assert.match(expression, /iqduel/);
   assert.match(expression, /phase/);
   assert.match(expression, /scoring/);
+  const privateRounds = rules.privateRooms.$roomCode.$gameId.$sessionId.$uid.rounds.$roundKey;
+  assert.match(privateRounds['.validate'], /\$gameId !== 'guesspartner'/);
+  assert.match(privateRounds.target['.validate'], /colormatch/);
+  assert.match(privateRounds.guess['.validate'], /colormatch/);
   assert.match(expression, /activeSession.*gameId/);
   assert.match(expression, /activeSession.*sessionId/);
   const privateWrite = rules.privateRooms.$roomCode.$gameId.$sessionId.$uid['.write'];
@@ -156,6 +185,9 @@ test('Color Match mengumpulkan lima hasil ronde dan menampilkannya sebagai satu 
   assert.match(game, /phase: 'finished'/);
   assert.match(game, /function recapRoundCard/);
   assert.match(game, /cm-recap-grid/);
+  assert.match(game, /function startRemoteGame/);
+  assert.match(game, /makeDistinctColor/);
+  assert.match(game, /Menyiapkan warna acak/);
   assert.match(game, /const average = r => standalone \? Number\(totals\[r\] \|\| 0\) : Math\.round\(Number\(totals\[r\] \|\| 0\) \/ Math\.max\(1, results\.length\)\)/);
   assert.doesNotMatch(game, /function revealPanel\(/);
   assert.doesNotMatch(game, /function localReveal\(/);
@@ -167,5 +199,9 @@ test('IQ Duel memakai satu panel hasil akhir dengan skor dan kartu pembahasan, b
   assert.match(game, /function resultPanel/);
   assert.match(game, /iq-score-grid/);
   assert.match(game, /iq-review-list/);
+  assert.match(game, /Ringkasan per kategori/);
+  assert.match(game, /Jawaban benar/);
+  assert.match(game, /hostAnswer/);
+  assert.match(game, /selectIQQuestions/);
   assert.doesNotMatch(game, /data-iq-action="next-result"/);
 });

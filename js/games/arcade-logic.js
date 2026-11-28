@@ -1,19 +1,17 @@
-export const ARCADE_STAGE_DURATION_MS = 12000;
-export const ARCADE_INTERMISSION_MS = 1200;
+export const ARCADE_STAGE_DURATION_MS = 60000;
+export const ARCADE_INTERMISSION_MS = 0;
 
+// Arcade is deliberately a single, classic Flappy-style challenge.
 export const ARCADE_STAGES = [
-  { id: 'flappy-face', name: 'Flappy Face', type: 'flappy', icon: '🪽', hint: 'Ketuk LOMPAT untuk melewati gerbang neon dan ambil bintang.', entities: ['gate', 'star', 'gate', 'heart', 'gate', 'star'], points: 10 },
-  { id: 'heart-catcher', name: 'Heart Catcher', type: 'catch', icon: '💗', hint: 'Geser kiri dan kanan untuk menangkap hati. Hindari bom.', entities: ['heart', 'coin', 'bomb', 'heart', 'heart', 'bomb', 'coin', 'heart'], points: 10 },
-  { id: 'neon-dodge', name: 'Neon Dodge', type: 'dodge', icon: '⚡', hint: 'Pindah posisi untuk menghindari balok yang jatuh.', entities: ['block', 'block', 'star', 'block', 'bomb', 'block', 'heart', 'block'], points: 8 },
-  { id: 'noodle-runner', name: 'Noodle Runner', type: 'runner', icon: '🏃', hint: 'Lari otomatis. LOMPAT melewati rintangan dan ambil koin.', entities: ['crate', 'coin', 'crate', 'crate', 'star', 'crate', 'heart'], points: 10 },
-  { id: 'coin-rush', name: 'Coin Rush', type: 'catch', icon: '🪙', hint: 'Kumpulkan koin sebanyak mungkin sebelum waktu habis.', entities: ['coin', 'coin', 'bomb', 'coin', 'heart', 'coin', 'coin', 'bomb'], points: 12 },
-  { id: 'bubble-pop', name: 'Bubble Pop', type: 'pop', icon: '🫧', hint: 'Dekati gelembung lalu tekan AKSI untuk memecahkannya.', entities: ['bubble', 'bubble', 'star', 'bubble', 'bubble', 'heart', 'bubble'], points: 12 },
-  { id: 'sky-hop', name: 'Sky Hop', type: 'hop', icon: '☁️', hint: 'Lompat untuk mengambil bintang yang melayang tinggi.', entities: ['star', 'star', 'cloud', 'heart', 'star', 'cloud', 'star'], points: 12 },
-  { id: 'laser-lanes', name: 'Laser Lanes', type: 'lane', icon: '🔦', hint: 'Geser jalur untuk menghindari sinar laser dan ambil bonus.', entities: ['laser', 'laser', 'coin', 'laser', 'laser', 'heart', 'laser', 'laser'], points: 10 },
-  { id: 'rocket-flight', name: 'Rocket Flight', type: 'rocket', icon: '🚀', hint: 'Tahan LOMPAT untuk terbang. Lepas untuk turun dan hindari meteor.', entities: ['star', 'meteor', 'star', 'meteor', 'heart', 'meteor', 'star'], points: 12 },
-  { id: 'meteor-dodge', name: 'Meteor Dodge', type: 'dodge', icon: '☄️', hint: 'Hindari hujan meteor dan kumpulkan hati di sela-selanya.', entities: ['meteor', 'meteor', 'heart', 'meteor', 'coin', 'meteor', 'meteor', 'heart'], points: 10 },
-  { id: 'rhythm-tap', name: 'Rhythm Tap', type: 'rhythm', icon: '🎵', hint: 'Tekan AKSI tepat saat lingkaran menyentuh garis cahaya.', entities: [], points: 15 },
-  { id: 'final-sprint', name: 'Final Sprint', type: 'boss', icon: '👾', hint: 'Gabungan akhir: bergerak, lompat, kumpulkan hati, hindari bom.', entities: ['heart', 'meteor', 'coin', 'bomb', 'star', 'block', 'heart', 'meteor', 'coin'], points: 15 }
+  {
+    id: 'flappy-face',
+    name: 'Flappy Face',
+    type: 'flappy',
+    icon: '🪽',
+    hint: 'Ketuk arena atau tombol LOMPAT untuk mengepak. Lewati celah pipa dan kumpulkan poin.',
+    points: 10,
+    gapSize: 0.35
+  }
 ];
 
 export const ARCADE_AVATARS = [
@@ -24,6 +22,13 @@ export const ARCADE_AVATARS = [
   { id: 'chick', emoji: '🐥', name: 'Anak ayam' }, { id: 'unicorn', emoji: '🦄', name: 'Unicorn' },
   { id: 'alien', emoji: '👾', name: 'Alien' }, { id: 'bear', emoji: '🧸', name: 'Beruang' }
 ];
+
+const PLAYER_RADIUS = 0.034;
+const PIPE_HALF_WIDTH = 0.026;
+const TOP_LIMIT = 0.07;
+const FLOOR_LIMIT = 0.92;
+const GRAVITY = 1.28;
+const FLAP_VELOCITY = -0.57;
 
 export function arcadeHash(seed, stageIndex, itemIndex, salt = 0) {
   let value = (Number(seed) ^ Math.imul(stageIndex + 1, 0x9e3779b1) ^ Math.imul(itemIndex + 1, 0x85ebca6b) ^ salt) >>> 0;
@@ -40,153 +45,126 @@ function random01(seed, stageIndex, itemIndex, salt = 0) {
 }
 
 export function getArcadeLane(role) {
-  return role === 'guest' ? { min: 0.54, max: 0.95, start: 0.76, direction: -1 } : { min: 0.05, max: 0.46, start: 0.24, direction: 1 };
+  return role === 'guest'
+    ? { min: 0.54, max: 0.95, start: 0.76, direction: 1 }
+    : { min: 0.05, max: 0.46, start: 0.24, direction: -1 };
 }
 
 export function createArcadePlayer(role, values = {}) {
   const lane = getArcadeLane(role);
   return {
     x: lane.start,
-    y: 0.82,
+    y: 0.5,
     vy: 0,
     score: 0,
     stageScore: 0,
     lives: 3,
+    gatesPassed: 0,
     invulnerableUntil: 0,
     consumed: [],
-    lastBeat: -1,
+    passed: [],
     ...values
   };
 }
 
-export function createArcadeEntities(seed, stageIndex, role) {
-  const stage = ARCADE_STAGES[stageIndex];
-  if (!stage || stage.type === 'rhythm') return [];
+export function createArcadeEntities(seed, stageIndex = 0, role = 'host') {
   const lane = getArcadeLane(role);
-  const width = lane.max - lane.min;
-  return stage.entities.map((kind, index) => {
-    const r1 = random01(seed, stageIndex, index, 11);
-    const r2 = random01(seed, stageIndex, index, 23);
-    const mirror = role === 'guest';
-    const offset = 0.06 + r1 * 0.78;
-    const x = mirror
-      ? lane.max - width * offset
-      : lane.min + width * offset;
+  const startX = role === 'guest' ? lane.min - 0.06 : lane.max + 0.06;
+  const direction = lane.direction;
+  const distance = (lane.max - lane.min) + 0.18;
+  return Array.from({ length: 22 }, (_, index) => {
+    const vertical = random01(seed, stageIndex, index, 23);
+    const gapSize = Math.max(0.29, 0.36 - index * 0.003);
     return {
-      id: `${stage.id}-${index}`,
-      kind,
-      x,
-      baseY: 0.2 + r2 * 0.52,
-      spawnAt: 450 + index * (stage.type === 'pop' ? 1050 : 880),
-      lifeMs: stage.type === 'pop' ? 2900 : stage.type === 'runner' || stage.type === 'flappy' ? 2200 : 3200,
-      phase: random01(seed, stageIndex, index, 37) * Math.PI * 2,
-      value: kind === 'coin' ? 12 : kind === 'star' ? 15 : kind === 'heart' ? 10 : stage.points
+      id: `flappy-gate-${index + 1}`,
+      kind: 'gate',
+      x: startX,
+      startX,
+      direction,
+      distance,
+      gapY: 0.25 + vertical * 0.46,
+      gapSize,
+      spawnAt: 1300 + index * 2400,
+      lifeMs: Math.max(3700, 4800 - index * 32),
+      value: 10
     };
   });
 }
 
-export function getArcadeEntityPosition(entity, elapsedMs, stage) {
+export function getArcadeEntityPosition(entity, elapsedMs) {
   const age = elapsedMs - entity.spawnAt;
   if (age < 0 || age > entity.lifeMs) return null;
-  const t = age / entity.lifeMs;
-  if (stage.type === 'runner' || stage.type === 'flappy') {
-    const lane = entity.x < 0.5 ? { min: 0.05, max: 0.46 } : { min: 0.54, max: 0.95 };
-    const direction = entity.x < 0.5 ? 1 : -1;
-    return { x: entity.x + direction * t * (lane.max - lane.min) * 0.72, y: entity.baseY > 0.5 ? 0.82 : entity.baseY, age, progress: t };
-  }
-  if (stage.type === 'pop') {
-    return { x: entity.x + Math.sin(age / 330 + entity.phase) * 0.025, y: entity.baseY + Math.cos(age / 430 + entity.phase) * 0.035, age, progress: t };
-  }
-  if (stage.type === 'hop') {
-    return { x: entity.x, y: entity.baseY + Math.sin(age / 270 + entity.phase) * 0.035, age, progress: t };
-  }
-  return { x: entity.x, y: -0.1 + t * 1.12, age, progress: t };
+  const progress = age / entity.lifeMs;
+  return {
+    x: entity.startX + entity.direction * entity.distance * progress,
+    y: entity.gapY,
+    gapY: entity.gapY,
+    gapSize: entity.gapSize,
+    age,
+    progress
+  };
 }
 
-export function arcadeBeatAt(elapsedMs, beatMs = 900, offsetMs = 650) {
-  if (elapsedMs < offsetMs) return { beat: -1, delta: Infinity };
-  const beat = Math.round((elapsedMs - offsetMs) / beatMs);
-  const target = offsetMs + beat * beatMs;
-  return { beat, target, delta: elapsedMs - target };
+function loseLife(next, now, events, cause) {
+  if (now < Number(next.invulnerableUntil || 0) || next.lives <= 0) return false;
+  next.lives = Math.max(0, Number(next.lives || 0) - 1);
+  next.invulnerableUntil = now + 1000;
+  next.y = 0.5;
+  next.vy = 0;
+  events.push({ kind: 'hit', cause, lives: next.lives });
+  return true;
 }
 
-export function stepArcadePlayer({ player, role, stage, input = {}, dt = 1 / 60, elapsedMs = 0, entities = [], now = 0 }) {
-  const lane = getArcadeLane(role);
-  const next = { ...player, consumed: [...(player.consumed || [])] };
-  const moveSpeed = stage.type === 'lane' ? 0.86 : 0.68;
-  if (input.left) next.x -= moveSpeed * dt;
-  if (input.right) next.x += moveSpeed * dt;
-  next.x = Math.max(lane.min + 0.025, Math.min(lane.max - 0.025, next.x));
+export function stepArcadePlayer({ player, role, stage = ARCADE_STAGES[0], input = {}, dt = 1 / 60, elapsedMs = 0, entities = [], now = 0 }) {
+  const next = { ...player, consumed: [...(player.consumed || [])], passed: [...(player.passed || [])] };
+  const events = [];
+  if (next.lives <= 0) return { player: next, events };
 
-  const jumpable = ['flappy', 'runner', 'hop', 'boss'].includes(stage.type);
-  if (jumpable) {
-    if ((input.jumpPressed || input.up) && next.y >= 0.78) next.vy = -1.45;
-    next.vy += 3.4 * dt;
-    next.y += next.vy * dt;
-    if (next.y >= 0.82) { next.y = 0.82; next.vy = 0; }
-    if (next.y < 0.12) { next.y = 0.12; next.vy = Math.max(0, next.vy); }
-  } else if (stage.type === 'rocket') {
-    next.vy += ((input.jump || input.up) ? -2.1 : 1.35) * dt;
-    next.vy = Math.max(-0.78, Math.min(0.78, next.vy));
-    next.y += next.vy * dt;
-    next.y = Math.max(0.16, Math.min(0.82, next.y));
-    if (next.y === 0.16 || next.y === 0.82) next.vy *= -0.15;
-  } else if (stage.type === 'pop') {
-    if (input.up) next.y -= 0.56 * dt;
-    if (input.down) next.y += 0.56 * dt;
-    next.y = Math.max(0.12, Math.min(0.82, next.y));
-  } else {
-    next.y = 0.82;
+  if (input.jumpPressed || input.tap) next.vy = FLAP_VELOCITY;
+  next.vy = Math.min(1.15, next.vy + GRAVITY * dt);
+  next.y += next.vy * dt;
+
+  if (next.y < TOP_LIMIT || next.y > FLOOR_LIMIT) {
+    const boundary = next.y < TOP_LIMIT ? 'ceiling' : 'floor';
+    if (loseLife(next, now, events, boundary)) return { player: next, events };
+    next.y = Math.max(TOP_LIMIT, Math.min(FLOOR_LIMIT, next.y));
     next.vy = 0;
   }
 
-  const events = [];
   const consumed = new Set(next.consumed);
-  if (stage.type === 'rhythm' && input.actionPressed) {
-    const beat = arcadeBeatAt(elapsedMs);
-    if (beat.beat >= 0 && beat.beat !== next.lastBeat) {
-      next.lastBeat = beat.beat;
-      if (Math.abs(beat.delta) <= 190) {
-        next.score += 15;
-        next.stageScore += 15;
-        events.push({ kind: 'perfect', score: 15 });
-      } else if (Math.abs(beat.delta) <= 320) {
-        next.score += 7;
-        next.stageScore += 7;
-        events.push({ kind: 'good', score: 7 });
-      } else {
-        events.push({ kind: 'miss', score: 0 });
+  const passed = new Set(next.passed);
+  const lane = getArcadeLane(role);
+  for (const entity of entities) {
+    if (consumed.has(entity.id) || passed.has(entity.id)) continue;
+    const position = getArcadeEntityPosition(entity, elapsedMs);
+    if (!position) continue;
+
+    const overlappingPipe = Math.abs(position.x - next.x) <= PIPE_HALF_WIDTH + PLAYER_RADIUS;
+    if (overlappingPipe) {
+      const gapTop = position.gapY - position.gapSize / 2;
+      const gapBottom = position.gapY + position.gapSize / 2;
+      const fitsGap = next.y - PLAYER_RADIUS > gapTop && next.y + PLAYER_RADIUS < gapBottom;
+      if (!fitsGap) {
+        if (now >= Number(next.invulnerableUntil || 0)) loseLife(next, now, events, 'pipe');
+        consumed.add(entity.id);
+        continue;
       }
+    }
+
+    const hasPassed = lane.direction < 0
+      ? position.x < next.x - PIPE_HALF_WIDTH - PLAYER_RADIUS
+      : position.x > next.x + PIPE_HALF_WIDTH + PLAYER_RADIUS;
+    if (hasPassed) {
+      passed.add(entity.id);
+      next.score += entity.value || stage.points || 10;
+      next.stageScore += entity.value || stage.points || 10;
+      next.gatesPassed = Number(next.gatesPassed || 0) + 1;
+      events.push({ kind: 'passed', score: entity.value || stage.points || 10, gatesPassed: next.gatesPassed });
     }
   }
 
-  for (const entity of entities) {
-    if (consumed.has(entity.id)) continue;
-    const position = getArcadeEntityPosition(entity, elapsedMs, stage);
-    if (!position) continue;
-    const dx = position.x - next.x;
-    const dy = position.y - next.y;
-    const near = Math.hypot(dx * 1.05, dy * 0.9) <= (stage.type === 'pop' ? 0.085 : 0.075);
-    if (!near) continue;
-    let activated = false;
-    if (stage.type === 'pop') activated = Boolean(input.actionPressed);
-    else activated = true;
-    if (!activated) continue;
-    consumed.add(entity.id);
-    if (['bomb', 'block', 'crate', 'laser', 'meteor', 'gate'].includes(entity.kind)) {
-      if (now >= Number(next.invulnerableUntil || 0)) {
-        next.lives = Math.max(0, next.lives - 1);
-        next.invulnerableUntil = now + 850;
-        events.push({ kind: 'hit', entity: entity.kind, lives: next.lives });
-      }
-    } else {
-      const points = entity.value || stage.points;
-      next.score += points;
-      next.stageScore += points;
-      events.push({ kind: 'collect', entity: entity.kind, score: points });
-    }
-  }
   next.consumed = [...consumed];
+  next.passed = [...passed];
   return { player: next, events };
 }
 
@@ -201,6 +179,8 @@ export function getArcadeWinner(players = {}) {
   return {
     hostScore,
     guestScore,
+    hostGates: Number(players.host?.gatesPassed || 0),
+    guestGates: Number(players.guest?.gatesPassed || 0),
     winner: hostScore === guestScore ? 'draw' : hostScore > guestScore ? 'host' : 'guest'
   };
 }

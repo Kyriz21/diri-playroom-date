@@ -1,55 +1,52 @@
-# LDR Mini Games — v0.46.0
+# LDR Mini Games — v0.48.0
 
-Tiga aktivitas baru memakai room dua perangkat dan menyediakan mode main di satu perangkat. Elemental Duo disembunyikan dari landing page dan status katalog menjadi `archived`; source, CSS, Firebase rules, dan dokumentasinya tetap disimpan sebagai konsep/arsip untuk pengembangan berikutnya.
+Tiga aktivitas menggunakan room dua perangkat dan menyediakan latihan di satu perangkat. Setiap permainan memakai lobby bersama: host membuat room, guest bergabung, keduanya melihat nama/presence dan menekan Ready, lalu host memulai setelah keduanya online.
 
-
-## Lobi pemain dan rekap hasil — v0.46.0
-
-- Room Love Match, Color Match, dan IQ Duel tidak langsung masuk permainan setelah guest bergabung. Kedua perangkat masuk ke lobi bersama terlebih dahulu.
-- Kartu pemain memperlihatkan nama, status online, dan status siap. Tombol mulai milik host tetap terkunci sampai host dan guest online serta sama-sama Ready.
-- Jika perangkat terputus, status online pada lobi berubah dan permainan tidak dapat dimulai sampai keduanya tersambung kembali.
-- Love Match mengungkap satu rekap akhir setelah kedua pemain menyelesaikan seluruh pertanyaan; tidak ada slide reveal per pertanyaan.
-- Color Match otomatis berpindah antar lima ronde dan baru menampilkan satu halaman rekap dengan lima kartu warna pada akhir permainan. Skor total ditampilkan sebagai rata-rata akurasi.
-- IQ Duel tetap memakai satu rekap akhir dengan kartu skor pemain dan daftar jawaban/pembahasan seluruh soal.
-- Firebase Rules v0.46.0 membatasi Ready/Start berdasarkan presence online untuk tiga game ini dan mengizinkan pembacaan silang tebakan Color Match hanya pada fase scoring/finished.
-
+## Lobby dan rekap
+- Love Match, Color Match, dan IQ Duel menunggu dua perangkat hadir dan siap sebelum game dimulai.
+- Tidak ada reveal per soal atau slide hasil. Setiap permainan menampilkan satu kartu/halaman rekap akhir.
+- Jawaban tetap privat sampai fase hasil yang sesuai; Firebase Rules membatasi akses silang berdasarkan gameId, sessionId, membership, dan phase.
 
 ## Love Match
-
-- 20 pertanyaan orisinal pada empat dimensi: I/E, S/N, T/F, J/P.
-- Mode dua perangkat: masing-masing menjawab secara privat. Jawaban pasangan baru dapat dibaca setelah keduanya menyelesaikan tes dan fase publik berubah ke `reveal` atau `result`.
-- Mode satu perangkat: Pemain 1 menjawab lebih dulu, lalu layar serah-terima menyembunyikan jawabannya sebelum Pemain 2 menjawab.
-- Skor merupakan persentase jawaban yang sama, bukan ukuran ilmiah hubungan atau diagnosis psikologis. Profil hanya refleksi ringan untuk memulai percakapan.
+- Bank berisi **80 pertanyaan orisinal**, 20 untuk masing-masing dimensi I/E, S/N, T/F, dan J/P.
+- Setiap sesi memilih **32 pertanyaan** (8 dari tiap dimensi) secara acak dan urutannya diacak.
+- Kedua pemain menjawab secara privat. Hasil hanya dibuka setelah keduanya selesai.
+- Rekap menampilkan skor kesamaan, kode dan nama tipe, penjelasan kecenderungan, kekuatan, gaya komunikasi, pola hubungan, area pertumbuhan, serta pilihan jawaban masing-masing pasangan untuk setiap pertanyaan.
+- Rekap dapat diunduh sebagai JSON (data terstruktur) atau CSV (lembar jawaban dan ringkasan).
+- Mode satu perangkat menggunakan alur bergantian dengan layar serah-terima yang menyembunyikan jawaban pemain pertama.
+- Interpretasi 16 tipe adalah refleksi ringan untuk percakapan, bukan diagnosis psikologis atau penilaian ilmiah kepribadian.
 
 ## Color Match
-
-- Lima ronde. Target warna ditampilkan beberapa detik berdasarkan tingkat kesulitan: Santai 5,2 detik, Sedang 3,6 detik, Sulit 2,3 detik.
-- Mode Versus: kedua pemain melihat target yang sama lalu mengatur slider RGB masing-masing.
-- Mode Duet: host menjadi pemberi petunjuk dan tetap melihat warna; guest menyusun warna dari petunjuk suara/chat. Angka RGB tidak ditampilkan kepada guest sebelum hasil dibuka.
-- Mode satu perangkat adalah latihan solo dengan lima ronde. Skor merupakan rata-rata akurasi RGB.
+- Lima ronde. Target RGB baru dibuat secara acak pada awal sesi dan untuk setiap ronde; generator menghindari target yang terlalu mirip dalam satu sesi.
+- Mode Versus: kedua pemain melihat target yang sama lalu menyusun kembali warna dengan slider RGB.
+- Mode Duet: satu pemain melihat target dan memberi petunjuk, pasangan merekonstruksi warna.
+- Kesulitan mengatur durasi preview: Santai 5,2 detik, Sedang 3,6 detik, Sulit 2,3 detik.
+- Alur mulai remote memeriksa fase setup, konfigurasi terbaru, dan keberadaan dua pemain sebelum host memulai ronde pertama.
+- Hasil lima ronde digabung dalam satu rekap dengan akurasi rata-rata dan kartu perbandingan target/tebakan.
 
 ## IQ Duel
+- Bank berisi **100 soal orisinal**, seimbang pada lima kategori: pola/matriks, deret, logika, hitung cepat, dan analogi.
+- Sesi memilih 12 atau 20 soal secara acak namun seimbang antarkategori; kedua perangkat menerima susunan soal yang sama.
+- Setiap soal memiliki empat opsi, batas waktu 30 detik, jawaban benar, dan penjelasan.
+- Jawaban pemain disimpan privat. Kunci jawaban dan pembahasan baru dipublikasikan setelah seluruh ronde selesai.
+- Rekap menampilkan skor pemain, persentase benar, ringkasan tiap kategori, jawaban kedua pemain, kunci, serta ulasan seluruh soal.
+- Mode satu perangkat tersedia untuk latihan solo 12 atau 20 soal.
+- Skor IQ bersifat hiburan dan tidak setara dengan tes IQ terstandar/klinis.
 
-- Bank 30 soal orisinal: matriks pola 3 × 3, pola, deret, logika, hitung cepat, dan analogi.
-- Pilihan kampanye 12 atau 20 ronde, 30 detik per soal. Keduanya menerima urutan soal acak deterministik yang sama di dua perangkat.
-- Jawaban disimpan per pemain di `privateRooms`. Kunci jawaban dan pembahasan baru dipublikasikan pada fase `result`.
-- Mode satu perangkat adalah latihan solo 12 atau 20 ronde.
+## Arcade — Flappy Face v0.48.0
+- Arcade hanya memiliki satu tantangan: Flappy Face selama 60 detik.
+- Dua karakter berada di arena yang sama; masing-masing punya tiga nyawa dan memperoleh 10 poin untuk setiap celah pipa yang berhasil dilewati.
+- Tap/klik arena atau tombol LOMPAT untuk memberi flap ke atas. Gravitasi menarik karakter turun ketika tidak mengepak.
+- Desktop mendukung Spasi, panah atas, atau W; HP memakai tap atau tombol LOMPAT.
+- Pemenang ditentukan dari jumlah pipa/skor. Rekap satu kartu muncul saat timer berakhir atau kedua pemain kehabisan nyawa.
+- Foto avatar dikompres menjadi JPEG 128×128 dengan batas 22 KB; avatar emoji juga tersedia.
 
 ## Privasi dan Firebase
 
-Mini game memakai Firebase Anonymous Auth dan room/session ID yang sudah digunakan Diri. Playroom Date. Jawaban Love Match dan IQ Duel tetap di jalur privat per UID sampai fase pengungkapan. Tebakan Color Match disimpan privat; target Duet hanya berada di private path host, sedangkan target Versus ditampilkan pada fase preview sesuai aturan game.
+Jawaban Love Match dan IQ Duel disimpan per UID pada `privateRooms`. Tebakan Color Match juga disimpan privat; target disimpan pada jalur privat host, dengan aturan tampilan sesuai mode dan fase. Firebase Rules memerlukan keanggotaan room, sessionId aktif, status online saat mulai, dan fase hasil untuk membuka data privat.
 
-**Penting untuk deployment:** terbitkan ulang `firebase-database.rules.json` dari build ini di Firebase Console → Realtime Database → Rules. Rules baru mengizinkan ID game `lovematch`, `colormatch`, `iqduel` dan memberi akses baca silang ke jawaban privat hanya setelah fase hasil yang sesuai. Jangan mengubah database menjadi public read/write.
+**Deployment:** publikasikan ulang seluruh `firebase-database.rules.json` dari build v0.48.0. Jangan mengganti aturan dengan public read/write. Uji dengan dua UID/perangkat nyata setelah Publish.
 
-## Mode Elemental Duo
+## Elemental Duo
 
-Elemental Duo tidak tampil di menu utama sejak v0.45.0. Implementasi dan dokumen terdahulu tetap disimpan; sesi lama masih dapat dikenali oleh loader, tetapi opsi untuk membuat sesi baru tidak ditampilkan di landing page.
-
-
-## Arcade — v0.47.0
-- Arcade menambahkan 12 mini-game singkat dalam satu arena Canvas bersama.
-- Daftar ronde: Flappy Face, Heart Catcher, Neon Dodge, Noodle Runner, Coin Rush, Bubble Pop, Sky Hop, Laser Lanes, Rocket Flight, Meteor Dodge, Rhythm Tap, Final Sprint.
-- Karakter menggunakan foto kamera/galeri terkompresi atau avatar emoji. Foto dipakai pada sesi aktif dan tidak menjadi syarat bermain.
-- Lobby memiliki presence/Ready kedua pemain. Di setup game, kedua pemain juga mengonfirmasi avatar; host memulai dengan Insert Coin.
-- Kontrol sentuh dan keyboard: kiri, kanan, naik/lompat, turun, aksi. Bubble Pop menggunakan gerak vertikal; Rocket Flight memakai tahan-naik; Rhythm Tap memakai aksi sesuai ketukan.
-- Satu kartu rekap menampilkan pemenang/seri, total skor, dan rincian 12 ronde.
+Elemental Duo tidak tampil di menu utama. Source dan dokumentasi terdahulu tetap disimpan sebagai arsip.

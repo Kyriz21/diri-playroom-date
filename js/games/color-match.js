@@ -1,5 +1,5 @@
 import { db, ref, get, set, update, onValue, runTransaction } from '../firebase.js';
-import { makeColor, colorAccuracy, colorHex } from './brain-game-logic.js';
+import { makeColor, makeDistinctColor, colorAccuracy, colorHex } from './brain-game-logic.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 const SHOW_MS = { easy: 5200, normal: 3600, hard: 2300 };
@@ -21,6 +21,8 @@ export function mountColorMatch(root, context) {
   let unsubscribePublic = null;
   let unsubscribePrivate = null;
   let busy = false;
+  let starting = false;
+  let settingsBusy = false;
   let advancing = false;
   let processingRound = ''; 
   let destroyed = false;
@@ -33,7 +35,7 @@ export function mountColorMatch(root, context) {
   function setupPanel() {
     if (standalone) return `<section class="bm-panel cm-setup"><span class="bm-tag">5 RONDE · LATIH INGATAN</span><h2>Seberapa akurat ingatan warnamu?</h2><p>Lihat warna selama beberapa detik, lalu susun kembali dengan tiga slider RGB.</p><label>Tingkat kesulitan<select data-cm-local-difficulty><option value="easy">Santai · 5 detik</option><option value="normal" selected>Sedang · 3,6 detik</option><option value="hard">Sulit · 2,3 detik</option></select></label><button class="button button-primary" data-cm-action="local-start">Mulai Color Match →</button></section>`;
     const settings = pub.settings || { mode: 'versus', difficulty: 'normal' };
-    return `<section class="bm-panel cm-setup"><span class="bm-tag">PENGATURAN PERMAINAN</span><h2>Color Match</h2><p>Lihat warna, ingat komposisinya, lalu bangun kembali dengan slider merah, hijau, dan biru. Setelah lima ronde, semua hasil muncul dalam satu rekap.</p><div class="cm-setting-grid"><label>Mode permainan<select data-cm-setting="mode" ${role !== 'host' ? 'disabled' : ''}><option value="versus" ${settings.mode === 'versus' ? 'selected' : ''}>Versus · Adu akurasi</option><option value="duet" ${settings.mode === 'duet' ? 'selected' : ''}>Duet · Beri petunjuk</option></select></label><label>Kesulitan<select data-cm-setting="difficulty" ${role !== 'host' ? 'disabled' : ''}><option value="easy" ${settings.difficulty === 'easy' ? 'selected' : ''}>Santai · 5 detik</option><option value="normal" ${settings.difficulty === 'normal' ? 'selected' : ''}>Sedang · 3,6 detik</option><option value="hard" ${settings.difficulty === 'hard' ? 'selected' : ''}>Sulit · 2,3 detik</option></select></label></div><div class="bm-result-actions">${role === 'host' ? '<button class="button button-primary" data-cm-action="start">Mulai 5 ronde →</button>' : '<span class="bm-muted">Menunggu pembuat sesi memulai Color Match.</span>'}</div></section>`;
+    return `<section class="bm-panel cm-setup"><span class="bm-tag">PENGATURAN PERMAINAN</span><h2>Color Match</h2><p>Lihat warna, ingat komposisinya, lalu bangun kembali dengan slider merah, hijau, dan biru. Setelah lima ronde, semua hasil muncul dalam satu rekap.</p><div class="cm-setting-grid"><label>Mode permainan<select data-cm-setting="mode" ${role !== 'host' ? 'disabled' : ''}><option value="versus" ${settings.mode === 'versus' ? 'selected' : ''}>Versus · Adu akurasi</option><option value="duet" ${settings.mode === 'duet' ? 'selected' : ''}>Duet · Beri petunjuk</option></select></label><label>Kesulitan<select data-cm-setting="difficulty" ${role !== 'host' ? 'disabled' : ''}><option value="easy" ${settings.difficulty === 'easy' ? 'selected' : ''}>Santai · 5 detik</option><option value="normal" ${settings.difficulty === 'normal' ? 'selected' : ''}>Sedang · 3,6 detik</option><option value="hard" ${settings.difficulty === 'hard' ? 'selected' : ''}>Sulit · 2,3 detik</option></select></label></div><div class="bm-result-actions">${role === 'host' ? `<button class="button button-primary" data-cm-action="start" ${starting || settingsBusy ? 'disabled' : ''}>${starting ? 'Menyiapkan warna acak…' : 'Mulai 5 ronde →'}</button>` : '<span class="bm-muted">Menunggu pembuat sesi memulai Color Match.</span>'}</div></section>`;
   }
 
   function colorPreview(color, visible = true) {
@@ -106,10 +108,10 @@ export function mountColorMatch(root, context) {
     await set(baseRef, { settings: { mode: 'versus', difficulty: 'normal', clueRole: 'host' }, meta: { phase: 'setup', round: 0 }, submissions: { host: false, guest: false }, totals: { host: 0, guest: 0 }, roundResults: {} });
   }
 
-  async function startRound(round) {
+  async function startRound(round, suppliedSettings = null) {
     if (standalone) {
       local.round = round;
-      local.target = makeColor();
+      local.target = makeDistinctColor(local.roundResults.map(item => item.target).filter(Boolean));
       draftGuess = { r: 128, g: 128, b: 128 };
       local.previewStartedAt = Date.now();
       phase = 'preview';
@@ -117,8 +119,9 @@ export function mountColorMatch(root, context) {
       return;
     }
     if (role !== 'host') return;
-    const settings = pub.settings || { mode: 'versus', difficulty: 'normal', clueRole: 'host' };
-    const target = makeColor();
+    const settings = suppliedSettings || pub.settings || { mode: 'versus', difficulty: 'normal', clueRole: 'host' };
+    const previousTargets = Object.values(pub.roundResults || {}).map(item => item.target).filter(Boolean);
+    const target = makeDistinctColor(previousTargets);
     await set(ref(db, `${privateRoot}/${room.host.uid}/rounds/${round}/target`), target);
     await update(baseRef, {
       settings,
@@ -211,6 +214,31 @@ export function mountColorMatch(root, context) {
     }
   }
 
+  async function startRemoteGame() {
+    if (role !== 'host' || starting || settingsBusy || pub.meta?.phase !== 'setup') return;
+    starting = true;
+    render();
+    try {
+      const snapshot = await get(baseRef);
+      const latest = snapshot.val() || {};
+      if (latest.meta?.phase !== 'setup') throw new Error('Sesi sudah dimulai atau tidak lagi berada di pengaturan.');
+      if (!room?.host?.uid || !room?.guest?.uid) throw new Error('Kedua pemain harus berada di room sebelum Color Match dimulai.');
+      pub = latest;
+      const settings = {
+        mode: latest.settings?.mode === 'duet' ? 'duet' : 'versus',
+        difficulty: ['easy', 'normal', 'hard'].includes(latest.settings?.difficulty) ? latest.settings.difficulty : 'normal',
+        clueRole: latest.settings?.clueRole === 'guest' ? 'guest' : 'host'
+      };
+      await startRound(1, settings);
+      toast('Color Match dimulai dengan target warna acak.', 'success');
+    } catch (error) {
+      toast(`Color Match belum bisa dimulai: ${error.message}`, 'error');
+    } finally {
+      starting = false;
+      render();
+    }
+  }
+
   async function submitRemoteGuess() {
     if (busy || pub.submissions?.[role]) return;
     busy = true;
@@ -239,7 +267,7 @@ export function mountColorMatch(root, context) {
     const action = button.dataset.cmAction;
     if (action === 'back') onBack?.();
     if (action === 'local-start') { local.difficulty = root.querySelector('[data-cm-local-difficulty]').value; local.round = 1; local.scores = []; local.roundResults = []; startRound(1); }
-    if (action === 'start' && role === 'host') void startRound(1);
+    if (action === 'start' && role === 'host') void startRemoteGame();
     if (action === 'submit') standalone ? localSubmit() : void submitRemoteGuess();
     if (action === 'replay') { if (standalone) { phase = 'setup'; local.scores = []; local.roundResults = []; local.round = 1; render(); } else onBack?.(); }
   }
@@ -255,7 +283,12 @@ export function mountColorMatch(root, context) {
       return;
     }
     if (event.target.matches('[data-cm-setting]') && role === 'host') {
-      void set(ref(db, `${base}/settings/${event.target.dataset.cmSetting}`), event.target.value).catch(error => toast(error.message, 'error'));
+      settingsBusy = true;
+      const setting = event.target.dataset.cmSetting;
+      const value = event.target.value;
+      void set(ref(db, `${base}/settings/${setting}`), value)
+        .catch(error => toast(`Pengaturan belum tersimpan: ${error.message}`, 'error'))
+        .finally(() => { settingsBusy = false; render(); });
     }
   }
 

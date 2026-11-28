@@ -1,4 +1,39 @@
-# Build Verification — Diri. Playroom Date v0.44.0
+# Build Verification — Diri. Playroom Date v0.50.0
+
+## v0.50.0 — Bomber Arena Map Variety & Spawn Fairness
+- `npm test`: **254/254 tes lulus**.
+- Stress test 10.000 seed: ketiga profil terdistribusi (Lapangan Terbuka 3.309, Persimpangan 3.336, Benteng Tengah 3.355).
+- Seluruh 10.000 arena lolos pemeriksaan konektivitas lantai dari kedua spawn, minimal dua jalur keluar per spawn, dan simetri 180° peti.
+- Jumlah peti: 9–26 per arena. Distribusi power-up: 2–4 pasangan peti, selalu dengan tipe item sama pada kedua sisi.
+- Perlindungan spawn 1.600 ms dihitung dari waktu mulai bersama setelah countdown; kontrol dinonaktifkan selama countdown dan input arah dihentikan saat window blur.
+- Firebase Rules dan struktur data sesi tidak berubah dari v0.49.0. Tidak perlu Publish ulang jika Rules v0.49.0 sudah aktif.
+- Pemeriksaan sintaks seluruh JavaScript serta parsing Firebase Rules JSON lulus. Playtest browser dan dua perangkat dengan Firebase aktif tetap diperlukan.
+
+## v0.49.2 — Bomber Arena Fair Connected Maps
+- `npm test`: **251/251 tes lulus**.
+- Bomber Arena map generation is rotationally symmetric (180°) for both player spawns.
+- Candidate crate placements are rejected if they disconnect any walkable floor cell or leave a crate without an accessible adjacent floor tile.
+- Hidden power-ups mirror with the same type, so both players have equivalent item opportunities.
+- 1,000 deterministic seeds are checked in the regression suite for direct spawn exits and full floor connectivity from both players. A separate 10,000-seed stress run found 0 disconnected arenas; crate counts ranged from 14 to 26.
+- 250 additional seeds are checked for mirrored crate and power-up layout.
+- Firebase Rules and session data schema are unchanged from v0.49.0.
+- `node --check` passed for all JavaScript files under `js/` and `tests/`. Firebase Rules JSON parsed successfully; all 152 `.read`, `.write`, and `.validate` expressions have balanced parentheses.
+- Browser and two-device Firebase playtest remains required.
+
+# Build Verification — Diri. Playroom Date v0.49.1
+
+## v0.49.1 — Bomber Arena Gameplay Polish
+- `npm test`: **250/250 tes lulus**.
+- Seluruh file JavaScript di `js/` lolos `node --check`.
+- Firebase Rules JSON valid; semua 152 ekspresi `.read`, `.write`, `.validate` seimbang.
+- Prediksi jalur ledakan diuji pada rentang fuse peringatan 850 ms; tile api aktif diverifikasi tetap terdaftar selama masa ledakan.
+- Statistik bom dipasang, peti dihancurkan, power-up dikumpulkan, dan hit yang mengurangi nyawa ditambahkan ke state host-authoritative dan kartu rekap.
+- D-pad 3×3, legenda power-up, fuse ring, dan peringatan jalur ledakan diperiksa melalui tes integrasi source/CSS.
+- Firebase Rules tidak berubah dari v0.49.0.
+- Belum dilakukan playtest langsung pada dua perangkat dengan Firebase project aktif.
+
+---
+
 
 ## v0.44.0 — Authored 50-Level Maps & Playability Repair
 - `npm test`: **199/199 tes lulus**.
@@ -141,3 +176,28 @@ Tes otomatis memvalidasi logika, geometri, jangkauan, dan input berdasarkan sour
 - Arcade logic checks: deterministic 12-stage entities, player side bounds, jump/rocket movement, Bubble Pop vertical movement, collection, hazard lives/invulnerability, rhythm timing, countdown bounds, and winner calculation.
 - `node --check` passed for all JavaScript files. Firebase Rules parsed as JSON; all rule expression strings have balanced parentheses.
 - Not verified: live browser rendering across devices, webcam capture on target phones, real Firebase permission behavior, and full two-device Arcade playthrough.
+
+
+# Build Verification — Diri. Playroom Date v0.48.0
+
+## v0.48.0 — Expanded Brain Banks & Flappy Face
+- Love Match: 80 soal (20 tiap dimensi), seleksi 32 soal seimbang per sesi, seluruh 16 profil memiliki deskripsi/kekuatan/komunikasi/relasi/pertumbuhan; hasil menyediakan pilihan kedua pemain dan ekspor JSON/CSV.
+- Color Match: start remote membaca ulang fase/config terbaru, validasi data privat menerima format RGB khusus Color Match, target diacak per ronde dan menghindari target terlalu mirip sebelumnya.
+- IQ Duel: 100 soal dalam lima kategori; seleksi 12/20 seimbang, rekap kategori dan pembahasan per soal.
+- Arcade: satu stage Flappy Face 60 detik; tap/klik atau tombol LOMPAT/Space/ArrowUp/W; pipe pairs, gravity, collision, lives, gate scoring, dan kartu hasil.
+- Firebase Rules JSON diparse, seluruh ekspresi `.read`, `.write`, `.validate` diperiksa keseimbangan tanda kurung; Arcade result transition dan presence gate diuji statis.
+- JavaScript syntax: jalankan `node --check` pada seluruh file di `js/`.
+- Automated test suite: 231/231 passed after final cache-version assertion update.
+- `node --check` passed untuk seluruh JavaScript di `js/`.
+- Firebase Rules berhasil diparse sebagai JSON dan semua ekspresi aturan memiliki tanda kurung seimbang.
+- Manual browser + dua perangkat dengan Firebase project aktif belum dilakukan.
+
+## v0.49.0 — Bomber Arena
+
+- `npm test`: **245/245 passed**.
+- `node --check` dijalankan untuk seluruh file JavaScript di `js/` dan `tests/`.
+- 1.000 seed arena diuji; kedua spawn selalu memiliki sedikitnya dua jalur keluar langsung.
+- Unit test memeriksa grid, collision, dinding/peti, blast silang, power-up, shield, nyawa, pemenang, timer, countdown, guest crate rendering, pemulihan setup, integrasi lobby dan Rules.
+- `firebase-database.rules.json` berhasil diparse; semua ekspresi `.read`, `.write`, `.validate` pada Rules memiliki tanda kurung seimbang.
+- Pemeriksaan seluruh aturan menemukan dan memperbaiki satu tanda kurung tutup berlebih pada `privateRooms/$roomCode/$gameId/$sessionId/$uid/.read`; pemeriksaan kini mencakup semua expression, bukan hanya path Bomber Arena.
+- Pengujian Firebase Emulator/Rules Playground dan playtest browser dua perangkat belum dilakukan.
